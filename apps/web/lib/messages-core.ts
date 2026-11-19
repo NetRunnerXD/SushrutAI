@@ -1,0 +1,69 @@
+// Safety-critical and navigation strings for the 8 additional languages (DRAFT — native-speaker review pending).
+// Emergency text must be understandable instantly, so these are kept short and literal.
+
+export const CORE: Record<string, Record<string, string>> = {
+  bn: {
+    navHome: "হোম", navMe: "আমি", sosOpen: "জরুরি সাহায্য", sosTitle: "এখনই সাহায্য নিন",
+    call108: "অ্যাম্বুলেন্স 108-এ কল করুন", call112: "জরুরি 112-এ কল করুন", callContact: "আমার জরুরি পরিচিতিকে কল করুন",
+    teleManas: "কারও সঙ্গে কথা বলুন — টেলি-মানস 14416 (বিনামূল্যে, 24×7)", nearestHospital: "নিকটতম হাসপাতাল খুঁজুন",
+    emergencyCard: "আমার জরুরি কার্ড", bloodGroup: "রক্তের গ্রুপ", allergiesLabel: "অ্যালার্জি",
+    howFeeling: "আজ আপনি কেমন বোধ করছেন?", tapToSpeak: "চাপুন এবং যেকোনো ভাষায় বলুন", todayMeds: "আজকের ওষুধ",
+    taken: "নিয়েছি", skip: "বাদ দিন", chooseLanguage: "আপনার ভাষা বেছে নিন", start: "শুরু করুন",
+  },
+  ta: {
+    navHome: "முகப்பு", navMe: "நான்", sosOpen: "அவசர உதவி", sosTitle: "இப்போதே உதவி பெறுங்கள்",
+    call108: "ஆம்புலன்ஸ் 108 அழைக்கவும்", call112: "அவசர எண் 112 அழைக்கவும்", callContact: "என் அவசர தொடர்பை அழைக்கவும்",
+    teleManas: "யாரிடமாவது பேசுங்கள் — டெலி-மனஸ் 14416 (இலவசம், 24×7)", nearestHospital: "அருகிலுள்ள மருத்துவமனையைக் கண்டறியவும்",
+    emergencyCard: "என் அவசர அட்டை", bloodGroup: "இரத்த வகை", allergiesLabel: "ஒவ்வாமை",
+    howFeeling: "இன்று நீங்கள் எப்படி உணர்கிறீர்கள்?", tapToSpeak: "அழுத்தி எந்த மொழியிலும் பேசுங்கள்", todayMeds: "இன்றைய மருந்துகள்",
+    taken: "எடுத்தேன்", skip: "தவிர்", chooseLanguage: "உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்", start: "தொடங்கு",
+  },
+  te: {
+    navHome: "హోమ్", navMe: "నేను", sosOpen: "అత్యవసర సహాయం", sosTitle: "ఇప్పుడే సహాయం పొందండి",
+    call108: "అంబులెన్స్ 108కు కాల్ చేయండి", call112: "అత్యవసర 112కు కాల్ చేయండి", callContact: "నా అత్యవసర కాంటాక్ట్‌కు కాల్ చేయండి",
+    teleManas: "ఎవరితోనైనా మాట్లాడండి — టెలి-మానస్ 14416 (ఉచితం, 24×7)", nearestHospital: "దగ్గరలోని ఆసుపత్రిని కనుగొనండి",
+    emergencyCard: "నా అత్యవసర కార్డు", bloodGroup: "రక్త గ్రూపు", allergiesLabel: "అలర్జీలు",
+    howFeeling: "ఈ రోజు మీకు ఎలా ఉంది?", tapToSpeak: "నొక్కి ఏ భాషలోనైనా మాట్లాడండి", todayMeds: "ఈ రోజు మందులు",
+    taken: "తీసుకున్నాను", skip: "వదిలేయండి", chooseLanguage: "మీ భాషను ఎంచుకోండి", start: "ప్రారంభించండి",
+  },
+  mr: {
+    navHome: "होम", navMe: "मी", sosOpen: "आपत्कालीन मदत", sosTitle: "आत्ताच मदत घ्या",
+    call108: "रुग्णवाहिका 108 ला कॉल करा", call112: "आपत्कालीन 112 ला कॉल करा", callContact: "माझ्या आपत्कालीन संपर्काला कॉल करा",
+    teleManas: "कोणाशी तरी बोला — टेली-मानस 14416 (मोफत, 24×7)", nearestHospital: "जवळचे रुग्णालय शोधा",
+    emergencyCard: "माझे आपत्कालीन कार्ड", bloodGroup: "रक्तगट", allergiesLabel: "ॲलर्जी",
+    howFeeling: "आज तुम्हाला कसे वाटत आहे?", tapToSpeak: "दाबा आणि कोणत्याही भाषेत बोला", todayMeds: "आजची औषधे",
+    taken: "घेतले", skip: "वगळा", chooseLanguage: "तुमची भाषा निवडा", start: "सुरू करा",
+  },
+  gu: {
+    navHome: "હોમ", navMe: "હું", sosOpen: "કટોકટી મદદ", sosTitle: "હમણાં જ મદદ મેળવો",
+    call108: "એમ્બ્યુલન્સ 108 પર કૉલ કરો", call112: "કટોકટી 112 પર કૉલ કરો", callContact: "મારા કટોકટી સંપર્કને કૉલ કરો",
+    teleManas: "કોઈની સાથે વાત કરો — ટેલી-માનસ 14416 (મફત, 24×7)", nearestHospital: "નજીકની હોસ્પિટલ શોધો",
+    emergencyCard: "મારું કટોકટી કાર્ડ", bloodGroup: "બ્લડ ગ્રુપ", allergiesLabel: "એલર્જી",
+    howFeeling: "આજે તમને કેવું લાગે છે?", tapToSpeak: "દબાવો અને કોઈપણ ભાષામાં બોલો", todayMeds: "આજની દવાઓ",
+    taken: "લીધી", skip: "છોડો", chooseLanguage: "તમારી ભાષા પસંદ કરો", start: "શરૂ કરો",
+  },
+  kn: {
+    navHome: "ಮುಖಪುಟ", navMe: "ನಾನು", sosOpen: "ತುರ್ತು ಸಹಾಯ", sosTitle: "ಈಗಲೇ ಸಹಾಯ ಪಡೆಯಿರಿ",
+    call108: "ಆಂಬ್ಯುಲೆನ್ಸ್ 108ಗೆ ಕರೆ ಮಾಡಿ", call112: "ತುರ್ತು 112ಗೆ ಕರೆ ಮಾಡಿ", callContact: "ನನ್ನ ತುರ್ತು ಸಂಪರ್ಕಕ್ಕೆ ಕರೆ ಮಾಡಿ",
+    teleManas: "ಯಾರೊಂದಿಗಾದರೂ ಮಾತನಾಡಿ — ಟೆಲಿ-ಮಾನಸ್ 14416 (ಉಚಿತ, 24×7)", nearestHospital: "ಹತ್ತಿರದ ಆಸ್ಪತ್ರೆ ಹುಡುಕಿ",
+    emergencyCard: "ನನ್ನ ತುರ್ತು ಕಾರ್ಡ್", bloodGroup: "ರಕ್ತದ ಗುಂಪು", allergiesLabel: "ಅಲರ್ಜಿಗಳು",
+    howFeeling: "ಇಂದು ನಿಮಗೆ ಹೇಗೆ ಅನಿಸುತ್ತಿದೆ?", tapToSpeak: "ಒತ್ತಿ ಮತ್ತು ಯಾವುದೇ ಭಾಷೆಯಲ್ಲಿ ಮಾತನಾಡಿ", todayMeds: "ಇಂದಿನ ಔಷಧಗಳು",
+    taken: "ತೆಗೆದುಕೊಂಡೆ", skip: "ಬಿಡಿ", chooseLanguage: "ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆರಿಸಿ", start: "ಪ್ರಾರಂಭಿಸಿ",
+  },
+  ml: {
+    navHome: "ഹോം", navMe: "ഞാൻ", sosOpen: "അടിയന്തര സഹായം", sosTitle: "ഇപ്പോൾ തന്നെ സഹായം നേടുക",
+    call108: "ആംബുലൻസ് 108 വിളിക്കുക", call112: "അടിയന്തര നമ്പർ 112 വിളിക്കുക", callContact: "എന്റെ അടിയന്തര കോൺടാക്റ്റിനെ വിളിക്കുക",
+    teleManas: "ആരോടെങ്കിലും സംസാരിക്കൂ — ടെലി-മനസ് 14416 (സൗജന്യം, 24×7)", nearestHospital: "അടുത്തുള്ള ആശുപത്രി കണ്ടെത്തുക",
+    emergencyCard: "എന്റെ അടിയന്തര കാർഡ്", bloodGroup: "രക്തഗ്രൂപ്പ്", allergiesLabel: "അലർജികൾ",
+    howFeeling: "ഇന്ന് നിങ്ങൾക്ക് എങ്ങനെയുണ്ട്?", tapToSpeak: "അമർത്തി ഏത് ഭാഷയിലും സംസാരിക്കൂ", todayMeds: "ഇന്നത്തെ മരുന്നുകൾ",
+    taken: "കഴിച്ചു", skip: "ഒഴിവാക്കുക", chooseLanguage: "നിങ്ങളുടെ ഭാഷ തിരഞ്ഞെടുക്കുക", start: "തുടങ്ങുക",
+  },
+  or: {
+    navHome: "ହୋମ", navMe: "ମୁଁ", sosOpen: "ଜରୁରୀ ସାହାଯ୍ୟ", sosTitle: "ଏବେ ସାହାଯ୍ୟ ନିଅନ୍ତୁ",
+    call108: "ଆମ୍ବୁଲାନ୍ସ 108 କୁ କଲ କରନ୍ତୁ", call112: "ଜରୁରୀ 112 କୁ କଲ କରନ୍ତୁ", callContact: "ମୋ ଜରୁରୀ ସମ୍ପର୍କକୁ କଲ କରନ୍ତୁ",
+    teleManas: "କାହା ସହ କଥା ହୁଅନ୍ତୁ — ଟେଲି-ମାନସ 14416 (ମାଗଣା, 24×7)", nearestHospital: "ନିକଟତମ ହସ୍ପିଟାଲ ଖୋଜନ୍ତୁ",
+    emergencyCard: "ମୋ ଜରୁରୀ କାର୍ଡ", bloodGroup: "ରକ୍ତ ଗ୍ରୁପ", allergiesLabel: "ଆଲର୍ଜି",
+    howFeeling: "ଆଜି ଆପଣ କେମିତି ଅନୁଭବ କରୁଛନ୍ତି?", tapToSpeak: "ଦବାନ୍ତୁ ଏବଂ ଯେକୌଣସି ଭାଷାରେ କୁହନ୍ତୁ", todayMeds: "ଆଜିର ଔଷଧ",
+    taken: "ନେଲି", skip: "ଛାଡନ୍ତୁ", chooseLanguage: "ଆପଣଙ୍କ ଭାଷା ବାଛନ୍ତୁ", start: "ଆରମ୍ଭ କରନ୍ତୁ",
+  },
+};
