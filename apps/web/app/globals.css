@@ -1,0 +1,454 @@
+@import "tailwindcss";
+
+/* SushrutAI "Steel & Spice" design tokens.
+   The household's steel: brushed-steel grounds, polished rims, round katori wells. Spice colours are identity codes
+   (one per family member). Jamun purple is reserved for "your next step": the primary action, the next dose and the
+   current place. Red is only for emergency and urgent states. Spec: DESIGN.md. */
+:root {
+  --bg: #E4E8EB;             /* brushed steel ground */
+  --surface: #F3F5F7;        /* polished lid, a step under its white rim */
+  --surface-2: #DCE1E5;      /* pressed steel, the inside of a katori */
+  --text: #182028;           /* steel-shadow ink */
+  --muted: #4C5762;
+  --border: #C3CBD2;
+  --border-input: #6F7B86;
+  --brand: #5B2A7A;          /* jamun: next step only */
+  --brand-strong: #46205F;
+  --brand-ink: #FFFFFF;
+  --brand-soft: #EEE5F4;
+  --info: #1C4F86;           /* links */
+  --info-soft: #DDE7F2;
+  --accent: #D18B06;         /* haldi: marks and highlights, never text on steel */
+  --accent-ink: #2B1C00;
+  --accent-soft: #F5E5BE;
+  --ok: #2B6634;             /* dhania */
+  --ok-soft: #DAEAD6;
+  --warn: #874800;
+  --warn-soft: #F5E2C0;
+  --danger: #A5221A;
+  --danger-soft: #F6DDD9;
+  --on-tone: #FFFFFF;        /* text on solid ok / danger */
+  --emergency: #B3121B;      /* SOS red: background with white text */
+  --series-1: #2a78d6;
+  --series-2: #d95926;
+  --focus: #5B2A7A;
+  /* the shell: a gunmetal rail and header */
+  --rail: #232B33;
+  --rail-2: #313A43;
+  --rail-text: #EEF1F3;
+  --rail-muted: #B1BBC4;
+  --rail-on: #D7BCEB;        /* current place on the rail (jamun, lifted for the dark steel) */
+  --rail-on-ink: #24102F;
+  /* spice codes, one per person (self = haldi) */
+  --sp-0: #C98A0A; --sp-1: #4F7A3A; --sp-2: #C45A16; --sp-3: #3C5A9A; --sp-4: #7D5230; --sp-5: #8E2C6B;
+  /* steel light */
+  --rim: inset 0 1.5px 0 #FFFFFF, inset 0 -1px 0 rgb(24 32 40 / 5%);
+  --well: inset 0 2px 5px rgb(24 32 40 / 17%), inset 0 -1px 0 rgb(255 255 255 / 75%);
+  --e1: 0 1px 2px rgb(24 32 40 / 7%), 0 6px 16px -10px rgb(24 32 40 / 26%);
+  --e2: 0 2px 4px rgb(24 32 40 / 8%), 0 12px 28px -14px rgb(24 32 40 / 36%);
+  --e3: 0 4px 10px rgb(24 32 40 / 10%), 0 28px 56px -20px rgb(24 32 40 / 48%);
+  color-scheme: light;
+}
+
+/* Gunmetal: the same steel at night. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #22292E; --surface: #2B3338; --surface-2: #343D43; --text: #ECEFF1; --muted: #B4BEC5;
+    --border: #414B52; --border-input: #85919A; --brand: #CBA6E3; --brand-strong: #DDC2EF; --brand-ink: #22102D;
+    --brand-soft: #3A2E45; --info: #93B9EF; --info-soft: #1B2A42; --accent: #E2A72A; --accent-ink: #1F1400;
+    --accent-soft: #3A2F17; --ok: #86CF8F; --ok-soft: #17301C; --warn: #F2B860; --warn-soft: #33260F;
+    --danger: #FF9086; --danger-soft: #3D1A18; --on-tone: #10161F; --emergency: #C0261C; --focus: #CBA6E3;
+    --rail: #111518; --rail-2: #262D32; --rail-text: #E8ECEF; --rail-muted: #9AA6B0; --rail-on: #CBA6E3; --rail-on-ink: #22102D;
+    --sp-0: #E2A72A; --sp-1: #7FB36A; --sp-2: #E8844A; --sp-3: #7E9BDB; --sp-4: #C2946B; --sp-5: #D77BB3;
+    --series-1: #3987e5; --series-2: #e0703f;
+    --rim: inset 0 1px 0 rgb(255 255 255 / 9%);
+    --well: inset 0 2px 6px rgb(0 0 0 / 45%), inset 0 -1px 0 rgb(255 255 255 / 5%);
+    --e1: 0 1px 2px rgb(0 0 0 / 30%); --e2: 0 12px 28px -14px rgb(0 0 0 / 70%); --e3: 0 28px 56px -20px rgb(0 0 0 / 80%);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #22292E; --surface: #2B3338; --surface-2: #343D43; --text: #ECEFF1; --muted: #B4BEC5;
+  --border: #414B52; --border-input: #85919A; --brand: #CBA6E3; --brand-strong: #DDC2EF; --brand-ink: #22102D;
+  --brand-soft: #3A2E45; --info: #93B9EF; --info-soft: #1B2A42; --accent: #E2A72A; --accent-ink: #1F1400;
+  --accent-soft: #3A2F17; --ok: #86CF8F; --ok-soft: #17301C; --warn: #F2B860; --warn-soft: #33260F;
+  --danger: #FF9086; --danger-soft: #3D1A18; --on-tone: #10161F; --emergency: #C0261C; --focus: #CBA6E3;
+  --rail: #111518; --rail-2: #262D32; --rail-text: #E8ECEF; --rail-muted: #9AA6B0; --rail-on: #CBA6E3; --rail-on-ink: #22102D;
+  --sp-0: #E2A72A; --sp-1: #7FB36A; --sp-2: #E8844A; --sp-3: #7E9BDB; --sp-4: #C2946B; --sp-5: #D77BB3;
+  --series-1: #3987e5; --series-2: #e0703f;
+  --rim: inset 0 1px 0 rgb(255 255 255 / 9%);
+  --well: inset 0 2px 6px rgb(0 0 0 / 45%), inset 0 -1px 0 rgb(255 255 255 / 5%);
+  --e1: 0 1px 2px rgb(0 0 0 / 30%); --e2: 0 12px 28px -14px rgb(0 0 0 / 70%); --e3: 0 28px 56px -20px rgb(0 0 0 / 80%);
+  color-scheme: dark;
+}
+/* ================================================================ Desktop mode: Night Steel Glass
+   docs/DESKTOP_UI_SPEC.md §2. Desktop remaps the same semantic tokens, so every component takes the desktop world.
+   Dark by default on desktop; Light ("Frosted Steel") when the person chose Light. Azure replaces jamun as the
+   one-next-step accent. High contrast still wins (its block comes after and is excluded here). */
+:root[data-ui="desktop"]:not([data-theme="light"]):not([data-contrast="high"]) {
+  --bg: #0B1118; --surface: #18212A; --surface-2: #212B35; --text: #E8EEF3; --muted: #97A6B3;
+  --border: rgb(255 255 255 / 8%); --border-input: #4B5A68;
+  --brand: #1E6FE6; --brand-strong: #1A60C9; --brand-ink: #FFFFFF; --brand-soft: rgb(58 141 255 / 16%);
+  --info: #7FB2FF; --info-soft: rgb(58 141 255 / 12%); --accent: #E2A72A; --accent-ink: #1F1400; --accent-soft: rgb(226 167 42 / 16%);
+  --ok: #3CCB7F; --ok-soft: rgb(60 203 127 / 14%); --warn: #F2B544; --warn-soft: rgb(242 181 68 / 14%);
+  --danger: #FF6B6B; --danger-soft: rgb(255 107 107 / 14%); --on-tone: #0B1118; --emergency: #E5383B; --focus: #3A8DFF;
+  --rail: #0F161E; --rail-2: #1B242E; --rail-text: #E8EEF3; --rail-muted: #97A6B3; --rail-on: #1E6FE6; --rail-on-ink: #FFFFFF;
+  --sp-0: #E2A72A; --sp-1: #7FB36A; --sp-2: #E8844A; --sp-3: #7E9BDB; --sp-4: #C2946B; --sp-5: #D77BB3;
+  --series-1: #3A8DFF; --series-2: #F2A25C;
+  --rim: inset 0 1px 0 rgb(255 255 255 / 6%);
+  --well: inset 0 2px 6px rgb(0 0 0 / 45%), inset 0 -1px 0 rgb(255 255 255 / 4%);
+  --e1: 0 0 0 1px rgb(255 255 255 / 7%); --e2: 0 0 0 1px rgb(255 255 255 / 8%), 0 12px 32px -18px rgb(0 0 0 / 55%);
+  --e3: 0 0 0 1px rgb(255 255 255 / 8%), 0 24px 60px -20px rgb(0 0 0 / 60%);
+  --d-frame: rgb(22 30 39 / 78%); --d-frame-line: rgb(255 255 255 / 6%); --d-tile: rgb(255 255 255 / 3.5%);
+  --d-tile-hover: rgb(255 255 255 / 5.5%); --d-tile-line: rgb(255 255 255 / 7%); --d-tile-line-hover: rgb(255 255 255 / 12%);
+  --d-pop: #1C2631; --d-accent-500: #3A8DFF; --d-faint: #6B7885;
+  --d-glow: radial-gradient(120% 90% at 50% 0%, rgb(58 141 255 / 55%), transparent 70%);
+  --d-amb-1: #12324D; --d-amb-2: #0F2236; --d-band: rgb(120 170 220 / 4%);
+  color-scheme: dark;
+}
+:root[data-ui="desktop"][data-theme="light"]:not([data-contrast="high"]) {
+  --bg: #E8EEF3; --surface: #F8FAFC; --surface-2: #E9EFF4; --text: #13202B; --muted: #55636F;
+  --border: rgb(19 32 43 / 10%); --border-input: #7A8792;
+  --brand: #1D6BDE; --brand-strong: #175BC0; --brand-ink: #FFFFFF; --brand-soft: #E1ECFB; --focus: #2F7FF0;
+  --info: #1C55A8; --info-soft: #E1ECFB;
+  --rail: #F8FAFC; --rail-2: #E9EFF4; --rail-text: #13202B; --rail-muted: #55636F; --rail-on: #1D6BDE; --rail-on-ink: #FFFFFF;
+  --rim: inset 0 1px 0 rgb(255 255 255 / 90%);
+  --e1: 0 0 0 1px rgb(19 32 43 / 8%), 0 6px 16px -12px rgb(19 32 43 / 22%);
+  --e2: 0 0 0 1px rgb(19 32 43 / 8%), 0 12px 28px -14px rgb(19 32 43 / 30%);
+  --e3: 0 0 0 1px rgb(19 32 43 / 8%), 0 28px 56px -20px rgb(19 32 43 / 40%);
+  --d-frame: rgb(255 255 255 / 70%); --d-frame-line: rgb(19 32 43 / 8%); --d-tile: rgb(255 255 255 / 80%);
+  --d-tile-hover: #FFFFFF; --d-tile-line: rgb(19 32 43 / 8%); --d-tile-line-hover: rgb(19 32 43 / 14%);
+  --d-pop: #FFFFFF; --d-accent-500: #2F7FF0; --d-faint: #6A7884;
+  --d-glow: radial-gradient(120% 90% at 50% 0%, rgb(47 127 240 / 28%), transparent 70%);
+  --d-amb-1: #D3E2F0; --d-amb-2: #DCE7F1; --d-band: rgb(31 111 230 / 5%);
+  color-scheme: light;
+}
+
+/* High contrast (Settings > Display): two values, white and black, borders everywhere. */
+:root[data-contrast="high"] {
+  --text: #000000; --muted: #1B1B1B; --border: #000000; --border-input: #000000; --bg: #FFFFFF; --surface: #FFFFFF;
+  --surface-2: #FFFFFF; --brand: #000000; --brand-strong: #000000; --brand-ink: #FFFFFF; --brand-soft: #FFFFFF;
+  --info: #003A80; --focus: #000000; --accent-soft: #FFE08A; --on-tone: #FFFFFF; --ok: #1E5A2E; --danger: #8B1A14; --warn: #6B3A00;
+  --rail: #000000; --rail-2: #222222; --rail-text: #FFFFFF; --rail-muted: #FFFFFF; --rail-on: #FFFFFF; --rail-on-ink: #000000;
+  --rim: none; --well: inset 0 0 0 2px #000000; --e1: none; --e2: 0 0 0 2px #000000; --e3: 0 0 0 2px #000000;
+  color-scheme: light;
+}
+/* Large text: everything scales from the root size */
+:root[data-text="lg"] { font-size: 21px; }
+:root[data-text="xl"] { font-size: 24px; }
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-input: var(--border-input);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-on-tone: var(--on-tone);
+  --color-emergency: var(--emergency);
+  --color-rail: var(--rail);
+  --color-rail-2: var(--rail-2);
+  --color-rail-text: var(--rail-text);
+  --color-rail-muted: var(--rail-muted);
+  --color-rail-on: var(--rail-on);
+  --color-rail-on-ink: var(--rail-on-ink);
+  --font-sans: var(--font-noto), var(--font-noto-deva), var(--font-noto-beng), var(--font-noto-taml),
+    var(--font-noto-telu), var(--font-noto-gujr), var(--font-noto-knda), var(--font-noto-mlym), var(--font-noto-orya),
+    system-ui, sans-serif;
+  /* Mukta (Ek Type) carries Latin + Devanagari headings; other scripts fall through to their Noto family */
+  --font-display: var(--font-mukta), var(--font-noto-beng), var(--font-noto-taml), var(--font-noto-telu),
+    var(--font-noto-gujr), var(--font-noto-knda), var(--font-noto-mlym), var(--font-noto-orya), var(--font-noto), sans-serif;
+  /* readings, doses and times: the body face with tabular figures (one numeral scale everywhere) */
+  --font-mono: var(--font-noto), var(--font-noto-deva), system-ui, sans-serif;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+}
+
+html { font-size: 17px; scroll-padding-bottom: 96px; scroll-padding-top: 72px; }
+html, body { background-color: var(--bg); color: var(--text); }
+body { font-family: var(--font-sans); line-height: 1.6; -webkit-font-smoothing: antialiased; caret-color: var(--brand); }
+:lang(hi), :lang(bn), :lang(ta), :lang(te), :lang(mr), :lang(gu), :lang(kn), :lang(ml), :lang(or) { line-height: 1.7; }
+
+h1, h2, .display { font-family: var(--font-display); letter-spacing: -0.01em; }
+h1 { font-size: 1.875rem; line-height: 1.15; font-weight: 800; text-wrap: balance; }
+h2 { font-size: 1.3125rem; line-height: 1.3; font-weight: 700; text-wrap: balance; }
+h3 { font-weight: 600; }
+@media (min-width: 1024px) { h1 { font-size: 2.25rem; } }
+.font-mono { font-variant-numeric: tabular-nums lining-nums; letter-spacing: 0; }
+a { text-underline-offset: 0.18em; text-decoration-thickness: 1.5px; }
+
+/* Focus: 3px jamun ring with a steel gap, never removed */
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+::selection { background: var(--accent-soft); color: var(--text); }
+html { scrollbar-color: var(--border-input) var(--bg); }
+
+@layer components {
+/* ---- shared component classes ---- */
+/* A lid: polished steel with a rolled rim */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--rim), var(--e1); }
+/* A katori: a round pressed well */
+.well { background: var(--surface-2); box-shadow: var(--well); }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 14px;
+  padding: 0.6rem 1.15rem; font-weight: 700; min-height: 48px; min-width: 48px;
+  transition: background-color 0.15s, transform 0.12s, box-shadow 0.15s;
+}
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--brand); color: var(--brand-ink); box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), var(--e1); }
+.btn-primary:hover:not(:disabled) { background: var(--brand-strong); }
+.btn-ghost { background: var(--surface-2); color: var(--text); }
+.btn-ghost:hover:not(:disabled) { background: var(--border); }
+.btn-outline { background: var(--surface); color: var(--text); border: 1.5px solid var(--border-input); box-shadow: var(--rim); }
+.btn-outline:hover:not(:disabled) { background: var(--surface-2); }
+.btn-danger { background: var(--danger-soft); color: var(--danger); }
+.btn-emergency { background: var(--emergency); color: #FFFFFF; }
+.input {
+  width: 100%; background: var(--surface); border: 1.5px solid var(--border-input); border-radius: 12px;
+  padding: 0.65rem 0.85rem; min-height: 48px; color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.input:focus-visible { outline: none; }
+.input::placeholder { color: var(--muted); }
+input[type="number"].input, input[inputmode="decimal"].input, input[inputmode="numeric"].input {
+  font-size: 1.1875rem; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+input[type="checkbox"], input[type="radio"] { accent-color: var(--brand); }
+}
+
+/* ================================================================ motion
+   One grammar: a lid lifts and settles (short vertical moves, no tilt, no bounce). The katori fills when a dose
+   is taken; the current family tier lifts. Only the listening voice well loops. */
+@keyframes lid { from { transform: translateY(6px); opacity: 0.55; } to { transform: none; opacity: 1; } }
+@keyframes fill { from { transform: scale(0.55); opacity: 0.4; } to { transform: none; opacity: 1; } }
+.fill-in { animation: fill 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.lift { animation: lid 0.2s cubic-bezier(0.16, 1, 0.3, 1) both; }
+/* A popover (model switch) lifts like a lid; a disclosure opens downward from its own edge (answer sections, the
+   medicines strip, the review panel); suggestion chips settle in when the written ones replace the quick ones. */
+@keyframes unfold { from { clip-path: inset(0 0 100% 0); opacity: 0.5; } to { clip-path: inset(0); opacity: 1; } }
+.pop-in { animation: lid 0.2s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.expand-in { animation: unfold 0.24s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.chip-in { animation: lid 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.chip-in:nth-child(2) { animation-delay: 40ms; } .chip-in:nth-child(3) { animation-delay: 80ms; } .chip-in:nth-child(4) { animation-delay: 120ms; }
+
+/* ---------------- the voice well ---------------- */
+@keyframes ripple { from { transform: scale(1); opacity: 0.35; } to { transform: scale(1.45); opacity: 0; } }
+@keyframes spin { to { rotate: 360deg; } }
+.voice { position: relative; isolation: isolate; display: grid; place-items: center; border-radius: 9999px;
+  background: var(--text); color: var(--bg); box-shadow: inset 0 2px 0 rgb(255 255 255 / 16%), inset 0 -3px 0 rgb(0 0 0 / 25%), var(--e2);
+  transition: background-color 0.2s, scale 0.09s linear; }
+.voice::before { content: ""; position: absolute; inset: 9%; border-radius: inherit; border: 2px solid currentColor; opacity: 0.22; }
+.voice[data-state="listening"] { background: var(--brand); color: var(--brand-ink); scale: calc(1 + var(--lvl, 0) * 0.1); }
+.voice[data-state="listening"]::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
+  background: var(--brand); animation: ripple 1.4s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+.voice .voice-ring { position: absolute; inset: -10%; z-index: -1; color: var(--brand); animation: spin 1.2s linear infinite; }
+button:active > .voice { scale: 0.96; }
+
+/* Sheets lift into place */
+@keyframes sheet-in { from { transform: translateY(24px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.sheet-in { animation: sheet-in 0.24s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.sheet-scrim { animation: fade-in 0.2s ease-out both; }
+
+/* The floating mic steps aside while a full voice well is on screen (it stays if it is mid-capture) */
+.floating-mic { transition: opacity 0.2s, scale 0.2s; }
+:root[data-orb-visible] .floating-mic:not([aria-pressed="true"]) { opacity: 0; scale: 0.6; pointer-events: none; visibility: hidden; }
+
+@keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface) 50%, var(--surface-2) 100%);
+  background-size: 800px 100%; animation: shimmer 1.6s linear infinite; border-radius: 12px;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+@media (pointer: fine) {
+  .no-scrollbar { scrollbar-width: thin; scrollbar-color: var(--border-input) transparent; padding-bottom: 6px; }
+  .no-scrollbar::-webkit-scrollbar { display: block; height: 6px; }
+  .no-scrollbar::-webkit-scrollbar-thumb { background: var(--border-input); border-radius: 3px; }
+}
+
+/* ---------------- app layout: the gunmetal rail (tablet = icons, desktop = full or icons) ---------------- */
+@media (min-width: 768px) {
+  :root { --sbw: 84px; }
+  .app-grid { display: grid; grid-template-columns: var(--sbw) minmax(0, 1fr); }
+  .sidebar { padding-inline: 0.75rem; }
+  .sidebar .sb-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .sidebar .sb-link, .sidebar .sb-toggle, .sidebar .sb-head { justify-content: center; padding-inline: 0; }
+}
+@media (min-width: 1024px) {
+  :root:not([data-sidebar="rail"]) { --sbw: 248px; }
+  :root:not([data-sidebar="rail"]) .sidebar { padding-inline: 0.875rem; }
+  :root:not([data-sidebar="rail"]) .sidebar .sb-label { position: relative; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; }
+  :root:not([data-sidebar="rail"]) .sidebar .sb-link { justify-content: flex-start; padding-inline: 0.375rem 0.75rem; }
+  :root:not([data-sidebar="rail"]) .sidebar .sb-toggle, :root:not([data-sidebar="rail"]) .sidebar .sb-head { justify-content: flex-start; padding-inline: 0.5rem; }
+}
+@media print { .app-grid { display: block; } }
+
+/* On-screen keyboard open (phones): the bottom bar and floating mic step aside, the composer drops to the bottom */
+:root[data-kb] .bottom-nav, :root[data-kb] .floating-mic { display: none; }
+@media (max-width: 767px) { :root[data-kb] .composer { bottom: 0.5rem; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  .voice::after, .voice .voice-ring { display: none; }
+}
+:root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after {
+  animation: none !important; transition: none !important;
+}
+:root[data-motion="reduce"] .voice::after, :root[data-motion="reduce"] .voice .voice-ring { display: none; }
+
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Printing (doctor visit summary): always light, ink-friendly, no app chrome. */
+@media print {
+  :root, :root[data-theme="dark"], :root[data-contrast="high"] {
+    --bg: #FFFFFF !important; --surface: #FFFFFF !important; --surface-2: #F2F2F2 !important;
+    --text: #000000 !important; --muted: #333333 !important; --border: #999999 !important;
+    --brand: #3D1257 !important; --danger: #8B1A14 !important; --warn: #6B3A00 !important;
+    --brand-soft: #F1EBF5 !important; --accent-soft: #F3E6C4 !important;
+    --rim: none !important; --e1: none !important; --well: none !important;
+  }
+  html { font-size: 11pt !important; }
+  body { background: #FFFFFF !important; }
+  @page { margin: 14mm 12mm; }
+  .print-avoid-break { break-inside: avoid; }
+}
+
+/* Thinking: three katoris simmer in turn (reduced motion: held still) */
+@keyframes simmer { 0%, 100% { transform: translateY(0); background: var(--surface-2); } 40% { transform: translateY(-3px); background: var(--brand); } }
+.simmer span { display: block; width: 0.7rem; height: 0.7rem; border-radius: 9999px; background: var(--surface-2); box-shadow: var(--well);
+  animation: simmer 1.2s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+.simmer span:nth-child(2) { animation-delay: 0.15s; } .simmer span:nth-child(3) { animation-delay: 0.3s; }
+
+/* High contrast: the read-aloud discs on Simple-mode tiles stay two-value */
+:root[data-contrast="high"] .speak-disc { background: #FFFFFF; color: #000000; box-shadow: inset 0 0 0 2px #000000; }
+
+/* ================================================================ Desktop / mobile layout variants + motion tokens
+   docs/DESKTOP_UI_SPEC.md §1.5 and §7. */
+@custom-variant desk (&:where([data-ui=desktop], [data-ui=desktop] *));
+@custom-variant mob (&:where([data-ui=mobile], [data-ui=mobile] *));
+:root {
+  --t-micro: 120ms; --t-small: 200ms; --t-panel: 280ms; --t-page: 360ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); --ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* The ambient field behind the desktop frame: two soft glows and three wide diagonal light bands */
+.d-backdrop {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    linear-gradient(118deg, transparent 18%, var(--d-band) 18%, var(--d-band) 26%, transparent 26%,
+                    transparent 52%, var(--d-band) 52%, var(--d-band) 57%, transparent 57%,
+                    transparent 78%, var(--d-band) 78%, var(--d-band) 90%, transparent 90%),
+    radial-gradient(60% 60% at 12% 8%, var(--d-amb-1), transparent 70%),
+    radial-gradient(55% 55% at 88% 92%, var(--d-amb-2), transparent 70%),
+    var(--bg);
+}
+/* The app frame: the one glass layer */
+.d-frame {
+  background: var(--d-frame); border: 1px solid var(--d-frame-line); border-radius: 28px;
+  box-shadow: inset 0 1px 0 var(--d-frame-line), 0 40px 80px -40px rgb(0 0 0 / 50%);
+  backdrop-filter: blur(24px) saturate(120%); -webkit-backdrop-filter: blur(24px) saturate(120%);
+}
+/* Tiles: translucent fills with a hairline; hover lifts 2px and brightens the line */
+.d-tile {
+  background: var(--d-tile); border: 1px solid var(--d-tile-line); border-radius: 18px;
+  transition: background-color var(--t-micro) var(--ease-out), border-color var(--t-micro) var(--ease-out),
+              transform var(--t-micro) var(--ease-out), box-shadow var(--t-small) var(--ease-out);
+}
+.d-tile-hover:hover { background: var(--d-tile-hover); border-color: var(--d-tile-line-hover); transform: translateY(-2px); }
+.d-glow { background: var(--d-glow), var(--d-tile); border-color: color-mix(in srgb, var(--d-accent-500) 45%, transparent);
+  animation: glow-in 300ms var(--ease-out) both; }
+@keyframes glow-in { from { background-size: 100% 0%, auto; opacity: 0.6; } to { background-size: 100% 100%, auto; opacity: 1; } }
+.d-pop { background: var(--d-pop); border: 1px solid var(--d-frame-line); border-radius: 20px; box-shadow: var(--e3); }
+
+/* Desktop: existing components read as glass tiles (cards, trays, sections) */
+[data-ui="desktop"] .card, [data-ui="desktop"] main section.rounded-\[16px\] { backdrop-filter: none; }
+
+/* Page transitions (View Transitions API): content cross-fades with an 8px rise; frame and rail stay */
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(8px); } }
+::view-transition-old(page) { animation: vt-out 200ms var(--ease-in) both; }
+::view-transition-new(page) { animation: vt-in var(--t-page) var(--ease-out) both; }
+.d-page { view-transition-name: page; }
+
+/* Entrances */
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes slide-in-r { from { opacity: 0; transform: translateX(24px); } }
+@keyframes pop-scale { from { opacity: 0; transform: scale(0.98); } }
+.d-rise { animation: rise var(--t-panel) var(--ease-out) both; }
+.d-stagger > * { animation: rise var(--t-panel) var(--ease-out) both; }
+.d-stagger > *:nth-child(2) { animation-delay: 30ms; } .d-stagger > *:nth-child(3) { animation-delay: 60ms; }
+.d-stagger > *:nth-child(4) { animation-delay: 90ms; } .d-stagger > *:nth-child(5) { animation-delay: 120ms; }
+.d-stagger > *:nth-child(6) { animation-delay: 150ms; } .d-stagger > *:nth-child(n+7) { animation-delay: 150ms; }
+.d-drawer-in { animation: slide-in-r var(--t-panel) var(--ease-out) both; }
+.d-dialog-in { animation: pop-scale var(--t-panel) var(--ease-out) both; }
+.d-press:active { transform: scale(0.98); transition: transform 80ms var(--ease-out); }
+
+/* The rail's current place: a glowing notch just outside the pill */
+.d-notch { position: absolute; left: -16px; top: 50%; width: 3px; height: 26px; translate: 0 -50%; border-radius: 3px;
+  background: var(--d-accent-500); box-shadow: 0 0 10px 1px var(--d-accent-500); }
+
+/* Mobile forced on a wide screen: the backdrop and frame use the desktop field (components/desktop/MobileFrame) */
+:root[data-ui="mobile"][data-ui-forced] { --d-amb-1: #12324D; --d-amb-2: #0F2236; --d-band: rgb(120 170 220 / 4%);
+  --d-frame-line: rgb(255 255 255 / 8%); --d-tile-line: rgb(255 255 255 / 10%); --d-pop: #1C2631; }
+
+/* Reduced motion: opacity-only, fast, no stagger, no page transition movement */
+@media (prefers-reduced-motion: reduce) {
+  .d-tile-hover:hover { transform: none; }
+  ::view-transition-new(page), ::view-transition-old(page) { animation: none; }
+}
+:root[data-motion="reduce"] .d-tile-hover:hover { transform: none; }
+
+/* Desktop forced on a small screen: the viewport is set to 1280px (desktop site); if a browser ignores that change,
+   the page still keeps the desktop layout at 1280px and pans, instead of squeezing it */
+:root[data-ui-squeeze] body { min-width: 1280px; }
+
+/* ---------------- Dose day-line (components/DoseLine.tsx): vertical, quiet, one moment of motion per change ----
+   The rail draws down, rows settle in one after another, "now" slides into place; taking a dose pops the station,
+   draws the tick and lets the rail fill. The next dose's halo breathes three times, then rests. */
+@keyframes dl-draw { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
+@keyframes dl-settle { from { opacity: 0; transform: translateY(6px); } }
+@keyframes dl-slide { from { opacity: 0; transform: translateX(-10px); } }
+@keyframes dl-pop { 0% { transform: scale(0.7); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@keyframes dl-tick { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+@keyframes dl-halo { 0%, 100% { box-shadow: 0 0 0 4px var(--brand-soft); } 50% { box-shadow: 0 0 0 9px var(--brand-soft); } }
+.dl-rail { animation: dl-draw 520ms var(--ease-out, cubic-bezier(0.16,1,0.3,1)) both; }
+.dl-fill { transition: height 600ms var(--ease-out, cubic-bezier(0.16,1,0.3,1)); }
+.dl-row { animation: dl-settle 360ms var(--ease-out, cubic-bezier(0.16,1,0.3,1)) both; }
+.dl-now { animation: dl-slide 420ms var(--ease-out, cubic-bezier(0.16,1,0.3,1)) 300ms both; }
+.dl-pop { animation: dl-pop 420ms var(--ease-out, cubic-bezier(0.16,1,0.3,1)); }
+.dl-tick { animation: dl-tick 300ms var(--ease-out, cubic-bezier(0.16,1,0.3,1)) 120ms both; }
+.dl-halo { box-shadow: 0 0 0 4px var(--brand-soft); animation: dl-halo 1.8s ease-in-out 600ms 3; }
+@media (prefers-reduced-motion: reduce) { .dl-rail, .dl-row, .dl-now, .dl-pop, .dl-tick, .dl-halo { animation: none !important; } .dl-fill { transition: none; } }
+/* Desktop dose rail: draws left to right, stations pop in one after another, the "now" needle slides into place */
+@keyframes dr-draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+@keyframes dr-stop { from { opacity: 0; scale: 0.6; } }
+@keyframes dr-now { from { opacity: 0; translate: -18px 0; } }
+.dr-rail { animation: dr-draw 600ms var(--ease-out, cubic-bezier(0.16,1,0.3,1)) both; }
+.dr-stop { animation: dr-stop 360ms var(--ease-out, cubic-bezier(0.16,1,0.3,1)) backwards; }
+.dr-now { animation: dr-now 480ms var(--ease-out, cubic-bezier(0.16,1,0.3,1)) 450ms both; }
+@media (prefers-reduced-motion: reduce) { .dr-rail, .dr-stop, .dr-now { animation: none !important; } }
+:root[data-motion="reduce"] .dr-rail, :root[data-motion="reduce"] .dr-stop, :root[data-motion="reduce"] .dr-now { animation: none !important; }
