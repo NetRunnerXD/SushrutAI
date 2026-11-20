@@ -1,0 +1,162 @@
+{
+  "task": "cxr",
+  "model": "medgemma:4b",
+  "per_class": 15,
+  "modality_chest_xray_pct": 100.0,
+  "abnormality_mentioned_on_pneumonia_pct": 86.7,
+  "abnormality_mentioned_on_normal_pct": 20.0,
+  "definitive_diagnosis_statements": 0,
+  "examples": [
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, let's look at the chest x-ray.\n\nYou can see the bones of the chest, ribs, and the heart. The heart appears to be a bit bigger than normal. There is some increased density in the right upper lung, which could be due to various reasons, like inflammation or fluid. The lungs generally appear clear, but it's difficult to see fine details on this image.\n\nIt's important to remember that I am not a doctor. This is just a visual interpretation of the image. Only a radiologist or a specialist can g"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, I can help you understand this chest x-ray.\n\nYou can see the bones of your chest, ribs, and the outline of your heart and lungs. The lungs appear to be mostly clear, but there is a small area of increased density in the lower part of the right lung. This could be due to various reasons, such as fluid or a small area of consolidation.\n\nIt's important to remember that I am an AI and cannot provide a medical diagnosis. Only a radiologist or a qualified medical professional can interpret this "
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, I can help you understand this chest x-ray.\n\nThe image shows the bones of your chest, ribs, and the outline of your lungs. The heart is also visible in the center. The lungs appear to be mostly clear, but there is some increased density in the lower right lung field. This could be due to various reasons, such as fluid, inflammation, or a mass.\n\nIt's important to remember that I am an AI and cannot provide a medical diagnosis. Only a radiologist or a qualified medical professional can inter"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, here's a description of the chest x-ray:\n\nThe image shows the bones of the chest, ribs, and lungs. The heart appears to be in a normal position. There are some areas of increased density in the lower lungs, but it's difficult to say exactly what they are without more information.\n\nIt's important to remember that I am an AI and cannot provide a medical diagnosis. Only a radiologist or a qualified medical professional can interpret this image and determine if there are any health concerns. T"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, I can help you understand this chest x-ray.\n\nThe image shows the bones of your chest, ribs, and the outline of your lungs. You can see the heart in the middle. The lungs appear mostly clear, but there is some increased density in the right lung, which could be due to various factors. There is also a tube visible, likely a breathing tube, which is common in this type of imaging.\n\nIt's important to remember that I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, let's look at the chest x-ray.\n\nYou can see the bones of the chest, ribs, and the outline of the lungs. The lungs appear to be mostly clear, but there is some increased density in the lower right lung field. This could be due to various factors, such as fluid, inflammation, or scarring.\n\nIt's important to remember that I am an AI and cannot provide a medical diagnosis. Only a radiologist or specialist can interpret this image and determine the cause of the increased density in the lower ri"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, I can help you understand this chest x-ray.\n\nThe image shows the bones of your chest, ribs, and the outline of your lungs. The heart appears to be in a normal position. The lungs seem generally clear, but there are some patchy areas of increased density in the right lung. These could be due to various reasons, such as inflammation or fluid accumulation.\n\nHowever, I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist can interpret this image and provide a definiti"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, I can help you understand this chest x-ray.\n\nThe image shows the bones of your chest, ribs, and the outline of your heart and lungs. The lungs appear mostly clear, with no obvious large areas of darkness suggesting pneumonia. The heart size seems normal.\n\nHowever, I am not a doctor, and this is not a diagnosis. Only a radiologist or a specialist can interpret this image and provide a proper diagnosis. They will look for subtle signs that I cannot see.\n\nPlease consult with your doctor or a "
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, let's look at this chest x-ray.\n\nYou can see the bones of your ribs and the outline of your lungs. The heart appears to be in a normal position. The lungs seem clear, with no obvious signs of infection or fluid buildup.\n\nHowever, I am not a doctor and cannot provide a diagnosis. A radiologist or specialist needs to review this image to give you a proper assessment. They will look for any subtle abnormalities that might not be immediately apparent.\n\nPlease consult with your doctor for furth"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, I can help you understand this chest x-ray.\n\nYou can see the bones of your chest (ribs, breastbone, and spine). The lungs appear to be mostly clear, with some normal markings. The heart size looks within normal limits.\n\nThere are no obvious signs of pneumonia (infection in the lungs) or other major problems visible in this image.\n\nHowever, I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist can interpret this image and give you a proper diagnosis. They will con"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, I can help you understand this chest X-ray.\n\nThe image shows the bones of your chest, ribs, and the spaces between them. The heart appears to be in the center, and the lungs fill the majority of the chest space on either side. The lungs look generally clear, but there is some increased density in the right lung.\n\nIt's important to remember that I am not a doctor. This is just a visual interpretation of the image. A radiologist or specialist needs to examine the image in detail and consider"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, I can help you understand this chest x-ray.\n\nThe image shows the bones of your chest, ribs, and lungs. The lungs appear to be somewhat cloudy on the left side, which could be due to fluid or other reasons. The heart size seems normal. The tubes and lines are visible, indicating that you are receiving medical care.\n\nHowever, I am not a doctor and cannot provide a diagnosis. Only a radiologist or specialist can interpret this image and determine the cause of the cloudy appearance in the left"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, let's look at this chest x-ray.\n\nYou can see the bones of your ribs, the outline of your heart, and the lungs. The lungs appear to be mostly clear, but there is some increased density in the right lower lung field. The heart size seems normal.\n\nIt's important to remember that I am not a doctor. This is just a visual interpretation of the image. A radiologist or specialist needs to examine this image and your medical history to give you a proper diagnosis. They can determine if the increase"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, let's look at the chest x-ray.\n\nThe image shows the bones of your chest, ribs, and the outline of your heart and lungs. The heart appears to be enlarged, which could be a sign of various conditions. There are some areas of increased density in the lungs, which could be due to fluid or other abnormalities.\n\nIt's important to remember that I am not a doctor. This is just a visual interpretation of the image. A radiologist or specialist needs to examine the image in detail and consider your m"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "description": "Okay, let's look at this chest x-ray.\n\nYou can see the bones of the chest, ribs, and the heart. The lungs appear to be mostly clear, but there is some increased density in the left lung, which could be due to various reasons. The heart size seems normal. The position of the major blood vessels is also visible.\n\nHowever, I am not a doctor, and I cannot provide a diagnosis. Only a radiologist or specialist can interpret this image and determine the cause of the increased density in the left lung. "
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, let's look at this chest x-ray.\n\nYou can see the bones of your chest, ribs, and the outline of your lungs. The heart appears to be in a normal position. The lungs seem clear, without any obvious signs of infection or fluid buildup.\n\nHowever, I am not a doctor, and I cannot give a medical opinion. Only a radiologist or a specialist can interpret this image and provide a diagnosis. They will consider the image along with your medical history and symptoms to determine what is going on.\n\nPleas"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, here's a description of the chest x-ray:\n\nThe image shows the lungs, heart, and bones of the chest. The lungs appear to be clear, with no obvious signs of pneumonia or fluid buildup. The heart size seems normal. The bones of the rib cage and spine are visible.\n\nThere are no obvious abnormalities in this image.\n\nIt's important to remember that I am not a doctor. A radiologist or specialist needs to examine this image to provide a proper diagnosis. They will consider the image along with the"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, here's a description of the chest x-ray:\n\nThe image shows the bones of the chest, ribs, and the heart. The lungs appear to be mostly clear, with some normal markings. The heart size seems within the expected range.\n\nThere are no obvious signs of pneumonia or other major problems. However, it's important to remember that I am not a doctor. A radiologist or specialist needs to examine the image in detail to provide a proper diagnosis. They will consider the image along with the patient's med"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, I can help you understand this chest x-ray.\n\nThe image shows the bones of your chest, ribs, and the outline of your lungs. The heart appears to be in a normal position. The lungs look generally clear, but there are some small spots visible in the lower part of the right lung.\n\nIt's important to remember that I am not a doctor. This is just a visual interpretation of the image. Only a radiologist or specialist can give you a proper diagnosis based on the full medical history and other tests"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, here's a description of the chest x-ray image:\n\nThe image shows the bones of the chest (ribs, ribs, and spine) and the lungs. The lungs appear generally clear, with no obvious large areas of darkness or unusual shadows. The heart size seems normal.\n\nHowever, I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist can interpret this image and provide a proper diagnosis. They will consider the image in the context of your medical history and symptoms.\n"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, I can help you understand this chest x-ray.\n\nThe image shows the bones of your chest, ribs, and the outline of your lungs. The heart is also visible in the center. The lungs appear generally clear, but I cannot see any specific details to determine if there are any problems.\n\nI am not a doctor, and I cannot give medical advice. This image needs to be reviewed by a radiologist or a doctor to determine if there are any abnormalities. They will be able to assess the image in detail and provid"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, here's a description of the chest x-ray image:\n\nThe image shows the bones of the chest, ribs, and the heart. The lungs appear to be mostly clear, with some subtle shading that could be normal. There are no obvious signs of a large problem like a collapsed lung or a significant blockage.\n\nHowever, it's important to remember that I am not a doctor. This is just a visual interpretation of the image. A radiologist or specialist needs to examine the image in detail and compare it to the patient"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, here's a description of the chest x-ray.\n\nThe image shows the bones of your chest, including your ribs, spine, and the outline of your lungs. The lungs appear to be mostly clear, with no obvious signs of pneumonia or fluid buildup. The heart size seems normal.\n\nHowever, I am not a doctor and cannot provide a diagnosis. A radiologist or specialist needs to examine the image in detail to give you a proper assessment. They will look for any subtle abnormalities that might not be immediately a"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, I can help you understand this chest x-ray.\n\nThe image shows the bones of your chest, ribs, and the spaces between them. You can see your heart and lungs. The heart looks normal in size. The lungs appear clear, with no obvious signs of infection or fluid.\n\nHowever, I am not a doctor, and I cannot give a diagnosis. Only a radiologist or a specialist can interpret this image and provide a medical opinion. They will consider the image along with your symptoms and medical history to determine "
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, here's a description of the chest x-ray image:\n\nThe image shows the bones of the chest, including the ribs, lungs, and heart. The lungs appear generally clear, with no obvious signs of pneumonia or fluid buildup. The heart size seems normal. The mediastinum (the space in the middle of the chest containing the heart, major blood vessels, and airways) appears unremarkable.\n\nHowever, I am not a medical professional and cannot provide a diagnosis. Only a radiologist or specialist can interpret"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, let's look at this chest x-ray.\n\nYou can see the bones of your ribs, the outline of your lungs, and the heart in the middle. The lungs appear to be mostly clear, but there is some increased density in the lower right lung field. This could be due to various reasons, such as fluid, inflammation, or a mass.\n\nIt's important to remember that I am an AI and cannot provide a medical diagnosis. Only a radiologist or a qualified medical professional can interpret this image and determine the cause"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, let's look at this chest x-ray.\n\nYou can see the bones of your ribs, the outline of your lungs, and the heart in the middle. The lungs appear to be mostly clear, with no obvious signs of infection or fluid buildup. The heart size seems normal.\n\nHowever, I am not a doctor, and I cannot give a medical diagnosis. Only a radiologist or a specialist can interpret this image and provide a proper diagnosis. They will consider the image along with your medical history and other tests to determine "
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, I can help you understand this chest x-ray.\n\nYou can see the bones of your ribs, your lungs, your heart, and your major blood vessels. The lungs appear to be mostly clear, with no obvious signs of infection or fluid buildup. The heart size seems normal.\n\nHowever, I am not a doctor, and I cannot give a diagnosis. Only a radiologist or a qualified medical professional can interpret this image and provide a proper diagnosis. They will consider the image along with your medical history and oth"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, here's a description of the chest x-ray image:\n\nThe image shows the bones of the chest, including the ribs, collarbones, and the outline of the heart and lungs. The lungs appear mostly clear, with no obvious large areas of darkness suggesting pneumonia or fluid. The heart size seems normal.\n\nHowever, I am not a doctor and cannot provide a diagnosis. Only a radiologist or a specialist can interpret this image and determine if there are any other abnormalities. They will consider the image i"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "description": "Okay, let's look at the chest x-ray.\n\nYou can see the bones of the chest (ribs, collarbones, and the outline of the heart). The lungs appear to be mostly clear, but there are some small spots of increased density. The heart size seems normal. The overall appearance is unremarkable.\n\nHowever, I am not a doctor, and I cannot give a diagnosis. Only a radiologist or a specialist can interpret this image and provide a proper assessment. They will consider the image along with your medical history and"
+    }
+  ],
+  "rescored": true
+}

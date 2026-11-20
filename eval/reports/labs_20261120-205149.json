@@ -1,0 +1,166 @@
+{
+  "task": "labs",
+  "model": "qwen3-vl:4b-instruct",
+  "pages": 20,
+  "test_recall_pct": 91.0,
+  "value_exact_pct_of_found": 99.4,
+  "range_exact_pct": 78.1,
+  "flag_correct_pct": 79.0,
+  "loinc_mapped_pct_of_found": 93.2,
+  "precision_pct": 91.0,
+  "median_seconds": 17.0,
+  "counts": {
+    "gt": 178,
+    "found": 162,
+    "value_ok": 161,
+    "range_ok": 82,
+    "range_n": 105,
+    "flag_ok": 83,
+    "flag_n": 105,
+    "loinc": 151,
+    "pred": 178,
+    "pred_matched": 162
+  },
+  "per_page": [
+    {
+      "page": 1,
+      "gt": 18,
+      "found": 18,
+      "pred": 18,
+      "seconds": 16.9
+    },
+    {
+      "page": 3,
+      "gt": 13,
+      "found": 10,
+      "pred": 13,
+      "seconds": 7.5
+    },
+    {
+      "page": 4,
+      "gt": 14,
+      "found": 13,
+      "pred": 13,
+      "seconds": 15.6
+    },
+    {
+      "page": 5,
+      "gt": 1,
+      "found": 1,
+      "pred": 11,
+      "seconds": 20.1
+    },
+    {
+      "page": 6,
+      "gt": 9,
+      "found": 9,
+      "pred": 9,
+      "seconds": 17.0
+    },
+    {
+      "page": 7,
+      "gt": 17,
+      "found": 16,
+      "pred": 16,
+      "seconds": 27.0
+    },
+    {
+      "page": 8,
+      "gt": 4,
+      "found": 4,
+      "pred": 4,
+      "seconds": 11.4
+    },
+    {
+      "page": 9,
+      "gt": 14,
+      "found": 13,
+      "pred": 14,
+      "seconds": 16.0
+    },
+    {
+      "page": 10,
+      "gt": 4,
+      "found": 4,
+      "pred": 4,
+      "seconds": 19.6
+    },
+    {
+      "page": 11,
+      "gt": 2,
+      "found": 1,
+      "pred": 1,
+      "seconds": 10.1
+    },
+    {
+      "page": 14,
+      "gt": 1,
+      "found": 1,
+      "pred": 1,
+      "seconds": 7.5
+    },
+    {
+      "page": 15,
+      "gt": 9,
+      "found": 8,
+      "pred": 10,
+      "seconds": 29.9
+    },
+    {
+      "page": 17,
+      "gt": 8,
+      "found": 8,
+      "pred": 8,
+      "seconds": 82.2
+    },
+    {
+      "page": 18,
+      "gt": 2,
+      "found": 0,
+      "pred": 0,
+      "seconds": 10.2
+    },
+    {
+      "page": 20,
+      "gt": 14,
+      "found": 14,
+      "pred": 14,
+      "seconds": 55.5
+    },
+    {
+      "page": 22,
+      "gt": 3,
+      "found": 3,
+      "pred": 3,
+      "seconds": 9.3
+    },
+    {
+      "page": 24,
+      "gt": 11,
+      "found": 11,
+      "pred": 11,
+      "seconds": 20.3
+    },
+    {
+      "page": 25,
+      "gt": 2,
+      "found": 1,
+      "pred": 1,
+      "seconds": 9.2
+    },
+    {
+      "page": 26,
+      "gt": 16,
+      "found": 15,
+      "pred": 15,
+      "seconds": 22.4
+    },
+    {
+      "page": 27,
+      "gt": 16,
+      "found": 12,
+      "pred": 12,
+      "seconds": 24.8
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+ "accuracy": 1.0,
+ "n": 80,
+ "wrong": [],
+ "non_symptom_to_dx": 0,
+ "symptom_missed": 0
+}

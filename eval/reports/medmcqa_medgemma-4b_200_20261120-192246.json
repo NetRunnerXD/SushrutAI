@@ -1,0 +1,31 @@
+{
+  "model": "medgemma:4b",
+  "n": 200,
+  "seed": 42,
+  "accuracy_pct": 51.0,
+  "errors": 0,
+  "seconds": 201,
+  "by_subject": {
+    "Dental": "31/60",
+    "Surgery": "11/21",
+    "Gynaecology & Obstetrics": "7/16",
+    "Medicine": "10/15",
+    "Pathology": "7/14",
+    "Pharmacology": "8/12",
+    "Biochemistry": "6/12",
+    "Anatomy": "3/9",
+    "Microbiology": "4/9",
+    "Physiology": "4/7",
+    "Social & Preventive Medicine": "2/4",
+    "Pediatrics": "2/4",
+    "Ophthalmology": "0/4",
+    "Forensic Medicine": "3/3",
+    "Psychiatry": "1/2",
+    "Anaesthesia": "1/2",
+    "Radiology": "0/2",
+    "ENT": "0/1",
+    "Orthopaedics": "1/1",
+    "Unknown": "0/1",
+    "Skin": "1/1"
+  }
+}

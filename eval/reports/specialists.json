@@ -1,0 +1,250 @@
+{
+ "cxr": {
+  "model": "torchxrayvision densenet121-res224-all",
+  "data": "Kermany paediatric CXR test split (390 pneumonia / 234 normal)",
+  "auc": 0.92,
+  "at_default_threshold": {
+   "threshold": 0.5,
+   "sensitivity": 0.995,
+   "specificity": 0.209
+  },
+  "best_at_spec_0.75": {
+   "threshold": 0.6188,
+   "sensitivity": 0.918,
+   "specificity": 0.752
+  },
+  "flagged_on_normal_at_default": {
+   "Infiltration": 0.645,
+   "Mass": 0.59,
+   "Pneumothorax": 0.483,
+   "Lung Opacity": 0.474,
+   "Enlarged Cardiomediastinum": 0.453,
+   "Nodule": 0.402,
+   "Fibrosis": 0.333,
+   "Cardiomegaly": 0.278,
+   "Pleural_Thickening": 0.209,
+   "Consolidation": 0.188,
+   "Emphysema": 0.111,
+   "Atelectasis": 0.094,
+   "Effusion": 0.081,
+   "Fracture": 0.038,
+   "Pneumonia": 0.026,
+   "Hernia": 0.017,
+   "Lung Lesion": 0.004,
+   "Edema": 0.0
+  },
+  "per_finding_p90_on_normal": {
+   "Atelectasis": 0.487,
+   "Consolidation": 0.507,
+   "Infiltration": 0.547,
+   "Pneumothorax": 0.51,
+   "Edema": 0.023,
+   "Emphysema": 0.5,
+   "Fibrosis": 0.507,
+   "Effusion": 0.452,
+   "Pneumonia": 0.065,
+   "Pleural_Thickening": 0.506,
+   "Cardiomegaly": 0.561,
+   "Nodule": 0.51,
+   "Mass": 0.661,
+   "Hernia": 0.075,
+   "Lung Lesion": 0.03,
+   "Fracture": 0.394,
+   "Lung Opacity": 0.708,
+   "Enlarged Cardiomediastinum": 0.533
+  },
+  "seconds_per_image": 0.055,
+  "gate": {
+   "auc": 0.85,
+   "sensitivity": 0.8,
+   "specificity": 0.75
+  },
+  "passed": true
+ },
+ "cxr_calibrate": {
+  "model": "torchxrayvision densenet121-res224-all",
+  "thresholds": {
+   "Atelectasis": 0.509,
+   "Consolidation": 0.513,
+   "Infiltration": 0.567,
+   "Pneumothorax": 0.541,
+   "Edema": 0.116,
+   "Emphysema": 0.501,
+   "Fibrosis": 0.521,
+   "Effusion": 0.532,
+   "Pneumonia": 0.256,
+   "Pleural_Thickening": 0.514,
+   "Cardiomegaly": 0.615,
+   "Nodule": 0.52,
+   "Mass": 0.691,
+   "Hernia": 0.342,
+   "Lung Lesion": 0.063,
+   "Fracture": 0.501,
+   "Lung Opacity": 0.742,
+   "Enlarged Cardiomediastinum": 0.556
+  },
+  "q_lung": 0.95,
+  "q_other": 0.975,
+  "test_half": {
+   "normal_films": 117,
+   "pneumonia_films": 195,
+   "normal_any_flag_rate": 0.291,
+   "pneumonia_lung_flag_rate": 0.826,
+   "flags_on_normal": {
+    "Mass": 13,
+    "Enlarged Cardiomediastinum": 6,
+    "Nodule": 5,
+    "Fracture": 5,
+    "Pleural_Thickening": 4,
+    "Cardiomegaly": 4,
+    "Emphysema": 4,
+    "Atelectasis": 4,
+    "Consolidation": 4,
+    "Lung Opacity": 4,
+    "Infiltration": 3,
+    "Pneumonia": 2,
+    "Fibrosis": 2,
+    "Effusion": 2,
+    "Hernia": 2,
+    "Lung Lesion": 2,
+    "Edema": 1
+   },
+   "flags_on_pneumonia": {
+    "Atelectasis": 130,
+    "Consolidation": 128,
+    "Lung Opacity": 125,
+    "Effusion": 95,
+    "Edema": 59,
+    "Pleural_Thickening": 56,
+    "Emphysema": 48,
+    "Enlarged Cardiomediastinum": 47
+   }
+  }
+ },
+ "bone": {
+  "data": "FracAtlas sample, 150 fractured / 150 not (CC BY 4.0)",
+  "overlap_removed": [
+   "IMG0000466.jpg",
+   "IMG0001869.jpg",
+   "IMG0002301.jpg",
+   "IMG0002383.jpg",
+   "IMG0002439.jpg",
+   "IMG0003183.jpg",
+   "IMG0003467.jpg",
+   "IMG0003704.jpg",
+   "IMG0003932.jpg",
+   "IMG0004209.jpg",
+   "IMG0000355.jpg",
+   "IMG0000386.jpg",
+   "IMG0000404.jpg",
+   "IMG0001096.jpg",
+   "IMG0001233.jpg",
+   "IMG0001321.jpg",
+   "IMG0001462.jpg",
+   "IMG0001982.jpg",
+   "IMG0002943.jpg",
+   "IMG0003209.jpg",
+   "IMG0003507.jpg"
+  ],
+  "n_test": 279,
+  "models": {
+   "Heem2/bone-fracture-detection-using-xray": {
+    "auc": 0.617,
+    "at_0.5": {
+     "sensitivity": 0.993,
+     "specificity": 0.079
+    },
+    "best_at_spec_0.75": {
+     "threshold": 0.9906,
+     "sensitivity": 0.336,
+     "specificity": 0.755
+    },
+    "seconds_per_image": 0.159,
+    "passed": false
+   },
+   "prithivMLmods/Bone-Fracture-Detection": {
+    "auc": 0.533,
+    "at_0.5": {
+     "sensitivity": 0.764,
+     "specificity": 0.266
+    },
+    "best_at_spec_0.75": {
+     "threshold": 0.998,
+     "sensitivity": 0.314,
+     "specificity": 0.755
+    },
+    "seconds_per_image": 0.175,
+    "passed": false
+   }
+  },
+  "gate": {
+   "auc": 0.85,
+   "sensitivity": 0.8,
+   "specificity": 0.75
+  }
+ },
+ "skin": {
+  "candidate": "brolaja/ham1000efficientnet2 (EfficientNetV2-S, HAM10000)",
+  "passed": false,
+  "tested": false,
+  "reason": "Its model card lists patient-facing decision support, screening and triage as out-of-scope, and it was trained on dermatoscope images, not phone photos. Not used in a patient-facing app."
+ },
+ "mri": {
+  "candidates": [
+   "Koushim/vit-brain-mri-classifier (MIT)",
+   "4-class community ViTs (licence unclear)"
+  ],
+  "passed": false,
+  "tested": false,
+  "reason": "No independent public 2D brain-MRI test set found that these models were not trained on (they train on the Kaggle/figshare tumour sets). Not shipped; MedGemma keeps its 'uncertain' warning."
+ },
+ "ct_ultrasound_ecg": {
+  "passed": false,
+  "tested": false,
+  "reason": "No credible open model for single-image uploads."
+ },
+ "loc": {
+  "data": "ChestX-Det test split (NIH), radiologist lesion masks",
+  "pairs": 72,
+  "segmented_share": 1.0,
+  "chance_hit_random_point_in_lungs": 0.281,
+  "methods": {
+   "gradcam_full": {
+    "pointing_hit": 0.069,
+    "heat_inside_lesion": 0.045,
+    "by_class": {
+     "Atelectasis": 0.0,
+     "Consolidation": 0.062,
+     "Effusion": 0.143,
+     "Cardiomegaly": 0.067
+    }
+   },
+   "gradcam": {
+    "pointing_hit": 0.153,
+    "heat_inside_lesion": 0.181,
+    "by_class": {
+     "Atelectasis": 0.0,
+     "Consolidation": 0.25,
+     "Effusion": 0.357,
+     "Cardiomegaly": 0.069
+    }
+   },
+   "occlusion": {
+    "pointing_hit": 0.319,
+    "heat_inside_lesion": 0.245,
+    "by_class": {
+     "Atelectasis": 0.0,
+     "Consolidation": 0.688,
+     "Effusion": 0.571,
+     "Cardiomegaly": 0.133
+    }
+   }
+  },
+  "caveat": "NIH films were in the classifier's training data (labels only); comparison between methods is fair."
+ },
+ "cxr_scores": {
+  "films": 624,
+  "anatomy_found": 624,
+  "file": "eval/reports/cxr_scores_current.json"
+ }
+}
