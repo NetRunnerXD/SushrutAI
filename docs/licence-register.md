@@ -1,0 +1,40 @@
+# Data & model licence register
+
+Every external dataset or model SushrutAI uses, with its terms and what we are allowed to do with it.
+Review before any commercial launch.
+
+| Source | What | Where it lives | Licence / terms | Allowed use now | Before commercial launch |
+|---|---|---|---|---|---|
+| PMBJP Jan Aushadhi product list | 2,453 generic products with MRP (downloaded 2026-11-20 via the site's "Download CSV") | `data/sources/janaushadhi/` | Government of India public information | Product search, prices, generic alternatives | Show "source: PMBJP, date"; refresh weekly |
+| CDSCO list of drugs prohibited under s.26A | 444 entries (2018 upload of the gazette list) | `data/sources/cdsco/` | Government of India public information | Banned-drug / FDC warnings, with status notes | **Add later notifications** (e.g. the 2018 and 2024 FDC bans), which are not in this PDF; get regulatory review of the status wording |
+| DDInter 2.0 | 160,235 drug–drug interaction pairs | `data/sources/ddinter/` | **CC BY-NC-SA 4.0** (non-commercial, share-alike) | Development, research and non-commercial use, with attribution | **Replace or licence** for commercial use (e.g. a commercial DDI database), or keep the product non-commercial |
+| openFDA drug labels | Fetched on demand, cached | `drug_monograph_cache` table | Public domain (US Government) | Any | — |
+| NLM MedlinePlus health topics | All English health topics from the daily Health Topic XML file (`kb medlineplus-all`, 2026-11-22) | `kb_chunks` table; raw file in `data/sources/web_cache/` | Public domain (NLM); attribution requested | Any | Keep attribution links |
+| CDC disease pages | Public pages (about, symptoms, prevention, treatment) for ~55 conditions relevant in India (`kb cdc`); clinician and public-health pages skipped; robots.txt checked, 1 request/s | `kb_chunks` (source `cdc:`); raw pages in `data/sources/web_cache/` | Public domain (US Government); CDC asks for attribution and no implied endorsement | Any, with source link | Keep "Source: CDC" links; no CDC logos |
+| WHO fact sheets | All fact sheets listed at who.int/news-room/fact-sheets (`kb who`); robots.txt checked, 1 request/s | `kb_chunks` (source `who:`); raw pages in `data/sources/web_cache/` | **CC BY-NC-SA 3.0 IGO** (non-commercial, share-alike, attribution) | Non-commercial use with attribution | **Remove or get WHO permission** before any commercial launch |
+| NHS Health A–Z (website content API) | Conditions pages (`kb nhs`), only when `NHS_API_KEY` is set | `kb_chunks` (source `nhs:`) | Open Government Licence v3.0 + NHS API terms (attribution, no NHS logo) | Any, with attribution, under the API terms | Re-check the API's syndication terms; needs the user's free key from developer.api.nhs.uk |
+| MIRAGE 100 handwritten medical records (`tavishm/100-handwritten-medical-records`) | 100 real Indian OPD prescription pages | `data/eval/rx_mirage100/images/` | **No licence stated** | **Internal evaluation only.** Do not train on it, redistribute it or publish images | Ask the author for licence terms |
+| Silver Rx labels (`labels_silver_v1.json`) | 19 pages transcribed by the coding assistant | `data/eval/rx_mirage100/` | Ours | Evaluation | Replace with clinician/pharmacist-verified labels |
+| MedGemma 4B (`medgemma:4b`) | Clinical LLM/VLM | Ollama | Health AI Developer Foundations terms (Google) | Development | Review HAI-DEF terms for the deployment |
+| Qwen3-VL-4B-Instruct (`qwen3-vl:4b-instruct`) | **Default prescription reader** | Ollama | Apache-2.0 | Any | — |
+| Qwen2.5-VL-3B (`qwen2.5vl:3b`) | Former Rx reader (kept for comparison) | Ollama | Qwen research licence for 3B (check model card) | Development | Confirm commercial terms, or drop it |
+| BGE-M3 (`bge-m3`) | Embeddings | Ollama | MIT | Any | — |
+| TorchXRayVision DenseNet-121 `densenet121-res224-all` (pip `torchxrayvision` 1.5.7) | Chest X-ray screening before MedGemma (`app/vision/specialists/chest_xray.py`, CPU) | `~/.torchxrayvision/models_data` | Code Apache-2.0; **weights trained on NIH, PadChest, CheXpert, MIMIC-CXR, Google, OpenI, RSNA data — research-use terms** | Development, research | Confirm weight terms for a commercial launch, or retrain on permissively licensed data |
+| TorchXRayVision ChestX-Det PSPNet (`pspnet_chestxray_best_model_4.pth`) | Lung/heart outlines for the chest X-ray input crop and map (`app/vision/specialists/anatomy.py`) | `~/.torchxrayvision/models_data` | Code Apache-2.0; weights trained on ChestX-Det anatomy labels (NIH images) — **research use** | Development, research | Confirm terms for a commercial launch |
+| ChestX-Det test split (553 NIH films, radiologist lesion masks) | Localisation test of the X-ray map (`eval/specialist_eval.py loc`) | HF cache (C:), mirror `natealberti/ChestX-Det` | Original: Deepwise-AILab/ChestX-Det-Dataset (NIH ChestX-ray14 images); mirror states no licence | **Internal evaluation only** | — |
+| Qwen3-VL-2B-Instruct (`qwen3-vl:2b-instruct`) | Lab-report reader for Faster/Instant (passed); failed prescriptions | Ollama | Apache-2.0 | Any | — |
+| IBM Granite 3.2 Vision 2B (`granite3.2-vision:2b`) | **Not used**: refused or mis-read documents | Ollama | Apache-2.0 | — | — |
+| Qwen3-1.7B (`qwen3:1.7b`), Llama 3.2 3B (`llama3.2:3b`) | Chat candidates for Faster/Instant (under evaluation) | Ollama | Apache-2.0; Llama 3.2 Community Licence | Development | Llama: attribution + AUP |
+| Qwen2.5-0.5B-Instruct (`qwen2.5:0.5b`), Gemma 3 1B (`gemma3:1b`) | Follow-up suggestion chips, on the CPU: qwen2.5:0.5b for English, gemma3:1b for Indian languages (eval/reports/suggest.json, v2). Candidates not kept and removed: qwen3:1.7b, qwen3:0.6b, gemma3:270m | Ollama | Apache-2.0; Gemma Terms of Use | Any (Gemma: within its prohibited-use policy) | Gemma: keep terms + policy notice |
+| FracAtlas (300-image sample) | Test set for bone-fracture models (`eval/specialist_eval.py bone`) | `data/eval/fracatlas_sample/` | CC BY 4.0 (via HF mirror `runananya/fracatlas`) | Evaluation | — |
+| Bone-fracture models `Heem2/bone-fracture-detection-using-xray`, `prithivMLmods/Bone-Fracture-Detection` | **Not used**: AUC 0.62 / 0.53 on FracAtlas | HF cache (C:) | Apache-2.0 | — | — |
+| OpenAI CLIP ViT-B/32, int8 ONNX (`Xenova/clip-vit-base-patch32`) | Upload check: is the image health-related? (`app/ocr/check.py`, CPU) | HF cache (C:) | MIT | Any | — |
+| Imagenette 2 (160 px), 100 validation images | Everyday photos for the upload-check eval (`eval/image_check_eval.py`) | `data/eval/nonhealth_imagenette/` | Repository Apache-2.0; **images are from ImageNet (research / non-commercial use)** | **Internal evaluation only.** Not shipped, not trained on | Replace with a freely licensed photo set if the eval is published |
+| Llama-Guard-3-1B (`llama-guard3:1b`) | Safety classifier | Ollama | Llama 3.2 Community Licence | Any (attribution, AUP) | Review licence terms for scale (>700M MAU clause irrelevant here) |
+| AI4Bharat IndicConformer-600M | Indic speech-to-text (ONNX) | HF cache (C:) | MIT | Any | — |
+| AI4Bharat IndicTrans2 dist-200M (en↔indic) | Translation | HF cache (C:) | MIT | Any | — |
+| faster-whisper large-v3-turbo | English/Hinglish STT | `D:\hf` | MIT (OpenAI Whisper weights) | Any | — |
+| faster-whisper small (`Systran/faster-whisper-small`) | Spoken-language detection for the mic and hands-free mode (which of the app language, English and Hindi is spoken; ~1.6 s on CPU). eval/reports/lang_detect.json | HF cache | MIT (OpenAI Whisper weights) | Any | — |
+| Meta MMS-TTS (`facebook/mms-tts-*`) | Default text-to-speech | `D:\hf` | **CC BY-NC 4.0** (non-commercial) | Development, non-commercial | Switch to Indic Parler-TTS (Apache-2.0; gated — accept terms on HF and set TTS_ENGINE=parler) |
+| ICMR Standard Treatment Workflows | 27 specialty PDFs → 956 KB chunks | `data/sources/icmr_stw/` | Government of India public guidance | Retrieval with attribution | Keep "source: ICMR STW" citations |
+| MedMCQA (validation split) | Model accuracy eval | `data/eval/medmcqa/` | Apache-2.0 (per dataset card; verify) | Evaluation | — |
