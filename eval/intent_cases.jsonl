@@ -1,0 +1,80 @@
+{"text": "Hi", "intent": "greeting"}
+{"text": "hello", "intent": "greeting"}
+{"text": "Good morning!", "intent": "greeting"}
+{"text": "namaste", "intent": "greeting"}
+{"text": "नमस्ते जी", "intent": "greeting"}
+{"text": "kaise ho", "intent": "greeting"}
+{"text": "hey there, how are you?", "intent": "greeting"}
+{"text": "வணக்கம்", "intent": "greeting"}
+{"text": "నమస్తే", "intent": "greeting"}
+{"text": "নমস্কার", "intent": "greeting"}
+{"text": "thank you", "intent": "thanks_bye"}
+{"text": "ok thanks", "intent": "thanks_bye"}
+{"text": "धन्यवाद", "intent": "thanks_bye"}
+{"text": "shukriya", "intent": "thanks_bye"}
+{"text": "bye", "intent": "thanks_bye"}
+{"text": "ठीक है", "intent": "thanks_bye"}
+{"text": "who are you?", "intent": "about_app"}
+{"text": "what can you do", "intent": "about_app"}
+{"text": "are you a doctor?", "intent": "about_app"}
+{"text": "aap kaun ho", "intent": "about_app"}
+{"text": "What should I eat for lunch?", "intent": "nutrition_lifestyle"}
+{"text": "What is a healthy breakfast for a diabetic?", "intent": "nutrition_lifestyle"}
+{"text": "How much water should I drink in summer?", "intent": "nutrition_lifestyle"}
+{"text": "What to eat during fever?", "intent": "nutrition_lifestyle"}
+{"text": "Best exercise for back strength", "intent": "nutrition_lifestyle"}
+{"text": "How can I lose weight on a vegetarian diet?", "intent": "nutrition_lifestyle"}
+{"text": "dinner me kya khana chahiye", "intent": "nutrition_lifestyle"}
+{"text": "रात को क्या खाना चाहिए", "intent": "nutrition_lifestyle"}
+{"text": "Is it good to walk after dinner?", "intent": "nutrition_lifestyle"}
+{"text": "How many hours of sleep do I need?", "intent": "nutrition_lifestyle"}
+{"text": "Which fruits are good for anaemia?", "intent": "nutrition_lifestyle"}
+{"text": "Is curd good in winter?", "intent": "nutrition_lifestyle"}
+{"text": "What is Dolo 650?", "intent": "medicine"}
+{"text": "Can I take paracetamol with my BP tablets?", "intent": "medicine"}
+{"text": "side effects of metformin", "intent": "medicine"}
+{"text": "Is there a cheaper alternative to Telma 40?", "intent": "medicine"}
+{"text": "dolo kab lena chahiye", "intent": "medicine"}
+{"text": "क्या मैं खाली पेट दवा ले सकता हूँ", "intent": "medicine"}
+{"text": "how to take thyronorm", "intent": "medicine"}
+{"text": "Is azithromycin an antibiotic?", "intent": "medicine"}
+{"text": "Can pregnant women take crocin?", "intent": "medicine"}
+{"text": "pan 40 kis liye hoti hai", "intent": "medicine"}
+{"text": "explain my CBC report", "intent": "report_question"}
+{"text": "My HbA1c is 7.8, what does it mean?", "intent": "report_question"}
+{"text": "What is a normal TSH range?", "intent": "report_question"}
+{"text": "my cholesterol is 240", "intent": "report_question"}
+{"text": "what does high creatinine in my report mean", "intent": "report_question"}
+{"text": "मेरी रिपोर्ट में शुगर ज्यादा है", "intent": "report_question"}
+{"text": "I have had fever and body ache for 3 days", "intent": "symptoms"}
+{"text": "My child has loose motions since morning", "intent": "symptoms"}
+{"text": "headache and vomiting since yesterday", "intent": "symptoms"}
+{"text": "I feel dizzy when I stand up", "intent": "symptoms"}
+{"text": "There is a rash on my arm that itches", "intent": "symptoms"}
+{"text": "mujhe 2 din se bukhar hai", "intent": "symptoms"}
+{"text": "pet me dard ho raha hai", "intent": "symptoms"}
+{"text": "सिर में दर्द और चक्कर", "intent": "symptoms"}
+{"text": "cough for 3 weeks with weight loss", "intent": "symptoms"}
+{"text": "burning while passing urine", "intent": "symptoms"}
+{"text": "I can't sleep at night and feel tired", "intent": "symptoms"}
+{"text": "my knee is swollen and painful", "intent": "symptoms"}
+{"text": "fever since 2 days, took crocin but no relief", "intent": "symptoms"}
+{"text": "எனக்கு காய்ச்சல்", "intent": "symptoms"}
+{"text": "নমস্কার, আমার জ্বর হয়েছে", "intent": "symptoms"}
+{"text": "hi, I have a sore throat", "intent": "symptoms"}
+{"text": "How can I improve my immunity?", "intent": "general_health"}
+{"text": "How to prevent dengue?", "intent": "general_health"}
+{"text": "What is blood pressure?", "intent": "general_health"}
+{"text": "Is it safe to get the flu vaccine?", "intent": "general_health"}
+{"text": "how often should I get a health checkup", "intent": "general_health"}
+{"text": "What causes diabetes?", "intent": "general_health"}
+{"text": "What is the capital of France?", "intent": "off_topic"}
+{"text": "Tell me a joke", "intent": "off_topic"}
+{"text": "Who won the cricket match yesterday?", "intent": "off_topic"}
+{"text": "Write a poem about rain", "intent": "off_topic"}
+{"text": "what is the price of gold today", "intent": "off_topic"}
+{"text": "book a train ticket to Delhi", "intent": "off_topic"}
+{"text": "solve 25 times 4", "intent": "off_topic"}
+{"text": "recommend a good Bollywood movie", "intent": "off_topic"}
+{"text": "how is the weather in Mumbai", "intent": "off_topic"}
+{"text": "translate hello to French", "intent": "off_topic"}
