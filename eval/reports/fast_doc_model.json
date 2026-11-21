@@ -1,0 +1,43 @@
+{
+ "prescriptions_rx_eval_19_pages": {
+  "qwen3-vl:4b-instruct (stored baseline)": {
+   "name_recall": 48.0,
+   "precision": 46.3,
+   "frequency": 68.4,
+   "duration": 61.5
+  },
+  "qwen3-vl:2b-instruct": {
+   "name_recall": 38.0,
+   "precision": 30.1,
+   "frequency": 40.0,
+   "duration": 75.0,
+   "passed": false
+  },
+  "granite3.2-vision:2b": {
+   "passed": false,
+   "why": "page tiles exceed the 4k context; with 16k it answered 'unanswerable'"
+  }
+ },
+ "lab_reports_20_pages": {
+  "qwen3-vl:4b-instruct (stored baseline)": {
+   "test_recall": 91.0,
+   "values_exact": 99.4,
+   "flags": 79.0
+  },
+  "qwen3-vl:2b-instruct": {
+   "test_recall": 91.0,
+   "values_exact": 98.1,
+   "flags": 81.5,
+   "accuracy_passed": true,
+   "speed_idle_s": 43.4,
+   "baseline_speed_idle_s": 21.9,
+   "passed": false,
+   "why": "slower than the default reader on an idle machine"
+  },
+  "granite3.2-vision:2b": {
+   "passed": false,
+   "why": "mostly 'unanswerable' or page-layout markup"
+  }
+ },
+ "decision": "No faster document reader: prescriptions and lab reports use qwen3-vl:4b in every speed mode."
+}

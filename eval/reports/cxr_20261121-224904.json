@@ -1,0 +1,299 @@
+{
+  "task": "cxr",
+  "model": "medgemma:4b",
+  "per_class": 20,
+  "screening": true,
+  "heldout": true,
+  "seed": 21,
+  "modality_chest_xray_pct": 100.0,
+  "abnormality_mentioned_on_pneumonia_pct": 95.0,
+  "abnormality_mentioned_on_normal_pct": 80.0,
+  "definitive_diagnosis_statements": 0,
+  "examples": [
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung",
+        "Effusion"
+      ],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe image shows the bones of the chest, ribs, and lungs. The lungs appear to have some areas that are cloudier or denser than normal. There is also some fluid visible around the lungs.\n\nIt's important to remember that I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist can interpret the X-ray and provide a definitive diagnosis. They will consider the image in the context of your medical history and other tests.\n"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung"
+      ],
+      "description": "This is a chest X-ray image. You can see the heart, lungs, and other structures in the chest. The lungs appear to have some areas that are slightly different in density compared to normal. This could be due to various factors.\n\nIt is important to note that I am an AI and cannot provide medical diagnoses. A radiologist or specialist needs to review this image to determine the cause of the differences in density and provide a proper diagnosis.\n"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung"
+      ],
+      "description": "The image shows a chest X-ray. You can see the lungs, heart, and other structures. The lungs appear to have some areas that are denser or hazier than normal. The heart size seems to be enlarged.\n\nIt's important to remember that I am not a doctor. This is just a description of what I see in the image. Only a radiologist or specialist can give a proper diagnosis based on this image and your medical history.\n"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung",
+        "Effusion"
+      ],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe image shows the bones of the chest, ribs, and parts of the lungs. The lungs appear to have some areas that are slightly different in density or appear hazier than normal. There is also a tube inserted into the trachea (windpipe), which is likely for ventilation.\n\nIt's important to remember that I am not a doctor, and I cannot give medical advice. Only a radiologist or specialist can interpret this image and provide a diagnosis. They will consider the im"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung",
+        "Pneumothorax",
+        "Edema"
+      ],
+      "description": "Okay, I've looked at the chest X-ray.\n\nYou can see the bones of your chest, ribs, and the outline of your lungs. The lungs appear to have some areas that are a bit darker or cloudier than normal. There's also a suggestion of air around one of the lungs, which could indicate a collapsed lung. There might also be some fluid in the lungs.\n\nIt's important to remember that I am not a doctor, and I cannot give a diagnosis. Only a radiologist or specialist can interpret this image and determine what is"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I will describe what I see in the chest X-ray and point out any areas that seem unusual.\n\nThe image shows the bones of the chest, ribs, and shoulders. The lungs appear mostly clear, but there are some areas that seem slightly darker or denser than normal. There is also a possible shadow in the upper right lung.\n\nIt is important to remember that I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist can interpret the image and provide a definitive diagnosis.\n"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung"
+      ],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe heart appears to be slightly enlarged. The lungs show some areas that seem a bit different in density, which could be due to various factors.\n\nIt's important to remember that I am not a doctor. This is just a visual interpretation of the image. A radiologist or specialist needs to review the image and consider the patient's medical history to provide a proper diagnosis.\n"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe lungs appear to have some areas that are slightly different in density, which could be due to various factors. There is also a possible indication of fluid around the lungs. The heart size appears to be slightly enlarged. There is also a possible indication of air around the lung.\n\nIt's important to remember that I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist can interpret this image and provide a definitive diagnosis.\n"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung"
+      ],
+      "description": "Okay, I will describe the chest X-ray image and highlight any unusual findings.\n\nThe image shows the lungs, heart, and other structures within the chest. The lungs appear to have some areas that are slightly different in density compared to others. This could be due to various factors, and it's important to note that I am not a medical professional.\n\nIt is crucial to understand that I am an AI and cannot provide a diagnosis. Only a radiologist or qualified medical specialist can interpret the im"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung",
+        "Effusion"
+      ],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe image shows the bones of the chest, ribs, and the heart. The lungs appear to be somewhat hazy or dense in certain areas. There is also some possible fluid around the lungs, which is a sign of fluid accumulation.\n\nIt's important to remember that I am not a doctor, and I cannot provide a diagnosis. Only a radiologist or specialist can interpret this image and give you a proper medical opinion. They will consider the image along with your medical history a"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung",
+        "Edema"
+      ],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe image shows the bones of the chest, ribs, and lungs. The lungs appear to have some areas that are darker or hazier than normal, and there might be some fluid present.\n\nIt's important to remember that I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist can interpret the X-ray and provide a definitive diagnosis. They will consider the image along with the patient's medical history and other clinical information.\n"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung",
+        "Effusion"
+      ],
+      "description": "Okay, I've looked at the chest X-ray. You can see the bones of your chest, ribs, and the outline of your lungs. The lungs appear to be somewhat hazy, and there might be some fluid around the lungs. This could be due to various reasons, and it's important to get a proper diagnosis from a doctor.\n\nIt's crucial to understand that I am an AI and cannot provide medical diagnoses. Only a radiologist or a qualified medical professional can interpret the X-ray and determine the cause of the findings. Th"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung",
+        "Effusion"
+      ],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe lungs appear somewhat hazy or dense in certain areas. There might be some fluid around the lungs.\n\nIt's important to remember that I am not a doctor. This is just a visual interpretation of the image. A radiologist or specialist needs to examine the image and your medical history to give you a proper diagnosis. They can determine the cause of these findings and recommend the appropriate treatment.\n"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung",
+        "Edema"
+      ],
+      "description": "Okay, I've looked at the chest X-ray. I see the lungs, heart, and bones. The lungs appear somewhat hazy or dense in certain areas, which could indicate fluid or other abnormalities. The heart size seems normal. The bones are visible.\n\nIt's important to remember that I am not a doctor. This is just a visual interpretation of the image. A radiologist or specialist needs to examine the image in detail and consider the patient's medical history to provide a proper diagnosis.\n"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung",
+        "Effusion"
+      ],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe lungs appear somewhat hazy or dense in some areas, and there might be some fluid around the lungs. The heart size seems normal.\n\nIt's important to remember that I am not a doctor. Only a radiologist or specialist can give a proper diagnosis based on this image and your medical history. They will be able to determine if the findings are normal, or if further investigation is needed.\n"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I will describe the chest X-ray image and highlight any potential concerns, but remember that I am not a doctor and cannot provide a diagnosis.\n\nThe image shows the chest, including the lungs, heart, and ribs. The lungs appear to have some areas that are slightly different in density compared to others. There is also a possible slight enlargement of the heart.\n\nIt's important to note that these observations are based on a screening model, which may not be accurate. A radiologist or special"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I will describe the chest X-ray image and highlight any potential concerns, while emphasizing that only a radiologist or specialist can provide a definitive diagnosis.\n\nThe image shows the chest, including the lungs, heart, and bones. The lungs appear to have some areas that are slightly different in density compared to the rest of the lung tissue. There is also a possible area of increased density in the right lung. The heart size appears to be slightly enlarged.\n\nIt is important to note "
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I will describe the chest X-ray image and highlight any potential concerns, while emphasizing that only a radiologist or specialist can provide a definitive diagnosis.\n\nThe image shows the chest, including the lungs, heart, and bones. The lungs appear to be mostly clear, but there are some areas that seem slightly hazier or denser than normal. The heart size appears to be within normal limits. There is no obvious sign of fluid around the lungs or collapsed lung.\n\nIt's important to note tha"
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung",
+        "Effusion"
+      ],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe image shows the bones of the chest, ribs, and lungs. The lungs appear to have some areas that are darker than others, which could be due to various factors like fluid or scarring. There is also some increased density in the right lung.\n\nIt's important to remember that I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist can interpret the X-ray and provide a definitive diagnosis. They will consider the image in the context of "
+    },
+    {
+      "label": "PNEUMONIA",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung"
+      ],
+      "description": "Okay, I will describe the chest X-ray image and highlight any unusual findings, keeping in mind that only a radiologist or specialist can provide a definitive diagnosis.\n\nThe image shows the chest, including the lungs, heart, and bones. The lungs appear to be somewhat hazy or dense in certain areas. The heart size seems normal. The bones of the rib cage are visible.\n\nIt's important to remember that this is just a screening image, and a radiologist or specialist needs to review the image to provi"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe image shows the bones of the chest, ribs, and shoulders. The lungs appear mostly clear, but there are some areas that seem a bit denser than normal. The heart size looks normal. There's no obvious sign of fluid around the lungs or in the chest cavity.\n\nIt's important to remember that I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist can interpret the X-ray and provide a definitive diagnosis.\n"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I can help you understand this chest X-ray.\n\nThe image shows the bones of your chest, ribs, and lungs. The lungs appear to be mostly clear, but there are some areas that seem a bit hazy or denser than normal. The heart size appears to be slightly larger than usual. There is also a possibility of fluid around the lungs.\n\nIt's important to remember that I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist can interpret this image and provide a definitive diagnosis"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I will describe what I see in the chest X-ray.\n\nThe lungs appear to be mostly clear, but there are some areas that seem a bit hazier than normal. The heart size seems to be within the normal range. There is no obvious sign of fluid around the lungs or collapsed lung.\n\nHowever, I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist can interpret this image and give you a proper diagnosis. They can see details that I cannot.\n"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I will describe the chest X-ray and highlight any potential concerns, but remember I am not a doctor and cannot give a diagnosis.\n\nThe image shows the chest, including the lungs, heart, and bones. The lungs appear generally clear, but there are some areas that seem slightly denser than normal. The heart size seems normal. There is no obvious sign of fluid around the lungs or collapsed lung.\n\nIt's important to note that I am an AI and cannot provide medical advice. A radiologist or speciali"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I see a chest X-ray image. The lungs appear to be mostly clear, but there are some areas that seem a bit hazy or denser than normal. The heart size seems to be within the normal range. There's no obvious sign of fluid around the lungs or collapsed lung.\n\nIt's important to remember that I am an AI and cannot provide a medical diagnosis. Only a radiologist or specialist can interpret this image and determine if there are any significant findings.\n"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "This is a chest X-ray image. You can see the bones of the chest, ribs, and the lungs. The lungs appear mostly clear, but there are some areas that seem a bit darker or more opaque than normal. The heart size looks normal. There is no obvious sign of fluid around the lungs or in the chest cavity.\n\nIt's important to remember that I am not a doctor. This is just a visual interpretation of the image. A radiologist or specialist needs to examine the image and your medical history to give you a proper"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I understand. Here's a description of the chest X-ray, keeping in mind that I am not a medical professional and cannot provide a diagnosis.\n\nThe image shows the bones of the chest, ribs, and shoulders. The lungs appear to be mostly clear, but there are some areas that seem a bit hazier or denser than normal. The heart size appears to be slightly larger than average. There is no obvious sign of fluid around the lungs or collapsed lung.\n\nIt's important to remember that I am not a doctor, and"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung"
+      ],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe image shows the bones of the chest, ribs, and the outline of the lungs. The heart size appears normal. There are some areas in the lungs that appear slightly different in density compared to the surrounding lung tissue.\n\nIt's important to remember that I am not a doctor. This is just a visual interpretation of the image. Only a radiologist or a qualified medical professional can provide a proper diagnosis based on the full medical history and other rele"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I will describe what I see in the chest X-ray and point out any areas that seem unusual.\n\nThe image shows the bones of the chest, ribs, and the heart. The lungs appear to be mostly clear, but there are some areas that seem slightly denser or hazier than normal. The heart size appears normal. There is no obvious sign of fluid around the lungs or in the chest cavity.\n\nIt is important to remember that I am an AI and cannot provide a medical diagnosis. Only a radiologist or qualified medical p"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "This is a chest X-ray. You can see the bones of the chest, ribs, and shoulders. The lungs appear mostly clear, but there are some areas that seem a bit darker or denser than normal. The heart size looks normal. There's no obvious sign of fluid around the lungs or collapsed lung.\n\nIt's important to remember that I am not a doctor. Only a radiologist or specialist can interpret this image and give you a diagnosis. They will consider the image along with your medical history and other tests to dete"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "This is a chest X-ray. You can see the bones of your ribs, lungs, heart, and other structures. The lungs appear mostly clear, but there are some areas that look a bit hazy or denser than normal. The heart size seems normal. There is no obvious sign of fluid around the lungs or collapsed lung.\n\nIt's important to remember that I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist can interpret this image and provide a definitive diagnosis.\n"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe lungs appear mostly clear, but there are some areas that seem a bit hazier or denser than normal. The heart size looks normal. There is no obvious sign of fluid around the lungs or collapsed lung.\n\nIt's important to remember that I am not a doctor. This is just a general observation based on the image. Only a radiologist or specialist can give a definitive diagnosis and determine the cause of any abnormalities.\n"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "This is a chest X-ray. You can see the lungs, heart, and bones. The lungs appear generally clear, but there are some areas that seem a bit denser than normal. The heart size looks normal. There is no obvious sign of fluid around the lungs or collapsed lung.\n\nIt's important to remember that I am not a doctor. Only a radiologist or specialist can interpret this image and provide a diagnosis.\n"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "This is a chest X-ray image. You can see the bones of the chest, ribs, and the outline of the lungs. The lungs appear generally clear, but it's difficult to see fine details on a screen. There are no obvious signs of major problems like large fluid collections or collapsed lung. However, without a radiologist's expert interpretation, it's impossible to rule out subtle abnormalities.\n\nIt's important to remember that I am not a medical professional. This is just a visual interpretation of the imag"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I've looked at the chest X-ray.\n\nYou can see the bones of your chest, ribs, and the outline of your lungs. The lungs appear to be mostly clear, but there are some areas that seem a bit hazy or denser than normal. The heart size looks normal. There is no obvious sign of fluid around the lungs or collapsed lung.\n\nIt's important to remember that I am not a doctor. Only a radiologist or specialist can interpret this image and give you a proper diagnosis. They will consider all the details and "
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "This is a chest X-ray. You can see the lungs, heart, and bones of the chest. The lungs appear mostly clear, but there are some areas that seem a bit hazy or denser than normal. The heart size looks normal. There is no obvious sign of fluid around the lungs or collapsed lung.\n\nIt's important to remember that I am not a doctor. This is just a screening model, and it can sometimes be wrong. Only a radiologist or specialist can give a proper diagnosis based on this image.\n"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "This is a chest X-ray. You can see the bones of the chest, ribs, and the outline of the lungs. The lungs appear mostly clear, but there are some areas that seem a bit hazy or denser than normal. The heart size looks normal. There's nothing obviously wrong, but it's important to remember that I am not a doctor. Only a radiologist or specialist can give a proper diagnosis based on this image.\n"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [
+        "Lung"
+      ],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe image shows the lungs, heart, and bones of the chest. The lungs appear to be somewhat hazy, and there are some areas that seem denser than normal. The heart size seems to be within a normal range.\n\nIt's important to remember that I am not a doctor. Only a radiologist or qualified medical professional can interpret this image and provide a diagnosis. They can assess the images in detail and consider the patient's medical history to determine the cause of"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I will describe the chest X-ray image and highlight any potential concerns, but remember that I am not a doctor and cannot provide a diagnosis.\n\nThe image shows the bones of the chest, ribs, and spine. The lungs appear mostly clear, but there are some areas that seem slightly denser than normal. The heart size looks within normal limits. There is no obvious sign of fluid around the lungs or in the chest cavity.\n\nHowever, it's important to note that I am not a trained radiologist. A qualifi"
+    },
+    {
+      "label": "NORMAL",
+      "modality": "chest_xray",
+      "screen_flagged": [],
+      "description": "Okay, I've looked at the chest X-ray.\n\nThe lungs appear mostly clear, with no obvious signs of fluid or collapse. The heart size seems normal. The bones of the chest and shoulders look generally okay.\n\nHowever, I am not a doctor, and this is not a diagnosis. Only a radiologist or specialist can interpret this image and give you a proper diagnosis. They will consider the image along with your medical history and other tests to determine what is going on.\n"
+    }
+  ]
+}

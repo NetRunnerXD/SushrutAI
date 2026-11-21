@@ -1,0 +1,66 @@
+{
+ "chat": {
+  "balanced": {
+   "median_s": 12.7,
+   "max_s": 45.0,
+   "models": [
+    "medgemma:4b"
+   ],
+   "stage_median_s": {
+    "profile": 0.0,
+    "guard": 0.65,
+    "translate": 0.0,
+    "intent": 0.0,
+    "search": 3.27,
+    "model": 6.89,
+    "checks_grounding": 0.0,
+    "medicine_links": 0.0
+   }
+  },
+  "fast": {
+   "median_s": 9.8,
+   "max_s": 33.4,
+   "models": [
+    "llama3.2:3b"
+   ],
+   "stage_median_s": {
+    "profile": 0.0,
+    "guard": 0.6,
+    "translate": 0.0,
+    "intent": 0.0,
+    "search": 3.25,
+    "model": 5.93,
+    "checks_grounding": 0.0,
+    "medicine_links": 0.0
+   }
+  },
+  "instant": {
+   "median_s": 8.1,
+   "max_s": 36.4,
+   "models": [
+    "llama3.2:3b"
+   ],
+   "stage_median_s": {
+    "profile": 0.0,
+    "guard": 0.62,
+    "translate": 0.0,
+    "intent": 0.0,
+    "search": 0.66,
+    "model": 6.76,
+    "checks_grounding": 0.0,
+    "medicine_links": 0.0
+   }
+  }
+ },
+ "labs": {
+  "qwen3-vl:4b-instruct": {
+   "median_s": 21.9,
+   "max_s": 28.9
+  },
+  "qwen3-vl:2b-instruct": {
+   "median_s": 43.4,
+   "max_s": 45.9
+  }
+ },
+ "note": "Idle machine, warm models, RTX 3060 6 GB. Symptom questions always use the Careful model."
+}

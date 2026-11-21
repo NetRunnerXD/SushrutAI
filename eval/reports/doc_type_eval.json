@@ -1,0 +1,159 @@
+{
+ "medgemma one-word": {
+  "correct": 56,
+  "n": 77,
+  "unsure": 10,
+  "wrong": 11,
+  "per_class": {
+   "prescription": "14/29",
+   "lab_report": "28/28",
+   "scan": "10/10",
+   "photo": "4/10"
+  },
+  "wrong_detail": [
+   [
+    "prescription->scan",
+    6
+   ],
+   [
+    "prescription->lab_report",
+    4
+   ],
+   [
+    "photo->lab_report",
+    1
+   ]
+  ]
+ },
+ "direct question": {
+  "correct": 56,
+  "n": 77,
+  "unsure": 0,
+  "wrong": 21,
+  "per_class": {
+   "prescription": "28/29",
+   "lab_report": "28/28",
+   "scan": "0/10",
+   "photo": "0/10"
+  },
+  "wrong_detail": [
+   [
+    "scan->lab_report",
+    10
+   ],
+   [
+    "photo->lab_report",
+    8
+   ],
+   [
+    "photo->prescription",
+    2
+   ],
+   [
+    "prescription->lab_report",
+    1
+   ]
+  ]
+ },
+ "yes/no features": {
+  "correct": 67,
+  "n": 77,
+  "unsure": 0,
+  "wrong": 10,
+  "per_class": {
+   "prescription": "27/29",
+   "lab_report": "21/28",
+   "scan": "10/10",
+   "photo": "9/10"
+  },
+  "wrong_detail": [
+   [
+    "lab_report->photo",
+    6
+   ],
+   [
+    "prescription->photo",
+    2
+   ],
+   [
+    "lab_report->scan",
+    1
+   ],
+   [
+    "photo->scan",
+    1
+   ]
+  ]
+ },
+ "page keywords": {
+  "correct": 23,
+  "n": 77,
+  "unsure": 53,
+  "wrong": 1,
+  "per_class": {
+   "prescription": "11/29",
+   "lab_report": "12/28",
+   "scan": "0/10",
+   "photo": "0/10"
+  },
+  "wrong_detail": [
+   [
+    "photo->lab_report",
+    1
+   ]
+  ]
+ },
+ "app": {
+  "correct": 67,
+  "n": 77,
+  "unsure": 0,
+  "wrong": 10,
+  "per_class": {
+   "prescription": "27/29",
+   "lab_report": "21/28",
+   "scan": "10/10",
+   "photo": "9/10"
+  },
+  "wrong_detail": [
+   [
+    "lab_report->photo",
+    6
+   ],
+   [
+    "prescription->photo",
+    2
+   ],
+   [
+    "lab_report->scan",
+    1
+   ],
+   [
+    "photo->scan",
+    1
+   ]
+  ]
+ },
+ "hybrid (features + direct)": {
+  "correct": 58,
+  "n": 77,
+  "unsure": 17,
+  "wrong": 2,
+  "per_class": {
+   "prescription": "27/29",
+   "lab_report": "21/28",
+   "scan": "10/10",
+   "photo": "0/10"
+  },
+  "wrong_detail": [
+   [
+    "lab_report->scan",
+    1
+   ],
+   [
+    "photo->scan",
+    1
+   ]
+  ]
+ },
+ "seconds_per_image_features": 36.7
+}

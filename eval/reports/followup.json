@@ -1,0 +1,296 @@
+{
+ "summary": {
+  "off": {
+   "topic_source": 10.0,
+   "topic_answer": 80.0,
+   "urgency_kept": 90.0
+  },
+  "on": {
+   "topic_source": 70.0,
+   "topic_answer": 100.0,
+   "urgency_kept": 90.0
+  }
+ },
+ "rows": [
+  {
+   "id": "dengue-en",
+   "t1_urgency": "see_doctor_24h",
+   "off": {
+    "topic_source": false,
+    "topic_answer": false,
+    "urgency": "see_doctor_24h",
+    "urgency_kept": true,
+    "top": [
+     "MedlinePlus: Antidepressants",
+     "MedlinePlus: Antidepressants",
+     "MedlinePlus: Cocaine"
+    ],
+    "reply": "The duration of recovery from a fracture depends on its severity and location. It could range from a few weeks to several months. The specific timeline would be determined by your doctor based on their evaluation."
+   },
+   "on": {
+    "topic_source": true,
+    "topic_answer": true,
+    "urgency": "see_doctor_24h",
+    "urgency_kept": true,
+    "top": [
+     "WHO fact sheet: Dengue",
+     "MedlinePlus: Dengue",
+     "MedlinePlus: Dengue"
+    ],
+    "reply": "Your symptoms could match dengue . Dengue is common during this season/region. The best thing to do now is rest and drink plenty of fluids like ORS (Oral Rehydration Solution). Avoid strenuous activities."
+   }
+  },
+  {
+   "id": "typhoid-en",
+   "t1_urgency": "none",
+   "off": {
+    "topic_source": false,
+    "topic_answer": true,
+    "urgency": "none",
+    "urgency_kept": true,
+    "top": [
+     "MedlinePlus: Nutrition for Older Adults",
+     "MedlinePlus: Diabetic Diet",
+     "MedlinePlus: Carbohydrates"
+    ],
+    "reply": "If your doctor thinks you might have typhoid fever, focus on getting fluids and rest. Avoid solid foods until you feel better. Once you start feeling hungry again, try easy-to-digest foods like clear broths, plain yogurt, bananas, and toast. As you recover, gradually introduce more variety into your"
+   },
+   "on": {
+    "topic_source": true,
+    "topic_answer": true,
+    "urgency": "none",
+    "urgency_kept": true,
+    "top": [
+     "WHO fact sheet: Typhoid",
+     "WHO fact sheet: Typhoid",
+     "WHO fact sheet: Typhoid"
+    ],
+    "reply": "To manage your diabetes effectively, focus on incorporating a balanced diet rich in nutrient-dense foods while limiting those high in carbohydrates and added sugars. Prioritize non-starchy vegetables, lean proteins, whole grains, and healthy fats. Consider consulting a registered dietitian or certif"
+   }
+  },
+  {
+   "id": "migraine-en",
+   "t1_urgency": "see_doctor_24h",
+   "off": {
+    "topic_source": true,
+    "topic_answer": true,
+    "urgency": "see_doctor_24h",
+    "urgency_kept": true,
+    "top": [
+     "MedlinePlus: Migraine",
+     "MedlinePlus: Migraine",
+     "MedlinePlus: Migraine"
+    ],
+    "reply": "Migraines can be triggered by many things! Stress, hormonal changes, weather shifts, strong smells, bright lights, and even certain foods like aged cheeses or chocolate might do the trick. Keeping track of what seems to bring them on could help."
+   },
+   "on": {
+    "topic_source": true,
+    "topic_answer": true,
+    "urgency": "see_doctor_24h",
+    "urgency_kept": true,
+    "top": [
+     "MedlinePlus: Migraine",
+     "MedlinePlus: Migraine",
+     "MedlinePlus: Migraine"
+    ],
+    "reply": "Migraines can be triggered by many factors that vary from person to person. Common triggers include stress, hormonal changes (especially in women), lack of sleep, skipping meals, caffeine withdrawal, alcohol consumption, bright lights, strong smells, weather changes, and certain medications. Keeping"
+   }
+  },
+  {
+   "id": "acidity-en",
+   "t1_urgency": "none",
+   "off": {
+    "topic_source": false,
+    "topic_answer": true,
+    "urgency": "none",
+    "urgency_kept": true,
+    "top": [
+     "MedlinePlus: Mental Disorders",
+     "MedlinePlus: Dengue",
+     "CDC: About Diphtheria"
+    ],
+    "reply": "It sounds like you might have heartburn/acid indigestion. It's not necessarily life-threatening, but it can become serious if left untreated. The severity depends on how often you experience these symptoms and whether they interfere with your daily activities."
+   },
+   "on": {
+    "topic_source": true,
+    "topic_answer": true,
+    "urgency": "none",
+    "urgency_kept": true,
+    "top": [
+     "MedlinePlus: Heartburn",
+     "MedlinePlus: Heartburn",
+     "MedlinePlus: Esophagus Disorders"
+    ],
+    "reply": "Heartburn/acid indigestion can range from mild discomfort to more severe issues like gastroesophageal reflux disease (GERD). While occasional episodes might not be concerning, persistent or worsening symptoms could indicate underlying conditions requiring evaluation. If you experience frequent or in"
+   }
+  },
+  {
+   "id": "diabetes-en",
+   "t1_urgency": "none",
+   "off": {
+    "topic_source": false,
+    "topic_answer": false,
+    "urgency": "none",
+    "urgency_kept": true,
+    "top": [
+     "MedlinePlus: Vasectomy",
+     "MedlinePlus: Tubal Ligation",
+     "US FDA label — metoprolol"
+    ],
+    "reply": "It depends on what has been reversed. I am unable to determine which one you are referring to."
+   },
+   "on": {
+    "topic_source": true,
+    "topic_answer": true,
+    "urgency": "none",
+    "urgency_kept": true,
+    "top": [
+     "CDC: Preventing Type 2 Diabetes",
+     "MedlinePlus: Diabetes Type 2",
+     "MedlinePlus: Diabetes Type 2"
+    ],
+    "reply": "Yes, prediabetes can sometimes be reversed by making lifestyle changes such as losing weight, eating healthier, and exercising regularly."
+   }
+  },
+  {
+   "id": "jaundice-hi",
+   "t1_urgency": "see_doctor_24h",
+   "off": {
+    "topic_source": false,
+    "topic_answer": true,
+    "urgency": "none",
+    "urgency_kept": false,
+    "top": [
+     "WHO fact sheet: Syphilis",
+     "MedlinePlus: Cryptosporidiosis",
+     "MedlinePlus: Cryptosporidiosis"
+    ],
+    "reply": "आपके भाई को पीलिया होने के कई कारण हो सकते हैं। यह आपके भाई की उम्र, लिंग और स्वास्थ्य स्थिति पर निर्भर करता है। कुछ सामान्य कारणों में शामिल हैं: पित्त नली का अवरोध, यकृत रोग, या लाल रक्त कोशिकाओं का तेजी से टूटना। यदि आपका भाई पीले रंग का दिख रहा है, तो उसे देखने के लिए डॉक्टर को दिखाना महत्वपूर्ण"
+   },
+   "on": {
+    "topic_source": false,
+    "topic_answer": true,
+    "urgency": "none",
+    "urgency_kept": false,
+    "top": [
+     "WHO fact sheet: Syphilis",
+     "MedlinePlus: Cryptosporidiosis",
+     "MedlinePlus: Cryptosporidiosis"
+    ],
+    "reply": "पीलिया के कारण अलग-अलग हो सकते हैं। कुछ मामलों में, यह कुछ हफ्तों में ठीक हो सकता है, जबकि अन्य में अधिक समय लग सकता है। आपके भाई की स्थिति पर निर्भर करता है कि वह कब ठीक हो जाएगा।"
+   }
+  },
+  {
+   "id": "asthma-hi",
+   "t1_urgency": "none",
+   "off": {
+    "topic_source": false,
+    "topic_answer": true,
+    "urgency": "none",
+    "urgency_kept": true,
+    "top": [
+     "MedlinePlus: How Much Exercise Do I Need?",
+     "MedlinePlus: How Much Exercise Do I Need?",
+     "MedlinePlus: Sports Safety"
+    ],
+    "reply": "दमा एक ऐसी स्थिति है जिसमें वायुमार्ग में सूजन और संकुचन होता है, जिससे सांस लेने में कठिनाई होती है। दमा के लक्षणों को कम करने और बेहतर स्वास्थ्य बनाए रखने के लिए, आपको अपने डॉक्टर से बात करनी चाहिए।"
+   },
+   "on": {
+    "topic_source": false,
+    "topic_answer": true,
+    "urgency": "none",
+    "urgency_kept": true,
+    "top": [
+     "ICMR Standard Treatment Workflow — Psychiatry",
+     "NCVBDC (vector-borne disease) guideline — Severe M",
+     "NCVBDC (vector-borne disease) guideline — Severe M"
+    ],
+    "reply": "आपकी बेटी को दमा है।"
+   }
+  },
+  {
+   "id": "pregnancy-hinglish",
+   "t1_urgency": "see_doctor_24h",
+   "off": {
+    "topic_source": false,
+    "topic_answer": true,
+    "urgency": "see_doctor_24h",
+    "urgency_kept": true,
+    "top": [
+     "MedlinePlus: Fever",
+     "MedlinePlus: Fever",
+     "MedlinePlus: Growth Disorders"
+    ],
+    "reply": "Your symptoms can be seen with morning sickness which is common in early pregnancy. It usually starts around this time and lasts until the end of the first trimester. Since you are three months pregnant, it could also match hyperemesis gravidarum where vomiting becomes excessive and leads to dehydra"
+   },
+   "on": {
+    "topic_source": true,
+    "topic_answer": true,
+    "urgency": "see_doctor_24h",
+    "urgency_kept": true,
+    "top": [
+     "US FDA label — chlorthalidone",
+     "ICMR Standard Treatment Workflow — Haemolytic Anae",
+     "ICMR Standard Treatment Workflow — Obstetrics & Gy"
+    ],
+    "reply": "Your symptoms can be seen with morning sickness which is common in early pregnancy. It usually starts around this time and lasts until the end of the first trimester. Since you are three months pregnant, it could also match hyperemesis gravidarum where vomiting becomes excessive and leads to dehydra"
+   }
+  },
+  {
+   "id": "uti-hinglish",
+   "t1_urgency": "see_doctor_24h",
+   "off": {
+    "topic_source": false,
+    "topic_answer": true,
+    "urgency": "see_doctor_24h",
+    "urgency_kept": true,
+    "top": [
+     "MedlinePlus: How Much Exercise Do I Need?",
+     "MedlinePlus: How Much Exercise Do I Need?",
+     "MedlinePlus: Intimate Partner Violence"
+    ],
+    "reply": "Your symptoms can be seen with urinary tract infection (UTI), overactive bladder, or other conditions. The best thing to do now is to consult a general physician."
+   },
+   "on": {
+    "topic_source": true,
+    "topic_answer": true,
+    "urgency": "see_doctor_24h",
+    "urgency_kept": true,
+    "top": [
+     "ICMR Standard Treatment Workflow — Paediatrics",
+     "ICMR Standard Treatment Workflow — Paediatrics",
+     "MoHFW / NHM guideline — National Rabies Guidelines"
+    ],
+    "reply": "Your symptoms can be seen with urinary tract infection (UTI), overactive bladder, or other conditions. The best thing to do now is to consult a general physician."
+   }
+  },
+  {
+   "id": "thyroid-en",
+   "t1_urgency": "none",
+   "off": {
+    "topic_source": false,
+    "topic_answer": true,
+    "urgency": "none",
+    "urgency_kept": true,
+    "top": [
+     "MedlinePlus: Body Weight",
+     "MedlinePlus: Obesity",
+     "MedlinePlus: Obesity"
+    ],
+    "reply": "An elevated TSH level can indicate hypothyroidism, where your thyroid gland may not produce enough hormones. This could potentially affect your metabolism and influence your weight over time. However, many factors contribute to weight changes, including diet, exercise, genetics, and other medical co"
+   },
+   "on": {
+    "topic_source": false,
+    "topic_answer": true,
+    "urgency": "none",
+    "urgency_kept": true,
+    "top": [
+     "MedlinePlus: Body Weight",
+     "MedlinePlus: Obesity",
+     "MedlinePlus: Obesity"
+    ],
+    "reply": "An elevated TSH level can indicate hypothyroidism, where your thyroid gland may not produce enough hormones. This could potentially affect your metabolism and overall energy levels. Your doctor will consider this result along with other factors like your symptoms and medical history to determine if "
+   }
+  }
+ ]
+}
