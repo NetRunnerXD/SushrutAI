@@ -1,0 +1,2859 @@
+{
+  "tag": "cand_qwen3_1_7b",
+  "kb": {
+    "drug_monographs": 2425,
+    "guidelines_in": 1714,
+    "nutrition_in": 31,
+    "patient_ed": 807
+  },
+  "reranker": true,
+  "grounding": "on",
+  "summary": {
+    "retrieval": {
+      "all": {
+        "n": 150,
+        "hit@1": 0.787,
+        "hit@6": 0.887,
+        "mrr@6": 0.815,
+        "precision@6": 0.681
+      },
+      "en": {
+        "n": 50,
+        "hit@1": 0.92,
+        "hit@6": 0.96,
+        "mrr@6": 0.928,
+        "precision@6": 0.767
+      },
+      "hi": {
+        "n": 50,
+        "hit@1": 0.82,
+        "hit@6": 0.92,
+        "mrr@6": 0.846,
+        "precision@6": 0.74
+      },
+      "hinglish": {
+        "n": 50,
+        "hit@1": 0.62,
+        "hit@6": 0.78,
+        "mrr@6": 0.67,
+        "precision@6": 0.537
+      },
+      "latency_s": {
+        "p50": 3.88,
+        "p95": 5.53
+      }
+    },
+    "answers": {
+      "n": 30,
+      "errors": 0,
+      "urgency_ok": "25/30",
+      "over_triage": 2,
+      "required_recall": 0.762,
+      "banned_violations": 0,
+      "citation_precision": 0.846,
+      "answers_with_citations": 4,
+      "grounding_rate": 0.205,
+      "flagged_not_in_sources": 23,
+      "latency_s": {
+        "p50": 23.8,
+        "p95": 48.0
+      },
+      "stage_p50_s": {
+        "checks_grounding": 1.32,
+        "guard": 1.05,
+        "intent": 0.0,
+        "medicine_links": 0.0,
+        "model": 12.59,
+        "profile": 0.01,
+        "search": 5.64,
+        "translate": 1.71
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "dengue-en",
+      "variant": "en",
+      "search_s": 8.2,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Dengue",
+        "medlineplus|MedlinePlus: Dengue",
+        "medlineplus|MedlinePlus: Mosquito Bites"
+      ],
+      "answer_s": 23.8,
+      "urgency_expected": "see_doctor_24h",
+      "urgency_observed": "see_doctor_24h",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 2,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.667,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.05,
+        "guard": 5.8,
+        "translate": 0.0,
+        "intent": 0.01,
+        "search": 5.26,
+        "model": 12.59,
+        "checks_grounding": 0.01,
+        "medicine_links": 0.12
+      },
+      "model": "qwen3:1.7b",
+      "reply": "Based on your description, you may be experiencing symptoms consistent with dengue. Dengue is a viral infection that causes high fever, body aches, and pain behind the eyes. These symptoms typically last 2-7 days. However, without a medical examination, it's hard to say for sure. If you're concerned about dengue, you should see a healthcare provider for confirmation. They may perform a blood test "
+    },
+    {
+      "id": "dengue-hi",
+      "variant": "hi",
+      "search_s": 3.89,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Dengue",
+        "medlineplus|MedlinePlus: Mosquito Bites",
+        "medlineplus|MedlinePlus: Mosquito Bites"
+      ]
+    },
+    {
+      "id": "dengue-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.726,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "medlineplus|MedlinePlus: Dengue",
+        "medlineplus|MedlinePlus: Chikungunya",
+        "medlineplus|MedlinePlus: Chikungunya"
+      ]
+    },
+    {
+      "id": "malaria-en",
+      "variant": "en",
+      "search_s": 3.842,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Malaria Training M",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man"
+      ]
+    },
+    {
+      "id": "malaria-hi",
+      "variant": "hi",
+      "search_s": 3.621,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.2,
+      "p6": 0.333,
+      "top": [
+        "medlineplus|MedlinePlus: Fever",
+        "medlineplus|MedlinePlus: Common Cold",
+        "medlineplus|MedlinePlus: Tetanus, Diphtheria, and Pertussis Vaccines"
+      ],
+      "answer_s": 19.2,
+      "urgency_expected": "see_doctor_24h",
+      "urgency_observed": "see_doctor_24h",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 2,
+      "required_n": 2,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 0.83,
+        "translate": 1.71,
+        "intent": 0.0,
+        "search": 4.55,
+        "model": 10.77,
+        "checks_grounding": 1.32,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "ठंड के साथ बुखार आना एक अप्रचलित प्रभावी चिकिष्ट हो सकता है। इस घटना के बारे में जागरजा उत्पन्न हो सकती है, और यदि बुखार खास तौर पर बढ़ रहा है या फिर बुखार बहुत ज्यादा बन रहा है, तब डॉक्टर के साथ बात करना आवश्यक है।\n\nध्यान दें: इस उत्तर का कुछ भाग सामान्य जानकारी है जो मेरे स्रोतों में नहीं है।"
+    },
+    {
+      "id": "malaria-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.569,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man"
+      ]
+    },
+    {
+      "id": "tb_cough-en",
+      "variant": "en",
+      "search_s": 3.485,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.5,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Pulmonology",
+        "ntep|NTEP (National TB Elimination Programme) — Tb Preventive Tre",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics"
+      ]
+    },
+    {
+      "id": "tb_cough-hi",
+      "variant": "hi",
+      "search_s": 3.567,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.3333333333333333,
+      "p6": 0.333,
+      "top": [
+        "medlineplus|MedlinePlus: Tetanus, Diphtheria, and Pertussis Vaccines",
+        "openfda|US FDA label — menthol",
+        "ntep|NTEP (National TB Elimination Programme) — Tb Preventive Tre"
+      ]
+    },
+    {
+      "id": "tb_cough-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.526,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "medlineplus|MedlinePlus: Diabetes",
+        "medlineplus|MedlinePlus: Diabetes Type 2",
+        "openfda|US FDA label — metoclopramide"
+      ],
+      "answer_s": 38.0,
+      "urgency_expected": "see_doctor_week",
+      "urgency_observed": "see_doctor_24h",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 2,
+      "required_n": 2,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 0.98,
+        "translate": 9.22,
+        "intent": 0.0,
+        "search": 5.93,
+        "model": 17.83,
+        "checks_grounding": 4.06,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "ठीक है, आपके स्वास्थ्य के लिए प्रतिकृति देखना जरुरी है। आपके मामले में तीसरे चार्ट के अंदर दिखाई दे रहे हैं: ग्लूबोइड डाइजिटल नियम, और उचित भोजन बढ़वाना जरुरी है। आपके घटितल भोजन में बुकर आ रहा है, जिसके लिए आपके शरीर के लिए उचित भोजन बढ़वाना जरुरी है।\n\nध्यान दें: इस उत्तर का कुछ भाग सामान्य जानकारी है जो मेरे स्रोतों में नहीं है।"
+    },
+    {
+      "id": "tb_treatment-en",
+      "variant": "en",
+      "search_s": 3.55,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Tuberculosis",
+        "ntep|NTEP (National TB Elimination Programme) — Family Caregiver ",
+        "icmr_stw|ICMR Standard Treatment Workflow — Adult Extrapulmonary Tube"
+      ],
+      "answer_s": 13.8,
+      "urgency_expected": "none",
+      "urgency_observed": "none",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 2,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 1.07,
+        "translate": 0.0,
+        "intent": 4.36,
+        "search": 5.52,
+        "model": 2.88,
+        "checks_grounding": 0.0,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "Treatment for tuberculosis usually lasts 6 to 12 months, depending on the type of TB and how well you respond to medication. Your mother should not stop treatment even if she feels better—this could make the infection harder to cure. Follow your doctor's advice carefully.\n\nNote: parts of this answer are general information that is not in my sources."
+    },
+    {
+      "id": "tb_treatment-hi",
+      "variant": "hi",
+      "search_s": 3.734,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Tuberculosis",
+        "ntep|NTEP (National TB Elimination Programme) — Tb Preventive Tre",
+        "icmr_stw|ICMR Standard Treatment Workflow — Adult Extrapulmonary Tube"
+      ]
+    },
+    {
+      "id": "tb_treatment-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.507,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "ntep|NTEP (National TB Elimination Programme) — Tb Preventive Tre",
+        "ntep|NTEP (National TB Elimination Programme) — Tb Preventive Tre",
+        "ntep|NTEP (National TB Elimination Programme) — Tb Preventive Tre"
+      ]
+    },
+    {
+      "id": "chest_pain-en",
+      "variant": "en",
+      "search_s": 3.503,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Cardiology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Cardiology",
+        "medlineplus|MedlinePlus: Heart Attack"
+      ]
+    },
+    {
+      "id": "chest_pain-hi",
+      "variant": "hi",
+      "search_s": 3.635,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Cardiology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Cardiology",
+        "medlineplus|MedlinePlus: Heart Attack"
+      ],
+      "answer_s": 0.0,
+      "urgency_expected": "emergency",
+      "urgency_observed": "emergency",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": null,
+      "grounding_flag": null,
+      "timings": {},
+      "model": null,
+      "reply": "सीने में दर्द दिल का दौरा हो सकता है। तुरंत 108 / 112 पर कॉल करें। खुद गाड़ी न चलाएँ।"
+    },
+    {
+      "id": "chest_pain-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.573,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "medlineplus|MedlinePlus: Non-Drug Pain Management",
+        "medlineplus|MedlinePlus: Heartburn",
+        "medlineplus|MedlinePlus: Heart Attack"
+      ]
+    },
+    {
+      "id": "stroke-en",
+      "variant": "en",
+      "search_s": 3.56,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.667,
+      "top": [
+        "medlineplus|MedlinePlus: Stroke",
+        "medlineplus|MedlinePlus: Hemorrhagic Stroke",
+        "icmr_stw|ICMR Standard Treatment Workflow — Interventional Radiology"
+      ]
+    },
+    {
+      "id": "stroke-hi",
+      "variant": "hi",
+      "search_s": 3.621,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "medlineplus|MedlinePlus: Stroke",
+        "icmr_stw|ICMR Standard Treatment Workflow — Interventional Radiology",
+        "medlineplus|MedlinePlus: Hemorrhagic Stroke"
+      ]
+    },
+    {
+      "id": "stroke-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.564,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.5,
+      "p6": 0.667,
+      "top": [
+        "medlineplus|MedlinePlus: Mumps",
+        "icmr_stw|ICMR Standard Treatment Workflow — Interventional Radiology",
+        "medlineplus|MedlinePlus: Stroke"
+      ],
+      "answer_s": 0.0,
+      "urgency_expected": "emergency",
+      "urgency_observed": "emergency",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": null,
+      "grounding_flag": null,
+      "timings": {},
+      "model": null,
+      "reply": "ये लकवे (स्ट्रोक) के लक्षण हो सकते हैं। लक्षण शुरू होने का समय नोट करें और तुरंत 108 / 112 पर कॉल करें।"
+    },
+    {
+      "id": "snake_bite-en",
+      "variant": "en",
+      "search_s": 3.54,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.25,
+      "p6": 0.167,
+      "top": [
+        "ntep|NTEP (National TB Elimination Programme) — Differentiated Tb",
+        "ntep|NTEP (National TB Elimination Programme) — Differentiated Tb",
+        "icmr_stw|ICMR Standard Treatment Workflow — Dermatology"
+      ],
+      "answer_s": 0.0,
+      "urgency_expected": "emergency",
+      "urgency_observed": "emergency",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": null,
+      "grounding_flag": null,
+      "timings": {},
+      "model": null,
+      "reply": "Possible poisoning, overdose or venomous bite — call 108 / 112 now and go to the nearest hospital. Do not induce vomiting. Take the container/strip with you."
+    },
+    {
+      "id": "snake_bite-hi",
+      "variant": "hi",
+      "search_s": 3.647,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "ntep|NTEP (National TB Elimination Programme) — Differentiated Tb",
+        "ntep|NTEP (National TB Elimination Programme) — Differentiated Tb",
+        "medlineplus|MedlinePlus: Body Lice"
+      ]
+    },
+    {
+      "id": "snake_bite-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.553,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Food Label Booklet",
+        "ntep|NTEP (National TB Elimination Programme) — Differentiated Tb",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Food Label Booklet"
+      ]
+    },
+    {
+      "id": "dog_bite-en",
+      "variant": "en",
+      "search_s": 3.693,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.333,
+      "top": [
+        "medlineplus|MedlinePlus: Animal Bites",
+        "medlineplus|MedlinePlus: Animal Bites",
+        "openfda|US FDA label — sterilized"
+      ]
+    },
+    {
+      "id": "dog_bite-hi",
+      "variant": "hi",
+      "search_s": 3.58,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.3333333333333333,
+      "p6": 0.167,
+      "top": [
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "ntep|NTEP (National TB Elimination Programme) — Differentiated Tb",
+        "medlineplus|MedlinePlus: Animal Diseases and Your Health"
+      ],
+      "answer_s": 21.9,
+      "urgency_expected": "see_doctor_24h",
+      "urgency_observed": "see_doctor_24h",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 2,
+      "required_n": 2,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 0.92,
+        "translate": 2.04,
+        "intent": 1.0,
+        "search": 5.5,
+        "model": 6.73,
+        "checks_grounding": 5.7,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "जानवर के काटने या खरोंचने से रेबीज़ हो सकता है — लक्षण आने पर यह जानलेवा है, पर इसे रोका जा सकता है। घाव को साबुन और बहते पानी से 15 मिनट धोएँ, फिर आज ही अस्पताल या स्वास्थ्य केंद्र जाकर एंटी-रेबीज़ टीका लगवाएँ (सरकारी अस्पताल में मुफ़्त)। घाव पर मिर्च, हल्दी या तेल न लगाएँ।\n\nगली के कुत्ते ने अपने बेटे के हाथ पर काट लिया, जबकि एक छोटा खून आ रहा है। इस स्थिति के लिए विशेषज्ञ के साथ चिकित्सा दंड करे"
+    },
+    {
+      "id": "dog_bite-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.458,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "icmr_stw|ICMR Standard Treatment Workflow — Interventional Radiology",
+        "openfda|US FDA label — sterilized"
+      ]
+    },
+    {
+      "id": "child_diarrhoea-en",
+      "variant": "en",
+      "search_s": 3.694,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics",
+        "icmr_stw|ICMR Standard Treatment Workflow — Pediatric Cardiology"
+      ]
+    },
+    {
+      "id": "child_diarrhoea-hi",
+      "variant": "hi",
+      "search_s": 3.767,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics",
+        "medlineplus|MedlinePlus: Diarrhea"
+      ]
+    },
+    {
+      "id": "child_diarrhoea-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.627,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.5,
+      "top": [
+        "medlineplus|MedlinePlus: Gastroenteritis",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatric Surgery",
+        "medlineplus|MedlinePlus: Urinary Incontinence"
+      ],
+      "answer_s": 28.8,
+      "urgency_expected": "see_doctor_24h",
+      "urgency_observed": "see_doctor_24h",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 2,
+      "required_n": 2,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 1.08,
+        "translate": 9.07,
+        "intent": 0.0,
+        "search": 5.53,
+        "model": 13.05,
+        "checks_grounding": 0.0,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "I am sorry to hear about your child's condition. It seems like he is having frequent loose motions every morning and is not urinating properly. This could be due to several reasons such as gastrointestinal issues, dietary changes, or other factors. Please consult a doctor for proper diagnosis and treatment.\n\nध्यान दें: इस उत्तर का कुछ भाग सामान्य जानकारी है जो मेरे स्रोतों में नहीं है।"
+    },
+    {
+      "id": "adult_diarrhoea-en",
+      "variant": "en",
+      "search_s": 3.442,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics",
+        "medlineplus|MedlinePlus: Gastroenteritis",
+        "medlineplus|MedlinePlus: Gastroenteritis"
+      ],
+      "answer_s": 15.1,
+      "urgency_expected": "self_care",
+      "urgency_observed": "see_doctor_24h",
+      "urgency_ok": true,
+      "over_triage": true,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.2,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 0.83,
+        "translate": 0.0,
+        "intent": 0.0,
+        "search": 6.04,
+        "model": 8.21,
+        "checks_grounding": 0.0,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "Based on your description, you're experiencing mild loose motions without a fever. This could be due to several reasons, but it's not something that needs immediate attention. Here's what we know:\n\n- **Loose motions** can happen after eating outside, especially if there was food contamination.\n- You don't have a fever, so it's likely not a severe infection like typhoid or dengue.\n- It's possible t"
+    },
+    {
+      "id": "adult_diarrhoea-hi",
+      "variant": "hi",
+      "search_s": 3.533,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Diarrhea",
+        "medlineplus|MedlinePlus: Diarrhea",
+        "medlineplus|MedlinePlus: Diarrhea"
+      ]
+    },
+    {
+      "id": "adult_diarrhoea-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.546,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.25,
+      "p6": 0.333,
+      "top": [
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "icmr_stw|ICMR Standard Treatment Workflow — Pediatric Cardiology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Pediatric Cardiology"
+      ]
+    },
+    {
+      "id": "common_cold-en",
+      "variant": "en",
+      "search_s": 3.679,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Common Cold",
+        "medlineplus|MedlinePlus: Sore Throat",
+        "openfda|US FDA label — menthol"
+      ]
+    },
+    {
+      "id": "common_cold-hi",
+      "variant": "hi",
+      "search_s": 4.258,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Common Cold",
+        "medlineplus|MedlinePlus: Tonsillitis",
+        "medlineplus|MedlinePlus: Sore Throat"
+      ],
+      "answer_s": 24.8,
+      "urgency_expected": "self_care",
+      "urgency_observed": "see_doctor_24h",
+      "urgency_ok": true,
+      "over_triage": true,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 1.03,
+        "translate": 3.26,
+        "intent": 0.0,
+        "search": 6.62,
+        "model": 9.32,
+        "checks_grounding": 4.52,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "आपका प्रमुख काल एक दिन से अधिक नाक बह रहा है, छींकन आ रहा है तथा गले में धीरह खरास है। इसके लिए जवाब यह है कि वह एक आम चिकिष्ट है जो नाक बह रही है और छींकता है। आपके घटनाओं के आधार पर, इस चिकिष्ट के लिए उचित उपयोग किया जा सकता है।\n\nध्यान दें: इस उत्तर का कुछ भाग सामान्य जानकारी है जो मेरे स्रोतों में नहीं है।"
+    },
+    {
+      "id": "common_cold-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.041,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "openfda|US FDA label — menthol",
+        "medlineplus|MedlinePlus: Diphtheria",
+        "medlineplus|MedlinePlus: Common Cold"
+      ]
+    },
+    {
+      "id": "child_fever-en",
+      "variant": "en",
+      "search_s": 3.888,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.667,
+      "top": [
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "icmr_stw|ICMR Standard Treatment Workflow — Pediatric Cardiology",
+        "medlineplus|MedlinePlus: Uncommon Infant and Newborn Problems"
+      ]
+    },
+    {
+      "id": "child_fever-hi",
+      "variant": "hi",
+      "search_s": 3.908,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "icmr_stw|ICMR Standard Treatment Workflow — Pediatric Cardiology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics"
+      ]
+    },
+    {
+      "id": "child_fever-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.04,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.167,
+      "top": [
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatric Tuberculosis",
+        "icmr_stw|ICMR Standard Treatment Workflow — Neonatology"
+      ],
+      "answer_s": 41.3,
+      "urgency_expected": "see_doctor_24h",
+      "urgency_observed": "see_doctor_24h",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": null,
+      "grounding_flag": null,
+      "timings": {
+        "profile": 0.01,
+        "guard": 1.07,
+        "translate": 8.86,
+        "intent": 0.0,
+        "search": 5.81,
+        "model": 25.59,
+        "checks_grounding": 0.0,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "मैं आपके बेट को रात में 102 घंटा की जल्दी खुरासन होता है। इस स्थिति को लेकर अच्छा चिंतन करें और एक प्रशिक्षित डॉक्टर से संपर्क करें।"
+    },
+    {
+      "id": "febrile_seizure-en",
+      "variant": "en",
+      "search_s": 4.029,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "medlineplus|MedlinePlus: Fever"
+      ],
+      "answer_s": 21.5,
+      "urgency_expected": "emergency",
+      "urgency_observed": "see_doctor_24h",
+      "urgency_ok": false,
+      "over_triage": false,
+      "required_hit": 0,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 8.88,
+        "translate": 0.0,
+        "intent": 0.0,
+        "search": 6.71,
+        "model": 5.89,
+        "checks_grounding": 0.0,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "The child has fits (convulsions) and is now very drowsy. This requires immediate attention. The condition may indicate a serious illness like malaria, which can cause brain damage if not treated properly. It's important to seek medical help immediately.\n\nNote: parts of this answer are general information that is not in my sources."
+    },
+    {
+      "id": "febrile_seizure-hi",
+      "variant": "hi",
+      "search_s": 5.078,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.5,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man"
+      ]
+    },
+    {
+      "id": "febrile_seizure-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.607,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.5,
+      "p6": 0.167,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatric Surgery",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics"
+      ]
+    },
+    {
+      "id": "typhoid-en",
+      "variant": "en",
+      "search_s": 4.047,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.5,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Gastroenterology",
+        "medlineplus|MedlinePlus: Diphtheria",
+        "medlineplus|MedlinePlus: Salmonella Infections"
+      ]
+    },
+    {
+      "id": "typhoid-hi",
+      "variant": "hi",
+      "search_s": 23.546,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "medlineplus|MedlinePlus: Dengue",
+        "icmr_stw|ICMR Standard Treatment Workflow — Interventional Radiology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Pediatric Cardiology"
+      ],
+      "answer_s": 26.8,
+      "urgency_expected": "see_doctor_24h",
+      "urgency_observed": "see_doctor_24h",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 2,
+      "required_n": 2,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 0.8,
+        "translate": 1.29,
+        "intent": 0.0,
+        "search": 5.64,
+        "model": 17.19,
+        "checks_grounding": 1.83,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "संबंधित जांच एवं चिकिष्टन के लिए आपके अभ्यरण के अनुसार निम्न में से किसी भी विशिष्ट खास ग्रहण करें:\n\nध्यान दें: इस उत्तर का कुछ भाग सामान्य जानकारी है जो मेरे स्रोतों में नहीं है।"
+    },
+    {
+      "id": "typhoid-hinglish",
+      "variant": "hinglish",
+      "search_s": 5.277,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "medlineplus|MedlinePlus: Sore Throat",
+        "openfda|US FDA label — menthol",
+        "medlineplus|MedlinePlus: Diphtheria"
+      ]
+    },
+    {
+      "id": "diabetes_diet-en",
+      "variant": "en",
+      "search_s": 3.913,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "medlineplus|MedlinePlus: Diabetes Type 2"
+      ]
+    },
+    {
+      "id": "diabetes_diet-hi",
+      "variant": "hi",
+      "search_s": 3.922,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Diabetes Type 2",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "medlineplus|MedlinePlus: How to Prevent Diabetes"
+      ]
+    },
+    {
+      "id": "diabetes_diet-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.703,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "medlineplus|MedlinePlus: Diabetes Type 2"
+      ],
+      "answer_s": 85.0,
+      "urgency_expected": "none",
+      "urgency_observed": "none",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 0,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 1.17,
+        "translate": 41.24,
+        "intent": 0.0,
+        "search": 5.8,
+        "model": 32.86,
+        "checks_grounding": 3.92,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "आपके स्वास्थ्य के लिए अच्छी खाना बनाने में आपको प्रति दिन जैविक और तेज़ गति वाले भोजन चुनने होगे। इंडियन डाटिशन में फल, रसगुण वाले जैविक फल, बहुमुखी फल, घटिमय फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाहर उगे फल, बाह"
+    },
+    {
+      "id": "hba1c_report-en",
+      "variant": "en",
+      "search_s": 3.835,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.333,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Endocrinology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Interventional Radiology",
+        "medlineplus|MedlinePlus: Cholesterol Levels: What You Need to Know"
+      ],
+      "answer_s": 13.8,
+      "urgency_expected": "none",
+      "urgency_observed": "none",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 2,
+      "required_n": 2,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.333,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 1.3,
+        "translate": 0.0,
+        "intent": 0.0,
+        "search": 7.92,
+        "model": 4.61,
+        "checks_grounding": 0.0,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "Your HbA1c of 8.2% indicates that your blood sugar levels are slightly elevated. This is above the target of <7.0%, which is considered good for most people. It may suggest you need closer monitoring or adjustments to your treatment plan. Discuss this with your doctor if you have other health issues or are concerned about your results.\n\nNote: parts of this answer are general information that is no"
+    },
+    {
+      "id": "hba1c_report-hi",
+      "variant": "hi",
+      "search_s": 3.708,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.5,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Endocrinology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Endocrinology",
+        "medlineplus|MedlinePlus: Cholesterol Levels: What You Need to Know"
+      ]
+    },
+    {
+      "id": "hba1c_report-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.714,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.167,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Endocrinology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Interventional Radiology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Endocrinology"
+      ]
+    },
+    {
+      "id": "bp_high-en",
+      "variant": "en",
+      "search_s": 3.881,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Interventional Radiology",
+        "icmr_stw|ICMR Standard Treatment Workflow — CTVS (Cardiothoracic & Va",
+        "ntep|NTEP (National TB Elimination Programme) — Differentiated Tb"
+      ]
+    },
+    {
+      "id": "bp_high-hi",
+      "variant": "hi",
+      "search_s": 3.755,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Interventional Radiology",
+        "icmr_stw|ICMR Standard Treatment Workflow — CTVS (Cardiothoracic & Va",
+        "ntep|NTEP (National TB Elimination Programme) — Differentiated Tb"
+      ],
+      "answer_s": 31.1,
+      "urgency_expected": "see_doctor_week",
+      "urgency_observed": "see_doctor_24h",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 2,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 0.82,
+        "translate": 1.86,
+        "intent": 0.0,
+        "search": 5.89,
+        "model": 20.89,
+        "checks_grounding": 1.62,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "आपके पास कोई जांच या चिकितस्थिति नहीं है? अगर आपके बीपी 160/100 है और लघु सिरदर्शन है, तब इसके अधिकतम विषय एवं उपचार के बारे में आपके अधिकारी या डॉक्टर के साथ बात करें।\n\nध्यान दें: इस उत्तर का कुछ भाग सामान्य जानकारी है जो मेरे स्रोतों में नहीं है।"
+    },
+    {
+      "id": "bp_high-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.835,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.167,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — CTVS (Cardiothoracic & Va",
+        "icmr_stw|ICMR Standard Treatment Workflow — Cardiology",
+        "medlineplus|MedlinePlus: Heart Attack"
+      ]
+    },
+    {
+      "id": "bp_crisis-en",
+      "variant": "en",
+      "search_s": 3.629,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.333,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Neurology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Ophthalmology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Ophthalmology"
+      ]
+    },
+    {
+      "id": "bp_crisis-hi",
+      "variant": "hi",
+      "search_s": 3.731,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.2,
+      "p6": 0.167,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Endocrinology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Interventional Radiology",
+        "ntep|NTEP (National TB Elimination Programme) — Differentiated Tb"
+      ]
+    },
+    {
+      "id": "bp_crisis-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.512,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.16666666666666666,
+      "p6": 0.167,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — CTVS (Cardiothoracic & Va",
+        "icmr_stw|ICMR Standard Treatment Workflow — Endocrinology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Cardiology"
+      ],
+      "answer_s": 40.7,
+      "urgency_expected": "emergency",
+      "urgency_observed": "none",
+      "urgency_ok": false,
+      "over_triage": false,
+      "required_hit": 0,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.02,
+        "guard": 1.14,
+        "translate": 9.12,
+        "intent": 0.88,
+        "search": 5.5,
+        "model": 21.37,
+        "checks_grounding": 2.7,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "आपके लिए BP 210/130 है, जो अत्यधिक दबाव का संदर्भ है। इसमें चिपचिपी और त्रुटि में आने के बारे中，अलग-अलग प्रभाव शामिल हो सकते हैं। आपके उचित नियमन के लिए डॉक्टर के साथ बात करें तथा अपनी स्थिति को ध्यान दें।\n\nध्यान दें: इस उत्तर का कुछ भाग सामान्य जानकारी है जो मेरे स्रोतों में नहीं है।"
+    },
+    {
+      "id": "anaemia-en",
+      "variant": "en",
+      "search_s": 4.365,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.16666666666666666,
+      "p6": 0.167,
+      "top": [
+        "medlineplus|MedlinePlus: Nutrition for Older Adults",
+        "medlineplus|MedlinePlus: Nutrition for Older Adults",
+        "medlineplus|MedlinePlus: Nutrition for Older Adults"
+      ],
+      "answer_s": 12.2,
+      "urgency_expected": "see_doctor_week",
+      "urgency_observed": "none",
+      "urgency_ok": false,
+      "over_triage": false,
+      "required_hit": 0,
+      "required_n": 2,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.25,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.02,
+        "guard": 1.0,
+        "translate": 0.0,
+        "intent": 0.0,
+        "search": 5.54,
+        "model": 5.55,
+        "checks_grounding": 0.0,
+        "medicine_links": 0.12
+      },
+      "model": "qwen3:1.7b",
+      "reply": "To help you feel better, focus on eating nutrient-dense foods like fruits, vegetables, whole grains, and legumes. These provide energy and essential vitamins. Include proteins such as lentils, chickpeas, and paneer. Stay hydrated and try to eat regular meals. If you're feeling very tired, consult a healthcare professional for personalized advice.\n\nNote: parts of this answer are general information"
+    },
+    {
+      "id": "anaemia-hi",
+      "variant": "hi",
+      "search_s": 4.498,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.5,
+      "top": [
+        "medlineplus|MedlinePlus: Iron",
+        "medlineplus|MedlinePlus: Nutrition for Older Adults",
+        "icmr_stw|ICMR Standard Treatment Workflow — Haemolytic Anaemia"
+      ]
+    },
+    {
+      "id": "anaemia-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.679,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "medlineplus|MedlinePlus: Nutrition for Older Adults",
+        "medlineplus|MedlinePlus: Nutrition for Older Adults",
+        "medlineplus|MedlinePlus: Nutrition for Older Adults"
+      ]
+    },
+    {
+      "id": "pregnancy_diet-en",
+      "variant": "en",
+      "search_s": 3.618,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Pregnancy and Nutrition",
+        "medlineplus|MedlinePlus: Pregnancy and Nutrition",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians"
+      ]
+    },
+    {
+      "id": "pregnancy_diet-hi",
+      "variant": "hi",
+      "search_s": 3.562,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Pregnancy and Nutrition",
+        "medlineplus|MedlinePlus: Pregnancy and Nutrition",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians"
+      ],
+      "answer_s": 27.8,
+      "urgency_expected": "none",
+      "urgency_observed": "none",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 0,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 0.79,
+        "translate": 1.24,
+        "intent": 0.0,
+        "search": 5.28,
+        "model": 15.86,
+        "checks_grounding": 4.57,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "में 4 महीने की गर्भवती होकर आप प्रति दिन स्वच्छ और बल्कि अधिक ताजगी वाले फौजदार खासकर बाइएट खाना चाहिए। आप अपने शरीर के लिए अधिक ऊष्मा उत्पन्न करने वाले खाद्य वस्तुओं को ध्यान दें। आप अपने घर में बनाये जाने वाले खाद्य वस्तुओं को बढ़ाया जाए और अपने शरीर के लिए अच्छा खाना चाहिए।\n\nध्यान दें: इस उत्तर का कुछ भाग सामान्य जानकारी है जो मेरे स्रोतों में नहीं है।"
+    },
+    {
+      "id": "pregnancy_diet-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.462,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Pregnancy and Nutrition",
+        "medlineplus|MedlinePlus: Pregnancy and Nutrition",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians"
+      ]
+    },
+    {
+      "id": "pregnancy_bleeding-en",
+      "variant": "en",
+      "search_s": 3.607,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Obstetrics & Gynaecology",
+        "medlineplus|MedlinePlus: Menstruation",
+        "icmr_stw|ICMR Standard Treatment Workflow — Obstetrics & Gynaecology"
+      ]
+    },
+    {
+      "id": "pregnancy_bleeding-hi",
+      "variant": "hi",
+      "search_s": 3.727,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Obstetrics & Gynaecology",
+        "openfda|US FDA label — aspirin",
+        "icmr_stw|ICMR Standard Treatment Workflow — Obstetrics & Gynaecology"
+      ]
+    },
+    {
+      "id": "pregnancy_bleeding-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.251,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Obstetrics & Gynaecology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Obstetrics & Gynaecology",
+        "openfda|US FDA label — aspirin"
+      ],
+      "answer_s": 0.0,
+      "urgency_expected": "emergency",
+      "urgency_observed": "emergency",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": null,
+      "grounding_flag": null,
+      "timings": {},
+      "model": null,
+      "reply": "गर्भावस्था में खून आना, तेज़ दर्द, दौरे या शिशु की हलचल कम होना — तुरंत 108 / 102 पर कॉल करें।"
+    },
+    {
+      "id": "vaccine_schedule-en",
+      "variant": "en",
+      "search_s": 4.098,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.667,
+      "top": [
+        "medlineplus|MedlinePlus: Flu Shot",
+        "nhm_stg|MoHFW / NHM guideline — National Rabies Guidelines",
+        "medlineplus|MedlinePlus: Childhood Vaccines"
+      ],
+      "answer_s": 13.3,
+      "urgency_expected": "none",
+      "urgency_observed": "none",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 3,
+      "cited_relevant": 2,
+      "grounding_rate": 0.333,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 1.13,
+        "translate": 0.0,
+        "intent": 0.85,
+        "search": 5.57,
+        "model": 5.71,
+        "checks_grounding": 0.0,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "Your 6-week-old baby needs several vaccines, including those for diphtheria, tetanus, pertussis (whooping cough), hepatitis B, and pneumococcus. These vaccines help protect against serious illnesses. Follow the vaccination schedule provided by your healthcare provider.\n\nNote: parts of this answer are general information that is not in my sources."
+    },
+    {
+      "id": "vaccine_schedule-hi",
+      "variant": "hi",
+      "search_s": 3.757,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Flu Shot",
+        "medlineplus|MedlinePlus: Childhood Vaccines",
+        "nhm_stg|MoHFW / NHM guideline — National Rabies Guidelines"
+      ]
+    },
+    {
+      "id": "vaccine_schedule-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.883,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "medlineplus|MedlinePlus: HIV and Pregnancy",
+        "medlineplus|MedlinePlus: Breastfeeding",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians"
+      ]
+    },
+    {
+      "id": "measles_vaccine-en",
+      "variant": "en",
+      "search_s": 3.78,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "immunisation|MoHFW National Immunization Schedule — National Immunization",
+        "immunisation|MoHFW National Immunization Schedule — National Immunization",
+        "immunisation|MoHFW National Immunization Schedule — National Immunization"
+      ]
+    },
+    {
+      "id": "measles_vaccine-hi",
+      "variant": "hi",
+      "search_s": 4.117,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "immunisation|MoHFW National Immunization Schedule — National Immunization",
+        "immunisation|MoHFW National Immunization Schedule — National Immunization",
+        "medlineplus|MedlinePlus: Mumps"
+      ],
+      "answer_s": 26.8,
+      "urgency_expected": "none",
+      "urgency_observed": "none",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 1.0,
+      "grounding_flag": null,
+      "timings": {
+        "profile": 0.01,
+        "guard": 0.99,
+        "translate": 2.12,
+        "intent": 1.28,
+        "search": 5.8,
+        "model": 13.47,
+        "checks_grounding": 3.14,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "खसरा-रूबेला टीका भारत में 9 से 12 महिने तक दिया जाता है। इसका प्रथम डोज 9 महिने व दूसरा डोज 12 महिने आधा अपने एवं उसके बाद छोटे बच्चों के लिए और बढ़ाया जाता है।"
+    },
+    {
+      "id": "measles_vaccine-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.564,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "immunisation|MoHFW National Immunization Schedule — National Immunization",
+        "immunisation|MoHFW National Immunization Schedule — National Immunization",
+        "icmr_stw|ICMR Standard Treatment Workflow — Nephrology"
+      ]
+    },
+    {
+      "id": "tetanus_wound-en",
+      "variant": "en",
+      "search_s": 3.795,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.5,
+      "top": [
+        "medlineplus|MedlinePlus: Tetanus",
+        "nhm_stg|MoHFW / NHM guideline — National Rabies Guidelines",
+        "medlineplus|MedlinePlus: Tetanus, Diphtheria, and Pertussis Vaccines"
+      ]
+    },
+    {
+      "id": "tetanus_wound-hi",
+      "variant": "hi",
+      "search_s": 3.778,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.333,
+      "top": [
+        "medlineplus|MedlinePlus: Tetanus",
+        "medlineplus|MedlinePlus: Tetanus, Diphtheria, and Pertussis Vaccines",
+        "icmr_stw|ICMR Standard Treatment Workflow — Dermatology"
+      ]
+    },
+    {
+      "id": "tetanus_wound-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.683,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.5,
+      "top": [
+        "medlineplus|MedlinePlus: Tetanus",
+        "medlineplus|MedlinePlus: Tetanus, Diphtheria, and Pertussis Vaccines",
+        "medlineplus|MedlinePlus: Tetanus, Diphtheria, and Pertussis Vaccines"
+      ],
+      "answer_s": 48.0,
+      "urgency_expected": "see_doctor_24h",
+      "urgency_observed": "see_doctor_24h",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 2,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 1.06,
+        "translate": 8.81,
+        "intent": 0.0,
+        "search": 5.35,
+        "model": 26.84,
+        "checks_grounding": 5.95,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "आपके बारे中，अगर कोई सम्पूर्ण जखम या खुजली है तो एक टेटूस इन्जेक्शन दिया जाता है। आपके मामले में अगर जखम गहरा है और वह लंबे समय तक चलता रहता है, तो एक टेटूस इन्जेक्शन आवश्यक हो सकता है। आपके प्रश्न के अनुसार आप जखम के बाहर भी जखम लगाते हैं, तो एक टेटूस इन्जेक्शन दिया जाता है।\n\nध्यान दें: इस उत्तर का कुछ भाग सामान्य जानकारी है जो मेरे स्रोतों में नहीं है।"
+    },
+    {
+      "id": "heat_stroke-en",
+      "variant": "en",
+      "search_s": 3.503,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.333,
+      "top": [
+        "medlineplus|MedlinePlus: Heat Illness",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "icmr_stw|ICMR Standard Treatment Workflow — Dermatology"
+      ],
+      "answer_s": 12.8,
+      "urgency_expected": "emergency",
+      "urgency_observed": "none",
+      "urgency_ok": false,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.333,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.02,
+        "guard": 1.4,
+        "translate": 0.0,
+        "intent": 0.0,
+        "search": 7.03,
+        "model": 4.32,
+        "checks_grounding": 0.0,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "Your grandfather's confusion, hot skin, and lack of sweating may indicate heat illness. Keep him cool, hydrate him, and seek medical help immediately. Ensure he stays in a shady area and avoid further sun exposure.\n\nNote: parts of this answer are general information that is not in my sources."
+    },
+    {
+      "id": "heat_stroke-hi",
+      "variant": "hi",
+      "search_s": 3.677,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.5,
+      "top": [
+        "medlineplus|MedlinePlus: Heat Illness",
+        "medlineplus|MedlinePlus: Heat Illness",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man"
+      ]
+    },
+    {
+      "id": "heat_stroke-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.671,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.25,
+      "p6": 0.167,
+      "top": [
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "medlineplus|MedlinePlus: Common Cold",
+        "medlineplus|MedlinePlus: Scabies"
+      ]
+    },
+    {
+      "id": "dehydration_summer-en",
+      "variant": "en",
+      "search_s": 3.685,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.667,
+      "top": [
+        "medlineplus|MedlinePlus: Dehydration",
+        "medlineplus|MedlinePlus: Dehydration",
+        "medlineplus|MedlinePlus: Dehydration"
+      ]
+    },
+    {
+      "id": "dehydration_summer-hi",
+      "variant": "hi",
+      "search_s": 4.093,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "medlineplus|MedlinePlus: Dehydration",
+        "medlineplus|MedlinePlus: Dehydration",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians"
+      ],
+      "answer_s": 36.2,
+      "urgency_expected": "self_care",
+      "urgency_observed": "none",
+      "urgency_ok": false,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 3,
+      "cited_relevant": 2,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 0.9,
+        "translate": 1.9,
+        "intent": 1.07,
+        "search": 7.15,
+        "model": 16.66,
+        "checks_grounding": 8.51,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "गर्मी में बाहर काम करते समय पानी की कमी से बचना होल ज़िमम रखना चाहिए। आपके शरीर के लिए पानी की अपेक्षा विसंवेदनशील तरह से पानी खाना चाहिए। इसके लिए छोटे-छोटे झुकाऊ ड्रिंक या फ़िल्टरदार पानी खाना चाहिए। उष्णता में भी अपने शरीर के लिए पानी की आवश्यकता बढ़ती है, और आप अपने घर में अधिक पानी खाना चाहिए।\n\nध्यान दें: इस उत्तर का कुछ भाग सामान्य जानकारी है जो मेरे स्रोतों में नहीं है।"
+    },
+    {
+      "id": "dehydration_summer-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.717,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "medlineplus|MedlinePlus: Dehydration",
+        "medlineplus|MedlinePlus: Heat Illness",
+        "medlineplus|MedlinePlus: Heat Illness"
+      ]
+    },
+    {
+      "id": "paracetamol_dose_child-en",
+      "variant": "en",
+      "search_s": 3.851,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.667,
+      "top": [
+        "nhm_stg|MoHFW / NHM guideline — National Rabies Guidelines",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics"
+      ]
+    },
+    {
+      "id": "paracetamol_dose_child-hi",
+      "variant": "hi",
+      "search_s": 3.824,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.667,
+      "top": [
+        "nhm_stg|MoHFW / NHM guideline — National Rabies Guidelines",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics"
+      ]
+    },
+    {
+      "id": "paracetamol_dose_child-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.729,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.667,
+      "top": [
+        "nhm_stg|MoHFW / NHM guideline — National Rabies Guidelines",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics"
+      ],
+      "answer_s": 41.6,
+      "urgency_expected": "none",
+      "urgency_observed": "none",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.5,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 1.65,
+        "translate": 9.64,
+        "intent": 0.0,
+        "search": 7.21,
+        "model": 19.69,
+        "checks_grounding": 3.39,
+        "medicine_links": 0.05
+      },
+      "model": "qwen3:1.7b",
+      "reply": "पैरेसिटमोल स्युप एक 3 साल के बच्चे के लिए 125 मग्री प्रति दिन तय होता है। इसे अनुशंसित रूप से वह घटना जब उष्णता आती है और गर्भवत्त के बाहर जाती है। फिर डॉक्टर के अनुरूप दिशा दें।\n\nध्यान दें: इस उत्तर का कुछ भाग सामान्य जानकारी है जो मेरे स्रोतों में नहीं है।"
+    },
+    {
+      "id": "metformin_side-en",
+      "variant": "en",
+      "search_s": 3.593,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "openfda|US FDA label — cefalexin",
+        "openfda|US FDA label — metformin",
+        "openfda|US FDA label — metformin"
+      ],
+      "answer_s": 11.1,
+      "urgency_expected": "none",
+      "urgency_observed": "none",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 0,
+      "cited_relevant": 0,
+      "grounding_rate": 0.5,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 1.05,
+        "translate": 0.0,
+        "intent": 0.0,
+        "search": 6.27,
+        "model": 3.7,
+        "checks_grounding": 0.0,
+        "medicine_links": 0.03
+      },
+      "model": "qwen3:1.7b",
+      "reply": "Common side effects of metformin include diarrhea, upper respiratory tract infection, and headache. These are usually mild and go away as your body adjusts to the medication. Always follow your doctor's instructions and report any unusual symptoms.\n\nNote: parts of this answer are general information that is not in my sources."
+    },
+    {
+      "id": "metformin_side-hi",
+      "variant": "hi",
+      "search_s": 3.62,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "openfda|US FDA label — cefalexin",
+        "openfda|US FDA label — metformin",
+        "openfda|US FDA label — metformin"
+      ]
+    },
+    {
+      "id": "metformin_side-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.537,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "openfda|US FDA label — cefalexin",
+        "openfda|US FDA label — metformin",
+        "openfda|US FDA label — metformin"
+      ]
+    },
+    {
+      "id": "azithro_viral-en",
+      "variant": "en",
+      "search_s": 3.474,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "openfda|US FDA label — azithromycin",
+        "openfda|US FDA label — azithromycin",
+        "medlineplus|MedlinePlus: Antibiotics"
+      ]
+    },
+    {
+      "id": "azithro_viral-hi",
+      "variant": "hi",
+      "search_s": 3.615,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "openfda|US FDA label — azithromycin",
+        "openfda|US FDA label — azithromycin",
+        "icmr_stw|ICMR Standard Treatment Workflow — Dermatology"
+      ],
+      "answer_s": 29.4,
+      "urgency_expected": "none",
+      "urgency_observed": "none",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 2,
+      "required_n": 2,
+      "banned": [],
+      "cited": 3,
+      "cited_relevant": 3,
+      "grounding_rate": 0.0,
+      "grounding_flag": "not_in_sources",
+      "timings": {
+        "profile": 0.01,
+        "guard": 0.74,
+        "translate": 1.14,
+        "intent": 0.0,
+        "search": 4.74,
+        "model": 18.68,
+        "checks_grounding": 4.05,
+        "medicine_links": 0.0
+      },
+      "model": "qwen3:1.7b",
+      "reply": "एजिथ्रोमाइसिन वायरल बुखार (वायरल आइडी) में लगाया जा सकता है। अपने पौधे के दौरान तब तक उपयोग किया जाता है जबकि वह चिकिष्ट बीटर बैक्टीरियल बुखार (बैक्टीरियल आइडी) में लगाया जाता है। एजिथ्रोमाइसिन वायरल बुखार में लगाया जाने से गंभीर बीटर बैक्टीरियल बुखार के खिलाफ एफिशिएंट होता है।\n\nध्यान दें: इस उत्तर का कुछ भाग सामान्य जानकारी है जो मेरे स्रोतों में नहीं है।"
+    },
+    {
+      "id": "azithro_viral-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.175,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "openfda|US FDA label — azithromycin",
+        "openfda|US FDA label — azithromycin",
+        "openfda|US FDA label — azithromycin"
+      ]
+    },
+    {
+      "id": "ibuprofen_dengue-en",
+      "variant": "en",
+      "search_s": 4.152,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Dengue",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Dengue Faq",
+        "openfda|US FDA label — ibuprofen"
+      ]
+    },
+    {
+      "id": "ibuprofen_dengue-hi",
+      "variant": "hi",
+      "search_s": 4.194,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Dengue",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Dengue Faq",
+        "openfda|US FDA label — ibuprofen"
+      ]
+    },
+    {
+      "id": "ibuprofen_dengue-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.854,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Dengue",
+        "medlineplus|MedlinePlus: Dengue",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics"
+      ],
+      "answer_s": 26.6,
+      "urgency_expected": "none",
+      "urgency_observed": "none",
+      "urgency_ok": true,
+      "over_triage": false,
+      "required_hit": 1,
+      "required_n": 1,
+      "banned": [],
+      "cited": 4,
+      "cited_relevant": 4,
+      "grounding_rate": 1.0,
+      "grounding_flag": null,
+      "timings": {
+        "profile": 0.01,
+        "guard": 1.14,
+        "translate": 8.46,
+        "intent": 0.0,
+        "search": 4.91,
+        "model": 11.98,
+        "checks_grounding": 0.0,
+        "medicine_links": 0.05
+      },
+      "model": "qwen3:1.7b",
+      "reply": "IBuprofen is generally not recommended for dengue fever because it can increase the risk of severe complications. It is safer to take acetaminophen (paracetamol) to control fever and relieve pain. Always consult your doctor before taking any medicine."
+    },
+    {
+      "id": "thyroid_tsh-en",
+      "variant": "en",
+      "search_s": 3.751,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Endocrinology",
+        "openfda|US FDA label — thyroxine",
+        "openfda|US FDA label — thyroxine"
+      ]
+    },
+    {
+      "id": "thyroid_tsh-hi",
+      "variant": "hi",
+      "search_s": 3.65,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Endocrinology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Endocrinology",
+        "medlineplus|MedlinePlus: Thyroid Tests"
+      ]
+    },
+    {
+      "id": "thyroid_tsh-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.606,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Endocrinology",
+        "medlineplus|MedlinePlus: Hyperthyroidism",
+        "medlineplus|MedlinePlus: Hyperthyroidism"
+      ]
+    },
+    {
+      "id": "lipids-en",
+      "variant": "en",
+      "search_s": 3.426,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: How to Lower Cholesterol with Diet",
+        "medlineplus|MedlinePlus: Cholesterol Levels: What You Need to Know",
+        "medlineplus|MedlinePlus: How to Lower Cholesterol with Diet"
+      ]
+    },
+    {
+      "id": "lipids-hi",
+      "variant": "hi",
+      "search_s": 3.828,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Cholesterol Levels: What You Need to Know",
+        "medlineplus|MedlinePlus: How to Lower Cholesterol with Diet",
+        "medlineplus|MedlinePlus: Cholesterol"
+      ]
+    },
+    {
+      "id": "lipids-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.693,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: How to Lower Cholesterol with Diet",
+        "medlineplus|MedlinePlus: How to Lower Cholesterol with Diet",
+        "medlineplus|MedlinePlus: How to Lower Cholesterol"
+      ]
+    },
+    {
+      "id": "millets-en",
+      "variant": "en",
+      "search_s": 3.991,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians"
+      ]
+    },
+    {
+      "id": "millets-hi",
+      "variant": "hi",
+      "search_s": 3.573,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "medlineplus|MedlinePlus: Nutrition for Older Adults",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians"
+      ]
+    },
+    {
+      "id": "millets-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.879,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians"
+      ]
+    },
+    {
+      "id": "salt_intake-en",
+      "variant": "en",
+      "search_s": 4.052,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Sodium",
+        "medlineplus|MedlinePlus: How to Lower Cholesterol with Diet",
+        "medlineplus|MedlinePlus: How to Lower Cholesterol with Diet"
+      ]
+    },
+    {
+      "id": "salt_intake-hi",
+      "variant": "hi",
+      "search_s": 4.172,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Sodium",
+        "medlineplus|MedlinePlus: How to Lower Cholesterol with Diet",
+        "medlineplus|MedlinePlus: How to Lower Cholesterol with Diet"
+      ]
+    },
+    {
+      "id": "salt_intake-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.89,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.167,
+      "top": [
+        "medlineplus|MedlinePlus: Sodium",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — My Plate For The Day",
+        "medlineplus|MedlinePlus: Nutrition for Older Adults"
+      ]
+    },
+    {
+      "id": "food_label-en",
+      "variant": "en",
+      "search_s": 4.212,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Food Label Booklet",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Food Label Booklet"
+      ]
+    },
+    {
+      "id": "food_label-hi",
+      "variant": "hi",
+      "search_s": 4.146,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Food Label Booklet",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Food Label Booklet"
+      ]
+    },
+    {
+      "id": "food_label-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.956,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Food Label Booklet",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Food Label Booklet"
+      ]
+    },
+    {
+      "id": "depression-en",
+      "variant": "en",
+      "search_s": 3.983,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Depression",
+        "medlineplus|MedlinePlus: Depression",
+        "medlineplus|MedlinePlus: Depression"
+      ]
+    },
+    {
+      "id": "depression-hi",
+      "variant": "hi",
+      "search_s": 4.263,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Depression",
+        "medlineplus|MedlinePlus: Depression",
+        "medlineplus|MedlinePlus: Depression"
+      ]
+    },
+    {
+      "id": "depression-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.271,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Depression",
+        "medlineplus|MedlinePlus: Insomnia",
+        "medlineplus|MedlinePlus: Insomnia"
+      ]
+    },
+    {
+      "id": "suicidal-en",
+      "variant": "en",
+      "search_s": 4.144,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "ntep|NTEP (National TB Elimination Programme) — Differentiated Tb",
+        "medlineplus|MedlinePlus: Tuberculosis",
+        "ntep|NTEP (National TB Elimination Programme) — Differentiated Tb"
+      ]
+    },
+    {
+      "id": "suicidal-hi",
+      "variant": "hi",
+      "search_s": 4.407,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "ntep|NTEP (National TB Elimination Programme) — Differentiated Tb",
+        "ntep|NTEP (National TB Elimination Programme) — Differentiated Tb",
+        "medlineplus|MedlinePlus: Tuberculosis"
+      ]
+    },
+    {
+      "id": "suicidal-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.884,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "openfda|US FDA label — aspirin",
+        "openfda|US FDA label — aspirin",
+        "medlineplus|MedlinePlus: Food Allergy"
+      ]
+    },
+    {
+      "id": "asthma_attack-en",
+      "variant": "en",
+      "search_s": 3.999,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Asthma in Children",
+        "medlineplus|MedlinePlus: Asthma in Children",
+        "medlineplus|MedlinePlus: Asthma in Children"
+      ]
+    },
+    {
+      "id": "asthma_attack-hi",
+      "variant": "hi",
+      "search_s": 3.943,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Asthma in Children",
+        "medlineplus|MedlinePlus: Asthma in Children",
+        "medlineplus|MedlinePlus: Asthma in Children"
+      ]
+    },
+    {
+      "id": "asthma_attack-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.98,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Asthma",
+        "medlineplus|MedlinePlus: Asthma",
+        "medlineplus|MedlinePlus: Asthma in Children"
+      ]
+    },
+    {
+      "id": "uti-en",
+      "variant": "en",
+      "search_s": 3.926,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Obstetrics & Gynaecology",
+        "medlineplus|MedlinePlus: Urinary Tract Infections",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man"
+      ]
+    },
+    {
+      "id": "uti-hi",
+      "variant": "hi",
+      "search_s": 4.424,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "medlineplus|MedlinePlus: Urinary Incontinence",
+        "icmr_stw|ICMR Standard Treatment Workflow — Nephrology",
+        "medlineplus|MedlinePlus: Urinary Incontinence"
+      ]
+    },
+    {
+      "id": "uti-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.02,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.5,
+      "top": [
+        "ntep|NTEP (National TB Elimination Programme) — Tb Preventive Tre",
+        "ntep|NTEP (National TB Elimination Programme) — Tb Preventive Tre",
+        "ntep|NTEP (National TB Elimination Programme) — Tb Preventive Tre"
+      ]
+    },
+    {
+      "id": "acidity-en",
+      "variant": "en",
+      "search_s": 3.966,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "medlineplus|MedlinePlus: Heartburn",
+        "medlineplus|MedlinePlus: GERD",
+        "medlineplus|MedlinePlus: GERD"
+      ]
+    },
+    {
+      "id": "acidity-hi",
+      "variant": "hi",
+      "search_s": 4.261,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "medlineplus|MedlinePlus: GERD",
+        "medlineplus|MedlinePlus: GERD",
+        "medlineplus|MedlinePlus: Food Allergy"
+      ]
+    },
+    {
+      "id": "acidity-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.849,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "openfda|US FDA label — tinidazole",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Malaria Training M",
+        "icmr_stw|ICMR Standard Treatment Workflow — Pulmonology"
+      ]
+    },
+    {
+      "id": "jaundice-en",
+      "variant": "en",
+      "search_s": 4.134,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "medlineplus|MedlinePlus: Jaundice",
+        "icmr_stw|ICMR Standard Treatment Workflow — Dermatology",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man"
+      ]
+    },
+    {
+      "id": "jaundice-hi",
+      "variant": "hi",
+      "search_s": 4.469,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Jaundice",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "icmr_stw|ICMR Standard Treatment Workflow — Dermatology"
+      ]
+    },
+    {
+      "id": "jaundice-hinglish",
+      "variant": "hinglish",
+      "search_s": 3.98,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.16666666666666666,
+      "p6": 0.167,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Interventional Radiology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Dermatology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Dermatology"
+      ]
+    },
+    {
+      "id": "chikungunya-en",
+      "variant": "en",
+      "search_s": 4.159,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Chikungunya",
+        "medlineplus|MedlinePlus: Chikungunya",
+        "medlineplus|MedlinePlus: Mosquito Bites"
+      ]
+    },
+    {
+      "id": "chikungunya-hi",
+      "variant": "hi",
+      "search_s": 4.663,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Mosquito Bites",
+        "medlineplus|MedlinePlus: Mosquito Bites",
+        "medlineplus|MedlinePlus: Chikungunya"
+      ]
+    },
+    {
+      "id": "chikungunya-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.46,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Urology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Urology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatric Tuberculosis"
+      ]
+    },
+    {
+      "id": "scabies-en",
+      "variant": "en",
+      "search_s": 4.585,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Dermatology",
+        "medlineplus|MedlinePlus: Itching",
+        "medlineplus|MedlinePlus: Itching"
+      ]
+    },
+    {
+      "id": "scabies-hi",
+      "variant": "hi",
+      "search_s": 5.139,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Dermatology",
+        "medlineplus|MedlinePlus: Itching",
+        "medlineplus|MedlinePlus: Itching"
+      ]
+    },
+    {
+      "id": "scabies-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.557,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.3333333333333333,
+      "p6": 0.167,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Psychiatry",
+        "medlineplus|MedlinePlus: Polio and Post-Polio Syndrome",
+        "medlineplus|MedlinePlus: Arthritis"
+      ]
+    },
+    {
+      "id": "burn-en",
+      "variant": "en",
+      "search_s": 4.84,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.333,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Dermatology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Dermatology",
+        "openfda|US FDA label — size"
+      ]
+    },
+    {
+      "id": "burn-hi",
+      "variant": "hi",
+      "search_s": 4.825,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.167,
+      "top": [
+        "openfda|US FDA label — neomycin",
+        "openfda|US FDA label — sterilized",
+        "openfda|US FDA label — size"
+      ]
+    },
+    {
+      "id": "burn-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.712,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "openfda|US FDA label — sterilized",
+        "openfda|US FDA label — size",
+        "icmr_stw|ICMR Standard Treatment Workflow — Dermatology"
+      ]
+    },
+    {
+      "id": "smoking_quit-en",
+      "variant": "en",
+      "search_s": 4.843,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Quitting Smoking",
+        "medlineplus|MedlinePlus: Quitting Smoking",
+        "medlineplus|MedlinePlus: Quitting Smoking"
+      ]
+    },
+    {
+      "id": "smoking_quit-hi",
+      "variant": "hi",
+      "search_s": 4.909,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.25,
+      "p6": 0.333,
+      "top": [
+        "medlineplus|MedlinePlus: Alcohol Use Disorder (AUD) Treatment",
+        "medlineplus|MedlinePlus: Alcohol Use Disorder (AUD) Treatment",
+        "medlineplus|MedlinePlus: Alcohol Use Disorder (AUD) Treatment"
+      ]
+    },
+    {
+      "id": "smoking_quit-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.445,
+      "hit1": false,
+      "hit6": false,
+      "rr": 0,
+      "p6": 0.0,
+      "top": [
+        "medlineplus|MedlinePlus: Common Cold",
+        "medlineplus|MedlinePlus: Nausea and Vomiting",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatric Surgery"
+      ]
+    },
+    {
+      "id": "exercise-en",
+      "variant": "en",
+      "search_s": 4.864,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: How Much Exercise Do I Need?",
+        "medlineplus|MedlinePlus: How Much Exercise Do I Need?",
+        "medlineplus|MedlinePlus: Exercise for Older Adults"
+      ]
+    },
+    {
+      "id": "exercise-hi",
+      "variant": "hi",
+      "search_s": 4.625,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: How Much Exercise Do I Need?",
+        "medlineplus|MedlinePlus: How Much Exercise Do I Need?",
+        "medlineplus|MedlinePlus: How to Prevent Diabetes"
+      ]
+    },
+    {
+      "id": "exercise-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.739,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: How Much Exercise Do I Need?",
+        "medlineplus|MedlinePlus: How Much Exercise Do I Need?",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians"
+      ]
+    },
+    {
+      "id": "bmi_weight-en",
+      "variant": "en",
+      "search_s": 5.089,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Obesity in Children",
+        "medlineplus|MedlinePlus: Diabetes",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians"
+      ]
+    },
+    {
+      "id": "bmi_weight-hi",
+      "variant": "hi",
+      "search_s": 4.968,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Obesity",
+        "icmr_stw|ICMR Standard Treatment Workflow — Endocrinology",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians"
+      ]
+    },
+    {
+      "id": "bmi_weight-hinglish",
+      "variant": "hinglish",
+      "search_s": 8.982,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Obesity",
+        "medlineplus|MedlinePlus: Obesity in Children",
+        "medlineplus|MedlinePlus: Obesity"
+      ]
+    },
+    {
+      "id": "breastfeeding-en",
+      "variant": "en",
+      "search_s": 5.782,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "medlineplus|MedlinePlus: Breastfeeding",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "icmr_stw|ICMR Standard Treatment Workflow — Neonatology"
+      ]
+    },
+    {
+      "id": "breastfeeding-hi",
+      "variant": "hi",
+      "search_s": 5.03,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "medlineplus|MedlinePlus: Breastfeeding",
+        "medlineplus|MedlinePlus: Infant and Newborn Nutrition",
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians"
+      ]
+    },
+    {
+      "id": "breastfeeding-hinglish",
+      "variant": "hinglish",
+      "search_s": 4.831,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.667,
+      "top": [
+        "icmr_nin|ICMR-NIN Dietary Guidelines — Dietary Guidelines For Indians",
+        "medlineplus|MedlinePlus: Breastfeeding",
+        "icmr_stw|ICMR Standard Treatment Workflow — Neonatology"
+      ]
+    },
+    {
+      "id": "hi_greeting_med-en",
+      "variant": "en",
+      "search_s": 5.185,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "openfda|US FDA label — metronidazole",
+        "openfda|US FDA label — metronidazole",
+        "openfda|US FDA label — tinidazole"
+      ]
+    },
+    {
+      "id": "hi_greeting_med-hi",
+      "variant": "hi",
+      "search_s": 4.435,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "openfda|US FDA label — metronidazole",
+        "openfda|US FDA label — metronidazole",
+        "openfda|US FDA label — metronidazole"
+      ]
+    },
+    {
+      "id": "hi_greeting_med-hinglish",
+      "variant": "hinglish",
+      "search_s": 5.899,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 1.0,
+      "top": [
+        "openfda|US FDA label — metronidazole",
+        "openfda|US FDA label — tinidazole",
+        "openfda|US FDA label — metronidazole"
+      ]
+    },
+    {
+      "id": "kala_azar-en",
+      "variant": "en",
+      "search_s": 7.425,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.667,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Gastroenterology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatrics",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatric Tuberculosis"
+      ]
+    },
+    {
+      "id": "kala_azar-hi",
+      "variant": "hi",
+      "search_s": 5.532,
+      "hit1": true,
+      "hit6": true,
+      "rr": 1.0,
+      "p6": 0.833,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Gastroenterology",
+        "ncvbdc|NCVBDC (vector-borne disease) guideline — Severe Malaria Man",
+        "icmr_stw|ICMR Standard Treatment Workflow — Paediatric Tuberculosis"
+      ]
+    },
+    {
+      "id": "kala_azar-hinglish",
+      "variant": "hinglish",
+      "search_s": 6.345,
+      "hit1": false,
+      "hit6": true,
+      "rr": 0.3333333333333333,
+      "p6": 0.333,
+      "top": [
+        "icmr_stw|ICMR Standard Treatment Workflow — Neonatology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Neonatology",
+        "icmr_stw|ICMR Standard Treatment Workflow — Urology"
+      ]
+    }
+  ]
+}
