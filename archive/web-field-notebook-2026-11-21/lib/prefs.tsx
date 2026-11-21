@@ -1,0 +1,46 @@
+"use client";
+
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+
+/** Display preferences: stored per device (localStorage), applied as data-* attributes on <html>. */
+export type Prefs = {
+  text: "md" | "lg" | "xl"; theme: "auto" | "light" | "dark"; contrast: "normal" | "high"; motion: "auto" | "reduce";
+  rate: "slow" | "normal" | "fast";   // read-aloud speed
+  simple: boolean;                    // Simple mode: big-button Home, everything read aloud
+  home: { order: string[]; hidden: string[] }; // Home card layout ("Customise Home")
+  sidebar: "full" | "rail";           // desktop sidebar: labels, or icons only
+  chatList: boolean;                  // Ask page: chat history column shown on wide screens
+};
+const DEFAULT: Prefs = { text: "md", theme: "auto", contrast: "normal", motion: "auto", rate: "normal", simple: false,
+                         home: { order: [], hidden: [] }, sidebar: "full", chatList: true };
+import { PREFS_KEY as KEY } from "./prefs-boot";
+
+function apply(p: Prefs) {
+  const r = document.documentElement;
+  p.text === "md" ? r.removeAttribute("data-text") : r.setAttribute("data-text", p.text);
+  p.theme === "auto" ? r.removeAttribute("data-theme") : r.setAttribute("data-theme", p.theme);
+  p.contrast === "high" ? r.setAttribute("data-contrast", "high") : r.removeAttribute("data-contrast");
+  p.motion === "reduce" ? r.setAttribute("data-motion", "reduce") : r.removeAttribute("data-motion");
+  p.sidebar === "rail" ? r.setAttribute("data-sidebar", "rail") : r.removeAttribute("data-sidebar");
+}
+
+const Ctx = createContext<{ prefs: Prefs; setPrefs: (p: Partial<Prefs>) => void }>({ prefs: DEFAULT, setPrefs: () => {} });
+
+export function PrefsProvider({ children }: { children: ReactNode }) {
+  const [prefs, set] = useState<Prefs>(DEFAULT);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    try { set({ ...DEFAULT, ...JSON.parse(localStorage.getItem(KEY) || "{}") }); } catch { /* ignore */ }
+    setLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (!loaded) return;
+    apply(prefs);
+    try { localStorage.setItem(KEY, JSON.stringify(prefs)); } catch { /* ignore */ }
+  }, [prefs, loaded]);
+  // Functional update so quick successive changes don't overwrite each other.
+  const setPrefs = (patch: Partial<Prefs>) => set((cur) => ({ ...cur, ...patch }));
+  return <Ctx.Provider value={{ prefs, setPrefs }}>{children}</Ctx.Provider>;
+}
+
+export const usePrefs = () => useContext(Ctx);

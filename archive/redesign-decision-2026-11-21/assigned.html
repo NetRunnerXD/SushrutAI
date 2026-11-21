@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390">
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--steel:#E8ECEF;--rim:#FAFBFC;--ink:#1C252D;--muted:#55616B;--line:#C9D0D6;--jamun:#5A2A78;--jamun-soft:#EFE6F5;--haldi:#D8960F;--dhania:#4F7A3A;--jeera:#8A5A2B;--kesar:#C9601A;--sos:#B3121B}
+*{box-sizing:border-box;margin:0}
+body{width:390px;height:844px;overflow:hidden;background:var(--steel);font-family:Mukta,system-ui,sans-serif;color:var(--ink)}
+.hdr{background:#2A333B;color:#F2F4F6;padding:12px 16px 0}
+.row{display:flex;align-items:center;gap:10px}
+.logo{width:36px;height:36px;border-radius:50%;background:#C9D0D6;position:relative;box-shadow:inset 0 2px 0 #fff8,inset 0 -2px 0 #0003}
+.logo i{position:absolute;width:9px;height:9px;border-radius:50%;background:#2A333B}
+.sos{margin-left:auto;background:var(--sos);color:#fff;font-weight:800;border-radius:999px;padding:10px 18px;font-size:17px}
+.icon{width:44px;height:44px;border-radius:50%;background:#3A444D}
+.tiers{display:flex;gap:4px;margin-top:12px}
+.tier{flex:1;height:44px;border-radius:12px 12px 0 0;background:#3A444D;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;color:#C9D0D6;border-top:4px solid var(--c)}
+.tier.on{background:var(--steel);color:var(--ink);font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+main{padding:16px}
+.kick{font-size:14px;color:var(--muted);font-weight:600}
+h1{font-size:28px;line-height:1.15;font-weight:800;margin:2px 0 14px}
+.tray{background:var(--rim);border-radius:20px;padding:14px;box-shadow:inset 0 1px 0 #fff,0 1px 0 #0000000d,0 8px 20px -14px #1c252d66;border:1px solid var(--line)}
+.tray h2{font-size:18px;font-weight:800;margin-bottom:10px}
+.kat{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.k{aspect-ratio:1;border-radius:50%;background:var(--steel);box-shadow:inset 0 3px 6px #1c252d26,inset 0 -1px 0 #fff;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.k b{font-size:26px;font-variant-numeric:tabular-nums}
+.k span{font-size:13px;color:var(--muted);font-weight:600}
+.k.done{background:var(--dhania);color:#fff;box-shadow:inset 0 3px 6px #0003}
+.k.done span{color:#E6F0E0}
+.k.next{background:var(--jamun);color:#fff;outline:3px solid var(--jamun-soft);outline-offset:3px}
+.k.next span{color:#E9DDF2}
+.nextbar{margin-top:14px;display:flex;align-items:center;gap:10px;background:var(--jamun-soft);border-radius:14px;padding:10px 12px}
+.nextbar p{flex:1;font-size:16px;line-height:1.3}
+.btn{background:var(--jamun);color:#fff;font-weight:800;border-radius:12px;padding:12px 16px;font-size:17px}
+.ask{margin-top:14px;background:var(--rim);border:1px solid var(--line);border-radius:20px;padding:14px;display:flex;align-items:center;gap:12px}
+.mic{width:64px;height:64px;border-radius:50%;background:var(--ink);flex:none;box-shadow:inset 0 2px 0 #fff3}
+.ask p{font-size:20px;font-weight:800;line-height:1.2}
+.ask small{display:block;font-size:14px;color:var(--muted);font-weight:400}
+.chips{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.chip{border:1.5px solid #8C979F;border-radius:999px;padding:9px 14px;font-weight:600;font-size:16px;background:var(--rim)}
+.alert{margin-top:14px;border-radius:14px;background:#FBE9E7;color:#8E1A12;padding:12px 14px;font-weight:600;font-size:16px;border-left:6px solid #B3261E}
+nav{position:absolute;bottom:0;left:0;right:0;height:72px;background:var(--rim);border-top:1px solid var(--line);display:flex}
+nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--muted);gap:4px}
+nav a i{width:24px;height:24px;border-radius:50%;border:2px solid currentColor}
+nav a.on{color:var(--jamun)}
+nav a.on i{background:var(--jamun)}
+</style></head><body>
+<div class="hdr">
+  <div class="row"><span class="logo"><i style="left:13px;top:4px"></i><i style="left:22px;top:13px"></i><i style="left:13px;top:22px"></i><i style="left:4px;top:13px"></i></span>
+  <span style="font-weight:800;font-size:20px">SushrutAI</span><span class="icon" style="margin-left:auto"></span><span class="sos" style="margin-left:0">SOS</span></div>
+  <div class="tiers"><span class="tier on" style="--c:var(--haldi)">Asha (me)</span><span class="tier" style="--c:var(--dhania)">Papa</span><span class="tier" style="--c:var(--kesar)">Riya</span><span class="tier" style="--c:#8C979F">+</span></div>
+</div>
+<main>
+  <p class="kick">Saturday, 21 November</p>
+  <h1>Good morning, Asha</h1>
+  <section class="tray">
+    <h2>Today's medicines</h2>
+    <div class="kat"><div class="k done"><b>2</b><span>Morning ✓</span></div><div class="k next"><b>1</b><span>2:00 pm</span></div><div class="k"><b>2</b><span>Night</span></div></div>
+    <div class="nextbar"><p><b>Metformin 500 mg</b><br>after lunch · in 25 min</p><span class="btn">Taken</span></div>
+  </section>
+  <section class="ask"><span class="mic"></span><p>Tap and speak<small>Ask about a symptom, a report or a medicine</small></p></section>
+  <div class="alert">Haemoglobin 9.8 g/dL — low. Explain this</div>
+  <div class="chips"><span class="chip">Fever</span><span class="chip">Cough</span><span class="chip">Stomach pain</span><span class="chip">Headache</span></div>
+</main>
+<nav><a class="on"><i></i>Home</a><a><i></i>Ask</a><a><i></i>Medicines</a><a><i></i>Records</a><a><i></i>Me</a></nav>
+</body></html>

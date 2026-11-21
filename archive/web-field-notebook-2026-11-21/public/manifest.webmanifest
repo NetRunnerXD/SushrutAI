@@ -1,0 +1,11 @@
+{
+  "name": "SushrutAI",
+  "short_name": "SushrutAI",
+  "description": "Voice-first health information assistant for India",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4EFE4",
+  "theme_color": "#1D2F4F",
+  "lang": "en-IN",
+  "icons": []
+}

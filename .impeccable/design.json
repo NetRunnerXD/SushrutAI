@@ -1,0 +1,973 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-21T05:22:29.519Z",
+  "title": "Design System: SushrutAI",
+  "extensions": {
+    "colorMeta": {
+      "jamun": {
+        "role": "primary",
+        "displayName": "Jamun",
+        "canonical": "#5B2A7A",
+        "oklch": "oklch(39.1% 0.135 309.8)",
+        "purpose": "Next step only: primary action, next dose, current place, focus ring. Gunmetal: #CBA6E3.",
+        "tonalRamp": [
+          "#0E0912",
+          "#2D1A3B",
+          "#512C6A",
+          "#744495",
+          "#9867BC",
+          "#BA90DA",
+          "#D7BFEB",
+          "#F3EBF9"
+        ]
+      },
+      "jamun-deep": {
+        "role": "primary",
+        "displayName": "Jamun Deep",
+        "canonical": "#46205F",
+        "oklch": "oklch(32.9% 0.111 309.4)",
+        "purpose": "Primary hover. Gunmetal: #DDC2EF.",
+        "tonalRamp": [
+          "#0D0910",
+          "#2C1C37",
+          "#4E3163",
+          "#704A8C",
+          "#946DB2",
+          "#B695D1",
+          "#D5C2E5",
+          "#F2ECF7"
+        ]
+      },
+      "jamun-ink": {
+        "role": "primary",
+        "displayName": "Jamun Ink",
+        "canonical": "#FFFFFF",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "purpose": "Text on jamun. Gunmetal: #22102D.",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#242424",
+          "#404040",
+          "#5D5D5D",
+          "#808080",
+          "#A4A4A4",
+          "#CACACA",
+          "#EEEEEE"
+        ]
+      },
+      "jamun-soft": {
+        "role": "primary",
+        "displayName": "Jamun Soft",
+        "canonical": "#EEE5F4",
+        "oklch": "oklch(93.3% 0.022 312.2)",
+        "purpose": "Next-dose panel, selected chip, input focus halo. Gunmetal: #3A2E45.",
+        "tonalRamp": [
+          "#0C0B0C",
+          "#262328",
+          "#433D47",
+          "#625A67",
+          "#857D8A",
+          "#A9A1AD",
+          "#CDC9D0",
+          "#EFEEF0"
+        ]
+      },
+      "steel-ground": {
+        "role": "neutral",
+        "displayName": "Steel Ground",
+        "canonical": "#E4E8EB",
+        "oklch": "oklch(92.9% 0.006 239.8)",
+        "purpose": "Page ground.",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#232425",
+          "#3D4042",
+          "#5B5E61",
+          "#7D8183",
+          "#A2A5A7",
+          "#C9CBCC",
+          "#EEEEEF"
+        ]
+      },
+      "polished-lid": {
+        "role": "neutral",
+        "displayName": "Polished Lid",
+        "canonical": "#F3F5F7",
+        "oklch": "oklch(96.9% 0.003 247.9)",
+        "purpose": "Cards, trays, sheets, inputs, bottom bar.",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#232425",
+          "#3F4041",
+          "#5C5E5F",
+          "#7F8082",
+          "#A3A5A6",
+          "#CACACB",
+          "#EEEEEF"
+        ]
+      },
+      "pressed-steel": {
+        "role": "neutral",
+        "displayName": "Pressed Steel",
+        "canonical": "#DCE1E5",
+        "oklch": "oklch(90.7% 0.008 241.7)",
+        "purpose": "Katori wells, ghost buttons, skeletons.",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#222426",
+          "#3D4043",
+          "#5A5E62",
+          "#7C8184",
+          "#A1A5A8",
+          "#C8CBCD",
+          "#EEEEEF"
+        ]
+      },
+      "steel-ink": {
+        "role": "neutral",
+        "displayName": "Steel Ink",
+        "canonical": "#182028",
+        "oklch": "oklch(23.9% 0.019 248.6)",
+        "purpose": "Text.",
+        "tonalRamp": [
+          "#0A0B0C",
+          "#212428",
+          "#394148",
+          "#555F68",
+          "#78818C",
+          "#9DA6AF",
+          "#C6CBD0",
+          "#EDEFF0"
+        ]
+      },
+      "steel-muted": {
+        "role": "neutral",
+        "displayName": "Steel Muted",
+        "canonical": "#4C5762",
+        "oklch": "oklch(45.1% 0.023 248.3)",
+        "purpose": "Secondary text. Gunmetal: #B4BEC5.",
+        "tonalRamp": [
+          "#0A0B0D",
+          "#202529",
+          "#384149",
+          "#545F6A",
+          "#76828E",
+          "#9CA6B0",
+          "#C5CBD1",
+          "#EDEFF1"
+        ]
+      },
+      "steel-rule": {
+        "role": "neutral",
+        "displayName": "Steel Rule",
+        "canonical": "#C3CBD2",
+        "oklch": "oklch(83.8% 0.013 244.3)",
+        "purpose": "Hairline borders and dividers. Gunmetal: #414B52.",
+        "tonalRamp": [
+          "#0A0B0C",
+          "#222427",
+          "#3B4045",
+          "#585F65",
+          "#7A8188",
+          "#9FA5AB",
+          "#C7CBCE",
+          "#EDEFF0"
+        ]
+      },
+      "steel-input-rule": {
+        "role": "neutral",
+        "displayName": "Input Rule",
+        "canonical": "#6F7B86",
+        "oklch": "oklch(57.7% 0.022 245.8)",
+        "purpose": "1.5px field and outline borders. Gunmetal: #85919A.",
+        "tonalRamp": [
+          "#0A0B0C",
+          "#202529",
+          "#384149",
+          "#545F6A",
+          "#76828D",
+          "#9BA6B0",
+          "#C5CBD1",
+          "#EDEFF1"
+        ]
+      },
+      "gunmetal-rail": {
+        "role": "neutral",
+        "displayName": "Gunmetal Rail",
+        "canonical": "#232B33",
+        "oklch": "oklch(28.5% 0.019 248.5)",
+        "purpose": "Side rail and header.",
+        "tonalRamp": [
+          "#0A0B0C",
+          "#212428",
+          "#3A4147",
+          "#565F68",
+          "#78818B",
+          "#9DA6AE",
+          "#C6CBD0",
+          "#EDEFF0"
+        ]
+      },
+      "gunmetal-rail-raised": {
+        "role": "neutral",
+        "displayName": "Raised Gunmetal",
+        "canonical": "#313A43",
+        "oklch": "oklch(34.4% 0.020 248.4)",
+        "purpose": "Inactive tiers and rail katoris. Gunmetal: #262D32.",
+        "tonalRamp": [
+          "#0A0B0C",
+          "#202429",
+          "#394148",
+          "#555F69",
+          "#77828C",
+          "#9DA6AF",
+          "#C6CBD1",
+          "#EDEFF0"
+        ]
+      },
+      "rail-text": {
+        "role": "neutral",
+        "displayName": "Rail Text",
+        "canonical": "#EEF1F3",
+        "oklch": "oklch(95.6% 0.004 236.5)",
+        "purpose": "Text on the rail. Gunmetal: #E8ECEF.",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#232425",
+          "#3E4041",
+          "#5B5E60",
+          "#7E8182",
+          "#A2A5A6",
+          "#C9CBCC",
+          "#EEEEEF"
+        ]
+      },
+      "rail-muted": {
+        "role": "neutral",
+        "displayName": "Rail Muted",
+        "canonical": "#B1BBC4",
+        "oklch": "oklch(78.7% 0.017 245.1)",
+        "purpose": "Inactive rail labels and tiers. Gunmetal: #9AA6B0.",
+        "tonalRamp": [
+          "#0A0B0C",
+          "#212428",
+          "#3A4147",
+          "#565F67",
+          "#78828A",
+          "#9EA6AD",
+          "#C6CBD0",
+          "#EDEFF0"
+        ]
+      },
+      "rail-current": {
+        "role": "primary",
+        "displayName": "Rail Jamun",
+        "canonical": "#D7BCEB",
+        "oklch": "oklch(83.3% 0.071 310.7)",
+        "purpose": "Current place on the rail. Gunmetal: #CBA6E3.",
+        "tonalRamp": [
+          "#0D0A0F",
+          "#291F30",
+          "#493756",
+          "#6A527B",
+          "#8E74A0",
+          "#B09BC1",
+          "#D2C5DB",
+          "#F1EDF4"
+        ]
+      },
+      "rail-current-ink": {
+        "role": "primary",
+        "displayName": "Rail Jamun Ink",
+        "canonical": "#24102F",
+        "oklch": "oklch(21.9% 0.063 312.1)",
+        "purpose": "Icon on the current rail katori. Gunmetal: #22102D.",
+        "tonalRamp": [
+          "#0C0A0E",
+          "#29202F",
+          "#493853",
+          "#6A5377",
+          "#8D769C",
+          "#B09CBD",
+          "#D1C5D9",
+          "#F1EDF3"
+        ]
+      },
+      "link-indigo": {
+        "role": "tertiary",
+        "displayName": "Link Indigo",
+        "canonical": "#1C4F86",
+        "oklch": "oklch(42.3% 0.106 253.1)",
+        "purpose": "Links and info banners. Gunmetal: #93B9EF.",
+        "tonalRamp": [
+          "#070C12",
+          "#11253C",
+          "#1A416C",
+          "#2D5F98",
+          "#5083BE",
+          "#7CA8DC",
+          "#B4CDEC",
+          "#E7EFF9"
+        ]
+      },
+      "link-indigo-soft": {
+        "role": "tertiary",
+        "displayName": "Link Indigo Soft",
+        "canonical": "#DDE7F2",
+        "oklch": "oklch(92.4% 0.018 250.6)",
+        "purpose": "Info tint. Gunmetal: #1B2A42.",
+        "tonalRamp": [
+          "#0A0B0C",
+          "#212428",
+          "#3A4048",
+          "#565F68",
+          "#78818B",
+          "#9EA6AE",
+          "#C6CBD0",
+          "#EDEFF0"
+        ]
+      },
+      "haldi-mark": {
+        "role": "secondary",
+        "displayName": "Haldi Mark",
+        "canonical": "#D18B06",
+        "oklch": "oklch(69.1% 0.146 73.3)",
+        "purpose": "Highlights and marks, never text on steel. Gunmetal: #E2A72A.",
+        "tonalRamp": [
+          "#110A03",
+          "#381D00",
+          "#633100",
+          "#8D4B00",
+          "#B36F00",
+          "#D39843",
+          "#E7C498",
+          "#F8EDDF"
+        ]
+      },
+      "haldi-soft": {
+        "role": "secondary",
+        "displayName": "Haldi Soft",
+        "canonical": "#F5E5BE",
+        "oklch": "oklch(92.5% 0.054 88.4)",
+        "purpose": "Text selection and highlight tint. Gunmetal: #3A2F17.",
+        "tonalRamp": [
+          "#0D0B08",
+          "#292315",
+          "#493F24",
+          "#6A5C39",
+          "#8D7F5B",
+          "#B0A485",
+          "#D1CAB8",
+          "#F1EEE8"
+        ]
+      },
+      "dhania-ok": {
+        "role": "tertiary",
+        "displayName": "Dhania OK",
+        "canonical": "#2B6634",
+        "oklch": "oklch(45.8% 0.101 146.8)",
+        "purpose": "Taken, normal, self care; the filled dose katori. Gunmetal: #86CF8F.",
+        "tonalRamp": [
+          "#070D08",
+          "#132A16",
+          "#1E4B25",
+          "#326D3A",
+          "#55905C",
+          "#81B386",
+          "#B7D4B9",
+          "#E8F1E9"
+        ]
+      },
+      "dhania-ok-soft": {
+        "role": "tertiary",
+        "displayName": "Dhania OK Soft",
+        "canonical": "#DAEAD6",
+        "oklch": "oklch(92.0% 0.032 139.4)",
+        "purpose": "Success tint. Gunmetal: #17301C.",
+        "tonalRamp": [
+          "#0A0C0A",
+          "#20261F",
+          "#394336",
+          "#556251",
+          "#778573",
+          "#9CA999",
+          "#C6CDC4",
+          "#EDEFEC"
+        ]
+      },
+      "warn-amber": {
+        "role": "tertiary",
+        "displayName": "Warn Amber",
+        "canonical": "#874800",
+        "oklch": "oklch(46.9% 0.111 58.9)",
+        "purpose": "This week, low readings, offline. Gunmetal: #F2B860.",
+        "tonalRamp": [
+          "#100905",
+          "#371D06",
+          "#623100",
+          "#8A4B06",
+          "#B16E35",
+          "#D19668",
+          "#E6C3A9",
+          "#F7ECE4"
+        ]
+      },
+      "warn-amber-soft": {
+        "role": "tertiary",
+        "displayName": "Warn Amber Soft",
+        "canonical": "#F5E2C0",
+        "oklch": "oklch(92.0% 0.049 82.2)",
+        "purpose": "Warning tint. Gunmetal: #33260F.",
+        "tonalRamp": [
+          "#0D0B08",
+          "#2A2317",
+          "#4A3E27",
+          "#6C5B3D",
+          "#8F7E5F",
+          "#B2A388",
+          "#D2C9BA",
+          "#F1EEE9"
+        ]
+      },
+      "danger-red": {
+        "role": "tertiary",
+        "displayName": "Danger Red",
+        "canonical": "#A5221A",
+        "oklch": "oklch(47.2% 0.168 28.9)",
+        "purpose": "See a doctor in 24h, high readings, destructive (as tint). Gunmetal: #FF9086.",
+        "tonalRamp": [
+          "#140706",
+          "#430F0B",
+          "#78120D",
+          "#A8251D",
+          "#D24F41",
+          "#F07F70",
+          "#FBB7AD",
+          "#FFE9E5"
+        ]
+      },
+      "danger-red-soft": {
+        "role": "tertiary",
+        "displayName": "Danger Red Soft",
+        "canonical": "#F6DDD9",
+        "oklch": "oklch(91.7% 0.028 28.5)",
+        "purpose": "Danger tint. Gunmetal: #3D1A18.",
+        "tonalRamp": [
+          "#0D0A0A",
+          "#2A2220",
+          "#4B3B39",
+          "#6D5855",
+          "#917A77",
+          "#B39F9C",
+          "#D3C7C5",
+          "#F1EDED"
+        ]
+      },
+      "emergency-red": {
+        "role": "tertiary",
+        "displayName": "Emergency Red",
+        "canonical": "#B3121B",
+        "oklch": "oklch(48.9% 0.190 26.4)",
+        "purpose": "SOS and emergency only, solid with white text. Gunmetal: #C0261C.",
+        "tonalRamp": [
+          "#150605",
+          "#470909",
+          "#7E0008",
+          "#B00B18",
+          "#DB423E",
+          "#F8786E",
+          "#FFB4AB",
+          "#FFE8E4"
+        ]
+      },
+      "spice-haldi": {
+        "role": "secondary",
+        "displayName": "Haldi (account holder)",
+        "canonical": "#C98A0A",
+        "oklch": "oklch(68.0% 0.141 76.0)",
+        "purpose": "Spice code 0. Gunmetal: #E2A72A.",
+        "tonalRamp": [
+          "#100A03",
+          "#361E00",
+          "#613400",
+          "#894E00",
+          "#AF7200",
+          "#CF9A46",
+          "#E4C599",
+          "#F7EDDF"
+        ]
+      },
+      "spice-dhania": {
+        "role": "secondary",
+        "displayName": "Dhania",
+        "canonical": "#4F7A3A",
+        "oklch": "oklch(53.2% 0.105 136.3)",
+        "purpose": "Spice code 1. Gunmetal: #7FB36A.",
+        "tonalRamp": [
+          "#080D07",
+          "#182910",
+          "#294A18",
+          "#406B2B",
+          "#628E4E",
+          "#8BB27A",
+          "#BCD3B2",
+          "#EAF1E7"
+        ]
+      },
+      "spice-kesar": {
+        "role": "secondary",
+        "displayName": "Kesar",
+        "canonical": "#C45A16",
+        "oklch": "oklch(59.1% 0.154 47.1)",
+        "purpose": "Spice code 2. Gunmetal: #E8844A.",
+        "tonalRamp": [
+          "#130804",
+          "#3F1500",
+          "#712200",
+          "#9F3800",
+          "#C75D1B",
+          "#E6895A",
+          "#F4BCA2",
+          "#FCEAE2"
+        ]
+      },
+      "spice-neel": {
+        "role": "secondary",
+        "displayName": "Neel",
+        "canonical": "#3C5A9A",
+        "oklch": "oklch(47.6% 0.110 263.8)",
+        "purpose": "Spice code 3. Gunmetal: #7E9BDB.",
+        "tonalRamp": [
+          "#080B12",
+          "#17233D",
+          "#273E6E",
+          "#3D5B9B",
+          "#5E7FC2",
+          "#87A4DF",
+          "#B9CBEE",
+          "#E9EFFA"
+        ]
+      },
+      "spice-jeera": {
+        "role": "secondary",
+        "displayName": "Jeera",
+        "canonical": "#7D5230",
+        "oklch": "oklch(47.9% 0.075 58.0)",
+        "purpose": "Spice code 4. Gunmetal: #C2946B.",
+        "tonalRamp": [
+          "#0F0A07",
+          "#311F12",
+          "#58371D",
+          "#7D5230",
+          "#A27552",
+          "#C39B7E",
+          "#DDC5B4",
+          "#F5EDE7"
+        ]
+      },
+      "spice-kokum": {
+        "role": "secondary",
+        "displayName": "Kokum",
+        "canonical": "#8E2C6B",
+        "oklch": "oklch(46.1% 0.149 345.0)",
+        "purpose": "Spice code 5. Gunmetal: #D77BB3.",
+        "tonalRamp": [
+          "#12070D",
+          "#3B132C",
+          "#691D4E",
+          "#943270",
+          "#BC5794",
+          "#DC83B6",
+          "#EEB8D5",
+          "#FAE9F2"
+        ]
+      },
+      "gunmetal-ground": {
+        "role": "neutral",
+        "displayName": "Gunmetal Ground",
+        "canonical": "#22292E",
+        "oklch": "oklch(27.6% 0.014 239.1)",
+        "purpose": "Dark-theme page.",
+        "tonalRamp": [
+          "#0A0B0C",
+          "#212427",
+          "#3B4145",
+          "#575F65",
+          "#798288",
+          "#9EA6AB",
+          "#C7CBCE",
+          "#EDEFF0"
+        ]
+      },
+      "gunmetal-lid": {
+        "role": "neutral",
+        "displayName": "Gunmetal Lid",
+        "canonical": "#2B3338",
+        "oklch": "oklch(31.6% 0.014 235.4)",
+        "purpose": "Dark-theme surfaces.",
+        "tonalRamp": [
+          "#0A0B0C",
+          "#212527",
+          "#3A4145",
+          "#565F65",
+          "#788288",
+          "#9EA6AB",
+          "#C6CBCE",
+          "#EDEFF0"
+        ]
+      },
+      "gunmetal-pressed": {
+        "role": "neutral",
+        "displayName": "Gunmetal Pressed",
+        "canonical": "#343D43",
+        "oklch": "oklch(35.4% 0.016 237.1)",
+        "purpose": "Dark-theme wells.",
+        "tonalRamp": [
+          "#0A0B0C",
+          "#212527",
+          "#3A4146",
+          "#565F66",
+          "#788289",
+          "#9DA6AC",
+          "#C6CBCF",
+          "#EDEFF0"
+        ]
+      },
+      "gunmetal-ink": {
+        "role": "neutral",
+        "displayName": "Gunmetal Ink",
+        "canonical": "#ECEFF1",
+        "oklch": "oklch(95.0% 0.004 236.5)",
+        "purpose": "Dark-theme text.",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#232425",
+          "#3E4041",
+          "#5B5E60",
+          "#7E8182",
+          "#A2A5A6",
+          "#C9CBCC",
+          "#EEEEEF"
+        ]
+      },
+      "gunmetal-jamun": {
+        "role": "primary",
+        "displayName": "Gunmetal Jamun",
+        "canonical": "#CBA6E3",
+        "oklch": "oklch(77.9% 0.094 311.7)",
+        "purpose": "Dark-theme next step.",
+        "tonalRamp": [
+          "#0D0910",
+          "#2B1D34",
+          "#4D335D",
+          "#6F4D84",
+          "#9370A9",
+          "#B597C9",
+          "#D4C3E0",
+          "#F2ECF6"
+        ]
+      },
+      "gunmetal-rail-night": {
+        "role": "neutral",
+        "displayName": "Night Rail",
+        "canonical": "#111518",
+        "oklch": "oklch(19.3% 0.009 240.4)",
+        "purpose": "Dark-theme rail and header.",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#222426",
+          "#3D4043",
+          "#595E62",
+          "#7C8185",
+          "#A1A5A9",
+          "#C8CBCD",
+          "#EEEEEF"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page title (h1), Mukta 800; 2.25rem from 1024px."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Card, section and sheet titles (h2), next-dose name."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Sub-card and banner titles, Mukta 700."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Reading text in ten scripts on a 17px root; line-height 1.7 for Indic scripts."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Chips, pills, slot and meta labels."
+      },
+      "numeral": {
+        "displayName": "Numeral",
+        "purpose": "Katori counts, vitals, dose times: tabular lining figures in the body face."
+      }
+    },
+    "shadows": [
+      {
+        "name": "rim",
+        "value": "inset 0 1.5px 0 #FFFFFF, inset 0 -1px 0 rgb(24 32 40 / 5%)",
+        "purpose": "Rolled top highlight on every polished surface. Gunmetal: inset 0 1px 0 rgb(255 255 255 / 9%). High contrast and print: none."
+      },
+      {
+        "name": "well",
+        "value": "inset 0 2px 5px rgb(24 32 40 / 17%), inset 0 -1px 0 rgb(255 255 255 / 75%)",
+        "purpose": "Pressed katori wells and tracks. Gunmetal: inset 0 2px 6px rgb(0 0 0 / 45%), inset 0 -1px 0 rgb(255 255 255 / 5%). High contrast: inset 0 0 0 2px #000000."
+      },
+      {
+        "name": "e1",
+        "value": "0 1px 2px rgb(24 32 40 / 7%), 0 6px 16px -10px rgb(24 32 40 / 26%)",
+        "purpose": "Resting cards, trays, primary button."
+      },
+      {
+        "name": "e2",
+        "value": "0 2px 4px rgb(24 32 40 / 8%), 0 12px 28px -14px rgb(24 32 40 / 36%)",
+        "purpose": "Voice well and voice-confirm panel."
+      },
+      {
+        "name": "e3",
+        "value": "0 4px 10px rgb(24 32 40 / 10%), 0 28px 56px -20px rgb(24 32 40 / 48%)",
+        "purpose": "Sheets and dialogs."
+      },
+      {
+        "name": "focus-ring",
+        "value": "outline: 3px solid var(--focus); outline-offset: 2px",
+        "purpose": "Global focus-visible ring, never removed; fields use a jamun border plus 0 0 0 3px jamun-soft."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-lid",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Exponential ease-out for every lift, fill and sheet."
+      },
+      {
+        "name": "lid",
+        "value": "translateY(6px) to none, opacity 0.55 to 1, 200ms",
+        "purpose": "Active family tier and confirm panels lift and settle."
+      },
+      {
+        "name": "fill",
+        "value": "scale(0.55) to none, opacity 0.4 to 1, 220ms",
+        "purpose": "Dose katori fills dhania when taken."
+      },
+      {
+        "name": "sheet-in",
+        "value": "translateY(24px) to none, 240ms; scrim fade 200ms ease-out",
+        "purpose": "Sheets rise into place."
+      },
+      {
+        "name": "ripple",
+        "value": "scale 1 to 1.45, opacity 0.35 to 0, 1.4s infinite",
+        "purpose": "The only interaction loop: the listening voice well."
+      },
+      {
+        "name": "simmer",
+        "value": "three katoris rise 3px and turn jamun in turn, 1.2s, 150ms stagger",
+        "purpose": "Thinking indicator."
+      },
+      {
+        "name": "press",
+        "value": "translateY(1px), 120ms",
+        "purpose": "Buttons press down on :active."
+      },
+      {
+        "name": "reduced",
+        "value": "prefers-reduced-motion or data-motion=reduce: all animation and transition off",
+        "purpose": "Ripple and spinner removed entirely."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "0-767px",
+        "note": "bottom tab bar and gunmetal header; verify at 360px"
+      },
+      {
+        "name": "sm",
+        "value": "640px",
+        "note": "card padding 20px; sheets become centred dialogs"
+      },
+      {
+        "name": "md",
+        "value": "768px",
+        "note": "84px icon rail"
+      },
+      {
+        "name": "lg",
+        "value": "1024px",
+        "note": "248px rail unless data-sidebar=rail; h1 2.25rem"
+      }
+    ],
+    "htmlAttributes": {
+      "data-text": "md | lg (21px root) | xl (24px root)",
+      "data-theme": "auto | light | dark",
+      "data-contrast": "high",
+      "data-motion": "reduce",
+      "data-sidebar": "rail",
+      "data-kb": "on-screen keyboard open",
+      "data-orb-visible": "full voice well on screen"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one next step on a view: jamun, 48px, presses down a pixel.",
+      "html": "<button class=\"ds-btn ds-btn-primary\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg>Taken</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:14px;padding:.6rem 1.15rem;min-height:48px;min-width:48px;font:700 1.0625rem/1.2 'Noto Sans',system-ui,sans-serif;border:0;cursor:pointer;transition:background-color .15s,transform .12s,box-shadow .15s}.ds-btn:active{transform:translateY(1px)}.ds-btn:focus-visible{outline:3px solid #5B2A7A;outline-offset:2px}.ds-btn-primary{background:#5B2A7A;color:#FFFFFF;box-shadow:inset 0 1px 0 rgb(255 255 255 / 18%),0 1px 2px rgb(24 32 40 / 7%),0 6px 16px -10px rgb(24 32 40 / 26%)}.ds-btn-primary:hover{background:#46205F}"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary actions: polished lid with a 1.5px input rule and the rim.",
+      "html": "<button class=\"ds-btn-outline\">Say again</button>",
+      "css": ".ds-btn-outline{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:14px;padding:.6rem 1.15rem;min-height:48px;font:700 1.0625rem/1.2 'Noto Sans',system-ui,sans-serif;background:#F3F5F7;color:#182028;border:1.5px solid #6F7B86;box-shadow:inset 0 1.5px 0 #FFFFFF,inset 0 -1px 0 rgb(24 32 40 / 5%);cursor:pointer;transition:background-color .15s,transform .12s}.ds-btn-outline:hover{background:#DCE1E5}.ds-btn-outline:active{transform:translateY(1px)}.ds-btn-outline:focus-visible{outline:3px solid #5B2A7A;outline-offset:2px}"
+    },
+    {
+      "name": "Emergency Button",
+      "kind": "button",
+      "refersTo": "button-emergency",
+      "description": "SOS and emergency calls only: solid emergency red, white text.",
+      "html": "<button class=\"ds-btn-sos\">SOS</button>",
+      "css": ".ds-btn-sos{display:inline-flex;align-items:center;justify-content:center;border-radius:14px;padding:.6rem 1.15rem;min-height:48px;min-width:48px;font:700 1.0625rem/1.2 'Noto Sans',system-ui,sans-serif;background:#B3121B;color:#FFFFFF;border:0;cursor:pointer;transition:filter .15s,transform .12s}.ds-btn-sos:hover{filter:brightness(1.1)}.ds-btn-sos:active{transform:translateY(1px)}.ds-btn-sos:focus-visible{outline:3px solid #5B2A7A;outline-offset:2px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "48px polished-lid field; focus turns the border jamun with a soft halo.",
+      "html": "<input class=\"ds-input\" placeholder=\"Ask about a symptom or a medicine\" />",
+      "css": ".ds-input{width:100%;max-width:22rem;background:#F3F5F7;border:1.5px solid #6F7B86;border-radius:12px;padding:.65rem .85rem;min-height:48px;color:#182028;font:400 1rem/1.6 'Noto Sans',system-ui,sans-serif;caret-color:#5B2A7A;transition:border-color .15s,box-shadow .15s}.ds-input::placeholder{color:#4C5762}.ds-input:focus{outline:none;border-color:#5B2A7A;box-shadow:0 0 0 3px #EEE5F4}"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "48px pill toggles; selected is a jamun border on jamun soft with a check.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip\" aria-pressed=\"false\">Fever</button><button class=\"ds-chip ds-chip-on\" aria-pressed=\"true\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#4C5762\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg>Headache</button></div>",
+      "css": ".ds-chips{display:flex;gap:.5rem;flex-wrap:wrap}.ds-chip{display:inline-flex;align-items:center;gap:.5rem;min-height:48px;padding:0 1rem;border-radius:9999px;border:1.5px solid #6F7B86;background:#F3F5F7;color:#182028;font:600 1rem/1 'Noto Sans',system-ui,sans-serif;box-shadow:inset 0 1.5px 0 #FFFFFF;cursor:pointer;transition:background-color .15s}.ds-chip:hover{background:#DCE1E5}.ds-chip-on{border-color:#5B2A7A;background:#EEE5F4;box-shadow:none}.ds-chip:focus-visible{outline:3px solid #5B2A7A;outline-offset:2px}"
+    },
+    {
+      "name": "Card (Lid)",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Polished lid with a rolled white rim, hairline border and soft cool E1; katori icon in the header.",
+      "html": "<section class=\"ds-card\"><div class=\"ds-card-head\"><span class=\"ds-katori\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M22 12h-4l-3 9L9 3l-3 9H2\"/></svg></span><div><h2 class=\"ds-h2\">Health snapshot</h2><p class=\"ds-sub\">Updated today</p></div></div><p class=\"ds-body\">Blood pressure has been in range all week.</p></section>",
+      "css": ".ds-card{max-width:24rem;background:#F3F5F7;border:1px solid #C3CBD2;border-radius:18px;padding:20px;box-shadow:inset 0 1.5px 0 #FFFFFF,inset 0 -1px 0 rgb(24 32 40 / 5%),0 1px 2px rgb(24 32 40 / 7%),0 6px 16px -10px rgb(24 32 40 / 26%);color:#182028;font-family:'Noto Sans',system-ui,sans-serif}.ds-card-head{display:flex;gap:.75rem;align-items:center;margin-bottom:.75rem}.ds-katori{display:grid;place-items:center;width:40px;height:40px;border-radius:9999px;background:#DCE1E5;box-shadow:inset 0 2px 5px rgb(24 32 40 / 17%),inset 0 -1px 0 rgb(255 255 255 / 75%)}.ds-h2{margin:0;font:700 1.25rem/1.3 Mukta,'Noto Sans',sans-serif;letter-spacing:-.01em}.ds-sub{margin:0;font-size:.9375rem;color:#4C5762}.ds-body{margin:0;line-height:1.6}"
+    },
+    {
+      "name": "Dabba",
+      "kind": "custom",
+      "refersTo": "dabba-katori-next",
+      "description": "Signature: the day's three dose katoris; the next is jamun, a taken katori fills dhania.",
+      "html": "<div class=\"ds-dabba\"><div class=\"ds-slot\"><span class=\"ds-k ds-k-done\"><svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M32 6 9 17l-5-5\"/></svg></span><b>Morning</b></div><div class=\"ds-slot\"><span class=\"ds-k ds-k-next\">0/1</span><b>Afternoon</b></div><div class=\"ds-slot\"><span class=\"ds-k\">0/2</span><b>Night</b></div></div>",
+      "css": ".ds-dabba{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:22rem;padding:16px;background:#F3F5F7;border:1px solid #C3CBD2;border-radius:24px;box-shadow:inset 0 1.5px 0 #FFFFFF,0 6px 16px -10px rgb(24 32 40 / 26%);font-family:'Noto Sans',system-ui,sans-serif;color:#182028}.ds-slot{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:.875rem}.ds-k{display:grid;place-items:center;width:100%;max-width:6.5rem;aspect-ratio:1;border-radius:9999px;background:#DCE1E5;box-shadow:inset 0 2px 5px rgb(24 32 40 / 17%),inset 0 -1px 0 rgb(255 255 255 / 75%);font:700 1.75rem/1 'Noto Sans',sans-serif;font-variant-numeric:tabular-nums}.ds-k-next{background:#5B2A7A;color:#FFFFFF;box-shadow:inset 0 3px 6px rgb(0 0 0 / 25%),0 0 0 4px #EEE5F4}.ds-k-done{background:#2B6634;color:#FFFFFF;box-shadow:inset 0 3px 6px rgb(0 0 0 / 22%);animation:ds-fill .22s cubic-bezier(.16,1,.3,1) both}@keyframes ds-fill{from{transform:scale(.55);opacity:.4}to{transform:none;opacity:1}}"
+    },
+    {
+      "name": "Family Tiers",
+      "kind": "nav",
+      "refersTo": "family-tier",
+      "description": "Signature: one tier per person on gunmetal with a spice dot; the open record's tier is engraved and lifted.",
+      "html": "<nav class=\"ds-tiers\" aria-label=\"Whose health\"><button class=\"ds-tier ds-tier-on\" aria-current=\"true\"><i style=\"background:#C98A0A\"></i>Myself</button><button class=\"ds-tier\"><i style=\"background:#4F7A3A\"></i>Amma</button><button class=\"ds-tier\"><i style=\"background:#C45A16\"></i>Riya</button></nav>",
+      "css": ".ds-tiers{display:flex;align-items:flex-end;gap:4px;padding:8px 12px 0;background:#232B33;font-family:'Noto Sans',system-ui,sans-serif}.ds-tier{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 14px;border:0;border-radius:14px 14px 0 0;background:#313A43;color:#B1BBC4;font-size:.9375rem;font-weight:600;cursor:pointer}.ds-tier:hover{color:#EEF1F3}.ds-tier i{width:12px;height:12px;border-radius:9999px;display:block}.ds-tier-on{background:#E4E8EB;color:#182028;font-weight:800;text-transform:uppercase;letter-spacing:.06em;box-shadow:inset 0 1.5px 0 #FFFFFF;animation:ds-lid .2s cubic-bezier(.16,1,.3,1) both}.ds-tier:focus-visible{outline:3px solid #D7BCEB;outline-offset:2px}@keyframes ds-lid{from{transform:translateY(6px);opacity:.55}to{transform:none;opacity:1}}"
+    },
+    {
+      "name": "Bottom Tab Bar",
+      "kind": "nav",
+      "refersTo": "rail-link-current",
+      "description": "Phone navigation; the current place is a filled jamun katori.",
+      "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab ds-tab-on\" aria-current=\"page\"><span><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z\"/></svg></span>Home</a><a class=\"ds-tab\"><span><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z\"/></svg></span>Ask</a><a class=\"ds-tab\"><span><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"9\" width=\"18\" height=\"6\" rx=\"3\"/><path d=\"M12 9v6\"/></svg></span>Medicines</a></nav>",
+      "css": ".ds-tabs{display:flex;max-width:24rem;background:#F3F5F7;border-top:1px solid #C3CBD2;box-shadow:0 -8px 24px -16px rgb(24 32 40 / 40%);font-family:'Noto Sans',system-ui,sans-serif}.ds-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:64px;font-size:.78rem;font-weight:600;color:#4C5762;cursor:pointer;text-decoration:none}.ds-tab span{display:grid;place-items:center;width:36px;height:36px;border-radius:9999px}.ds-tab-on{color:#5B2A7A;font-weight:700}.ds-tab-on span{background:#5B2A7A;color:#FFFFFF}.ds-tab:hover{color:#182028}.ds-tab:focus-visible{outline:3px solid #5B2A7A;outline-offset:2px}"
+    },
+    {
+      "name": "Urgency Banner",
+      "kind": "custom",
+      "refersTo": "button-danger",
+      "description": "Full 1.5px border plus tint, never a side stripe. Shown: see a doctor within 24 hours.",
+      "html": "<div class=\"ds-banner\" role=\"alert\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 8v4M12 16h.01\"/></svg><div><p class=\"ds-banner-t\">See a doctor within 24 hours</p><p class=\"ds-banner-b\">Specialist: <b>General physician</b></p></div></div>",
+      "css": ".ds-banner{display:flex;gap:12px;max-width:26rem;padding:16px;border-radius:16px;border:1.5px solid #A5221A;background:#F6DDD9;color:#A5221A;font-family:'Noto Sans',system-ui,sans-serif}.ds-banner svg{flex-shrink:0;margin-top:2px}.ds-banner-t{margin:0;font:700 1.125rem/1.35 Mukta,'Noto Sans',sans-serif}.ds-banner-b{margin:0;font-size:.9375rem;line-height:1.6}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Steel Tiffin",
+    "overview": "The household's health is kept the way an Indian home keeps its steel: one stacked tiffin carrier with a tier per person, and a dabba of round katoris for each day's medicines. Surfaces are brushed and polished steel, cool and calm, with a bright rolled rim along the top edge and round pressed wells for every slot. Colour does not decorate; it codes. Each person in the family owns one spice colour, jamun purple means \"your next step\", and red means only emergency or urgent.\n\nDensity is low and the hand is generous: 17px root type, 48px minimum targets, one clear next step per view. The shell is gunmetal (a side rail on tablet and desktop, a header on phone) with the family tiers hanging from it, so whose record is open is never in doubt. Motion is a lid lifting and settling: short vertical moves, no tilt and no bounce.\n\nThe system rejects the white-and-teal card stack of generic health apps and the cream paper notebook it replaced.",
+    "keyCharacteristics": [
+      "Cool brushed-steel ground, polished lids with a white top highlight, round inset katori wells.",
+      "Spice colours as identity codes, one per family member; haldi is always the account holder.",
+      "Jamun purple reserved for the primary action, the next dose and the current place.",
+      "Red only for emergency and urgent states; SOS always visible.",
+      "Mukta headings over a ten-script Noto Sans body, tabular numerals everywhere numbers matter.",
+      "Rounded vessel radii (12px to 24px) and full circles for slots and marks."
+    ],
+    "rules": [
+      {
+        "name": "The One Next Step Rule",
+        "body": "Jamun marks the user's next step: the primary action, the next dose, the current place. If two things on a screen are jamun, one of them is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Spice Is a Person Rule",
+        "body": "A spice colour always means a household member and is assigned by the family order, never chosen for decoration. Haldi is the account holder.",
+        "section": "colors"
+      },
+      {
+        "name": "The Red Means Now Rule",
+        "body": "Emergency Red appears only on SOS and emergency urgency. Danger Red appears only as a tint with a full border for urgent states and destructive actions.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Numeral Scale Rule",
+        "body": "Every number a person acts on (a dose, a time, a reading) uses tabular lining figures in the body face. No separate monospace family.",
+        "section": "typography"
+      },
+      {
+        "name": "The Root Scales Everything Rule",
+        "body": "Sizes are in rem from a 17px root; large text sets the root to 21px or 24px (`data-text=\"lg\" | \"xl\"`) and the whole interface scales with it.",
+        "section": "typography"
+      },
+      {
+        "name": "The Lid and Well Rule",
+        "body": "Things you read sit on a lid (rim plus E1). Things that hold a value or a slot are pressed into a well. Do not invert them.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Steel Light Rule",
+        "body": "Shadows are cool (steel-ink based, never pure black on light), soft and low. No hard offset shadows.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep SOS visible in the header on every screen, in simple mode, and with the keyboard open.",
+      "Do use the one urgency scale everywhere: emergency (solid red), see a doctor in 24 hours (danger tint plus full border), this week (warn), self care (ok).",
+      "Do give every banner a full 1.5px border and a tint of its tone.",
+      "Do show the \"Information, not a diagnosis\" disclaimer wherever health guidance appears.",
+      "Do make every target at least 48px and keep the 3px jamun focus ring with a 2px offset.",
+      "Do drive preferences through attributes on `<html>`: `data-text`, `data-theme`, `data-contrast`, `data-motion`, `data-sidebar`, applied before first paint.",
+      "Do honour simple mode: fewer destinations, bigger Home, everything read aloud.",
+      "Do keep print styles: always light, ink-friendly, no app chrome.",
+      "Do check every screen at 360px with no horizontal page scroll.",
+      "Do put shared component classes in `@layer components` so utilities win.",
+      "Do put slots and small marks in round katori wells and readable content on rimmed lids."
+    ],
+    "donts": [
+      "Don't use jamun for anything but the next step; never two jamun primary actions on one view.",
+      "Don't use a spice colour for anything but a household member, or as text on steel.",
+      "Don't use red outside emergency, urgent and destructive states, and never solid danger red for a destructive button.",
+      "Don't use a side stripe on banners or alerts.",
+      "Don't add tilt, bounce or looping motion beyond the listening voice well and loading indicators.",
+      "Don't fall back to the white-and-teal card stack or the cream paper notebook look.",
+      "Don't use hard offset shadows or pure black shadows on the light theme."
+    ]
+  }
+}

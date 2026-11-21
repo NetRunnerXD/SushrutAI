@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;800&family=Noto+Sans+Devanagari:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{--g:#0F6E4E;--pink:#C2185B;--y:#F2B705;--ink:#1B2B22;--line:#9DB3A6;--paper:#FFFFFF;--tint:#F3F6F2}
+*{box-sizing:border-box;margin:0}
+body{width:390px;height:844px;overflow:hidden;background:var(--tint);font-family:"Noto Sans",sans-serif;color:var(--ink)}
+.hdr{background:var(--g);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px}
+.hdr b{font-size:20px}
+.hdr small{display:block;font-size:13px;opacity:.85}
+.sos{margin-left:auto;background:#B3121B;color:#fff;font-weight:800;border-radius:6px;padding:10px 16px}
+.card{margin:14px 16px;background:var(--paper);border:2px solid var(--g);border-radius:4px}
+.card h2{background:var(--pink);color:#fff;font-size:16px;padding:8px 12px;display:flex;justify-content:space-between}
+.card h2 span{font-family:"Noto Sans Devanagari";font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:15px}
+td,th{border:1px solid var(--line);padding:8px;text-align:left}
+th{background:var(--tint);font-size:13px}
+.box{width:26px;height:26px;border:2px solid var(--ink);display:inline-block;vertical-align:middle}
+.stamp{display:inline-block;border:2px solid var(--g);color:var(--g);font-weight:800;font-size:12px;padding:2px 6px;transform:rotate(-6deg)}
+.notes{margin:14px 16px;background:var(--paper);border:2px dashed var(--g);padding:14px;font-size:18px;font-weight:600}
+.due{margin:0 16px;background:#FFF6D6;border-left:6px solid var(--y);padding:12px;font-weight:600}
+nav{position:absolute;bottom:0;left:0;right:0;height:70px;background:#fff;border-top:2px solid var(--g);display:flex}
+nav a{flex:1;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+nav a.on{background:var(--g);color:#fff}
+</style></head><body>
+<div class="hdr"><div><b>SushrutAI</b><small>Health card · Asha Devi · No. 0142</small></div><span class="sos">SOS</span></div>
+<p style="margin:14px 16px 0;font-size:26px;font-weight:800">Good morning, Asha</p>
+<section class="card"><h2>Today's medicines <span>आज की दवाइयाँ</span></h2>
+<table><tr><th>Medicine</th><th>Morning</th><th>Noon</th><th>Night</th></tr>
+<tr><td>Metformin 500</td><td><span class="stamp">TAKEN</span></td><td><span class="box"></span></td><td><span class="box"></span></td></tr>
+<tr><td>Amlodipine 5</td><td><span class="stamp">TAKEN</span></td><td>—</td><td>—</td></tr>
+<tr><td>Iron + folic</td><td>—</td><td>—</td><td><span class="box"></span></td></tr></table></section>
+<div class="due">Riya: MR-2 vaccine due this week</div>
+<div class="notes">🎙 Tap and speak — ask about a symptom or report</div>
+<nav><a class="on">Home</a><a>Ask</a><a>Medicines</a><a>Records</a><a>Me</a></nav>
+</body></html>
