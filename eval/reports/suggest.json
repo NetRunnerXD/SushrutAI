@@ -1,0 +1,5878 @@
+{
+ "rules": {
+  "relevance": 0.19,
+  "personal_pct": 100.0,
+  "lang_ok_pct": 100.0,
+  "medicine_chips": 0,
+  "variety": 0.3,
+  "p50_ms": 5,
+  "p95_ms": 10,
+  "within_budget_pct": 100.0,
+  "fallback_pct": null,
+  "rows": [
+   {
+    "id": "none/none/en",
+    "items": [
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?",
+     "Which health check-ups should I get at my age?"
+    ],
+    "source": "rules",
+    "ms": 2,
+    "relevance": 0.019,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/none/hi",
+    "items": [
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?",
+     "मेरी उम्र में कौन-सी जाँचें करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.005,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.381,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.227,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "What should I eat with Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.12,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 6,
+    "relevance": 0.019,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/food/en",
+    "items": [
+     "Give me a simple meal plan for a day",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.001,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.002,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/none/en",
+    "items": [
+     "What does my HbA1c result mean?",
+     "Diet tips for Type 2 diabetes",
+     "Safe exercise with Type 2 diabetes",
+     "How can I avoid cold and flu this winter?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.233,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/none/hi",
+    "items": [
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में खान-पान कैसा रखें?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?"
+    ],
+    "source": "rules",
+    "ms": 8,
+    "relevance": 0.044,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.306,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 11,
+    "relevance": 0.176,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "What should I eat with Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 6,
+    "relevance": 0.238,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 8,
+    "relevance": 0.085,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/food/en",
+    "items": [
+     "Give me a simple meal plan for a day",
+     "What does my HbA1c result mean?",
+     "Diet tips for Type 2 diabetes",
+     "Safe exercise with Type 2 diabetes"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.377,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में खान-पान कैसा रखें?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 7,
+    "relevance": 0.266,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/report/en",
+    "items": [
+     "Which values in my report need attention?",
+     "What does my HbA1c result mean?",
+     "Diet tips for Type 2 diabetes",
+     "Safe exercise with Type 2 diabetes"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.248,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/report/hi",
+    "items": [
+     "मेरी रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में खान-पान कैसा रखें?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 8,
+    "relevance": 0.138,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/none/en",
+    "items": [
+     "Is my BP 150/95 too high?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension",
+     "Where can I get my medicines cheaper?"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.248,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/none/hi",
+    "items": [
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में खान-पान कैसा रखें?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?",
+     "मेरी दवाएँ सस्ती कहाँ मिलेंगी?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.236,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.373,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 10,
+    "relevance": 0.237,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "What should I eat with Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 7,
+    "relevance": 0.213,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 10,
+    "relevance": 0.043,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/food/en",
+    "items": [
+     "Give me a simple meal plan for a day",
+     "Is my BP 150/95 too high?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.388,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में खान-पान कैसा रखें?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 9,
+    "relevance": 0.453,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/report/en",
+    "items": [
+     "Which values in my report need attention?",
+     "Is my BP 150/95 too high?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.255,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/report/hi",
+    "items": [
+     "मेरी रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में खान-पान कैसा रखें?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 7,
+    "relevance": 0.217,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/none/en",
+    "items": [
+     "Why is Tetanus-diphtheria (Td) dose 2 important?",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.051,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/none/hi",
+    "items": [
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.053,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.334,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.309,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "What should I eat with Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.274,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 8,
+    "relevance": 0.118,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/food/en",
+    "items": [
+     "Give me a simple meal plan for a day",
+     "Why is Tetanus-diphtheria (Td) dose 2 important?",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.112,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.081,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/none/en",
+    "items": [
+     "What does my TSH result mean?",
+     "Diet tips for Hypothyroidism",
+     "Safe exercise with Hypothyroidism",
+     "How can I avoid cold and flu this winter?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.081,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/none/hi",
+    "items": [
+     "मेरी TSH रिपोर्ट का क्या मतलब है?",
+     "थायरॉइड की कमी में खान-पान कैसा रखें?",
+     "थायरॉइड की कमी में कौन-सा व्यायाम सुरक्षित है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.119,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.335,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 9,
+    "relevance": 0.181,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   }
+  ]
+ },
+ "qwen3:0.6b": {
+  "relevance": 0.157,
+  "personal_pct": 100.0,
+  "lang_ok_pct": 100.0,
+  "medicine_chips": 0,
+  "variety": 0.362,
+  "p50_ms": 2960,
+  "p95_ms": 4627,
+  "within_budget_pct": 0.0,
+  "fallback_pct": 50.0,
+  "rows": [
+   {
+    "id": "none/none/en",
+    "items": [
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?",
+     "Which health check-ups should I get at my age?"
+    ],
+    "source": "model",
+    "ms": 1839,
+    "relevance": 0.019,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/none/hi",
+    "items": [
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?",
+     "मेरी उम्र में कौन-सी जाँचें करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 2782,
+    "relevance": 0.005,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 2014,
+    "relevance": 0.381,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 3362,
+    "relevance": 0.227,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/acidity/en",
+    "items": [
+     "What causes GERD?",
+     "What should I eat with GERD?",
+     "How long does GERD last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 1858,
+    "relevance": 0.008,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 4660,
+    "relevance": 0.019,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/food/en",
+    "items": [
+     "What's a simple meal plan for lunch?",
+     "How to avoid cold and flu this winter?",
+     "Tips to sleep better tonight?",
+     "How much water should I drink daily?"
+    ],
+    "source": "model",
+    "ms": 2106,
+    "relevance": 0.006,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 3494,
+    "relevance": 0.002,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/none/en",
+    "items": [
+     "What does my HbA1c mean?",
+     "How can I avoid cold and flu this winter?",
+     "What is a normal BP for my age?",
+     "What should I drink in a day?"
+    ],
+    "source": "model",
+    "ms": 2385,
+    "relevance": 0.043,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/none/hi",
+    "items": [
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में खान-पान कैसा रखें?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?"
+    ],
+    "source": "rules",
+    "ms": 3582,
+    "relevance": 0.044,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "How long does Viral fever usually last?",
+     "What else can I do at home?",
+     "What should I eat with Viral fever?"
+    ],
+    "source": "model",
+    "ms": 2118,
+    "relevance": 0.306,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 4179,
+    "relevance": 0.176,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/acidity/en",
+    "items": [
+     "What causes GERD?",
+     "What should I eat with GERD?",
+     "How long does GERD usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 3962,
+    "relevance": 0.064,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 4262,
+    "relevance": 0.085,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/food/en",
+    "items": [
+     "What's a simple meal plan for a day?",
+     "What does my HbA1c mean?",
+     "Diet tips for Type 2 diabetes",
+     "Safe exercise with Type 2 diabetes"
+    ],
+    "source": "model",
+    "ms": 2157,
+    "relevance": 0.263,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में खान-पान कैसा रखें?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 3824,
+    "relevance": 0.266,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/report/en",
+    "items": [
+     "What does my HbA1c result mean?",
+     "Which values in my report need attention?",
+     "How can I avoid cold and flu this winter?",
+     "What is a normal BP for my age?"
+    ],
+    "source": "model",
+    "ms": 2509,
+    "relevance": 0.256,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/report/hi",
+    "items": [
+     "मेरी रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में खान-पान कैसा रखें?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 5622,
+    "relevance": 0.138,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/none/en",
+    "items": [
+     "Is my BP 150/95 too high?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension",
+     "How can I avoid cold and flu this winter?"
+    ],
+    "source": "model",
+    "ms": 3516,
+    "relevance": 0.251,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/none/hi",
+    "items": [
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में खान-पान कैसा रखें?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?",
+     "मेरी दवाएँ सस्ती कहाँ मिलेंगी?"
+    ],
+    "source": "rules",
+    "ms": 3729,
+    "relevance": 0.236,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "How can I avoid cold and flu this winter?"
+    ],
+    "source": "model",
+    "ms": 2226,
+    "relevance": 0.322,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 4627,
+    "relevance": 0.237,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/acidity/en",
+    "items": [
+     "What causes GERD?",
+     "How long does GERD last?",
+     "What else can I do at home?",
+     "What else can I do with my usual medicines?"
+    ],
+    "source": "model",
+    "ms": 2380,
+    "relevance": 0.076,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 4423,
+    "relevance": 0.043,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/food/en",
+    "items": [
+     "What is a simple meal plan for a day?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension",
+     "How much water should I drink in a day?"
+    ],
+    "source": "model",
+    "ms": 2555,
+    "relevance": 0.18,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में खान-पान कैसा रखें?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 3525,
+    "relevance": 0.453,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/report/en",
+    "items": [
+     "Which values in my report need attention?",
+     "Is my BP 150/95 too high?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension"
+    ],
+    "source": "model",
+    "ms": 1927,
+    "relevance": 0.255,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/report/hi",
+    "items": [
+     "मेरी रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में खान-पान कैसा रखें?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 3462,
+    "relevance": 0.217,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/none/en",
+    "items": [
+     "Why is Td dose 2 important?",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "Normal BP for my age?"
+    ],
+    "source": "model",
+    "ms": 1922,
+    "relevance": 0.035,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/none/hi",
+    "items": [
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 2960,
+    "relevance": 0.053,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 2038,
+    "relevance": 0.334,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 3381,
+    "relevance": 0.309,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/acidity/en",
+    "items": [
+     "What causes GERD?",
+     "What should I eat with GERD?",
+     "How long does GERD last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 1887,
+    "relevance": 0.074,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 3312,
+    "relevance": 0.118,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/food/en",
+    "items": [
+     "A simple meal plan for a day",
+     "Why is Tetanus-diphtheria (Td) important?",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight"
+    ],
+    "source": "model",
+    "ms": 1916,
+    "relevance": 0.023,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता"
+    ],
+    "source": "rules",
+    "ms": 2936,
+    "relevance": 0.081,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/none/en",
+    "items": [
+     "What does my TSH result mean?",
+     "How can I avoid cold and flu this winter?",
+     "What is a normal BP for my age?",
+     "Which health check-ups should I get at my age?"
+    ],
+    "source": "model",
+    "ms": 1886,
+    "relevance": 0.07,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/none/hi",
+    "items": [
+     "मेरी TSH रिपोर्ट का क्या मतलब है?",
+     "थायरॉइड की कमी में खान-पान कैसा रखें?",
+     "थायरॉइड की कमी में कौन-सा व्यायाम सुरक्षित है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?"
+    ],
+    "source": "rules",
+    "ms": 3071,
+    "relevance": 0.119,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "How can I avoid cold and flu this winter?"
+    ],
+    "source": "model",
+    "ms": 1950,
+    "relevance": 0.321,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 3493,
+    "relevance": 0.181,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   }
+  ]
+ },
+ "gemma3:270m": {
+  "relevance": 0.191,
+  "personal_pct": 97.2,
+  "lang_ok_pct": 100.0,
+  "medicine_chips": 0,
+  "variety": 0.35,
+  "p50_ms": 1476,
+  "p95_ms": 1853,
+  "within_budget_pct": 65.0,
+  "fallback_pct": 17.5,
+  "rows": [
+   {
+    "id": "none/none/en",
+    "items": [
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?",
+     "Which health check-ups should I get at my age?"
+    ],
+    "source": "model",
+    "ms": 1461,
+    "relevance": 0.019,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/none/hi",
+    "items": [
+     "सर्दी-ज़ुकाम से कैसे बचें",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?",
+     "मेरी उम्र में कौन-सी जाँचें करानी चाहिए?"
+    ],
+    "source": "model",
+    "ms": 1475,
+    "relevance": 0.013,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 1494,
+    "relevance": 0.381,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "model",
+    "ms": 1811,
+    "relevance": 0.227,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "What should I eat with Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 1512,
+    "relevance": 0.12,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "model",
+    "ms": 1397,
+    "relevance": 0.019,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/food/en",
+    "items": [
+     "Simple meal plan for a day",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?"
+    ],
+    "source": "model",
+    "ms": 1374,
+    "relevance": 0.0,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "model",
+    "ms": 1243,
+    "relevance": 0.002,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/none/en",
+    "items": [
+     "What does my HbA1c result mean?",
+     "What does my Diet tips for Type 2 diabetes?",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight"
+    ],
+    "source": "model",
+    "ms": 1451,
+    "relevance": 0.209,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/none/hi",
+    "items": [
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में खान-पान कैसा रखें?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?"
+    ],
+    "source": "model",
+    "ms": 1600,
+    "relevance": 0.044,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 1410,
+    "relevance": 0.306,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 1295,
+    "relevance": 0.176,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "What should I eat with Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 1519,
+    "relevance": 0.238,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 1424,
+    "relevance": 0.085,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/food/en",
+    "items": [
+     "Give me a simple meal plan for a day",
+     "What does my HbA1c result mean?",
+     "Diet tips for Type 2 diabetes",
+     "Safe exercise with Type 2 diabetes"
+    ],
+    "source": "model",
+    "ms": 1450,
+    "relevance": 0.377,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में खान-पान कैसा रखें?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "model",
+    "ms": 1613,
+    "relevance": 0.266,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/report/en",
+    "items": [
+     "Which values in my report need attention?",
+     "What does my HbA1c result mean?",
+     "Diet tips for Type 2 diabetes",
+     "Safe exercise with Type 2 diabetes"
+    ],
+    "source": "model",
+    "ms": 1498,
+    "relevance": 0.248,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/report/hi",
+    "items": [
+     "मेरी HbA1c रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में खान-पान कैसा रखें?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "model",
+    "ms": 1844,
+    "relevance": 0.171,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/none/en",
+    "items": [
+     "Is my BP 150/95 too high?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension",
+     "Where can I get my medicines cheaper?"
+    ],
+    "source": "model",
+    "ms": 1358,
+    "relevance": 0.248,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/none/hi",
+    "items": [
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में खान-पान कैसा रखें?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?",
+     "मेरी दवाएँ सस्ती कहाँ मिलेंगी?"
+    ],
+    "source": "model",
+    "ms": 1641,
+    "relevance": 0.236,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 1378,
+    "relevance": 0.373,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 1853,
+    "relevance": 0.237,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "What should I eat with Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 1494,
+    "relevance": 0.213,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 1405,
+    "relevance": 0.043,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/food/en",
+    "items": [
+     "Simple meal plan for a day",
+     "Is my BP 150/95 too high?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension"
+    ],
+    "source": "model",
+    "ms": 1413,
+    "relevance": 0.399,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में खान-पान कैसा रखें?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "model",
+    "ms": 1552,
+    "relevance": 0.453,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/report/en",
+    "items": [
+     "Which values in my report need attention?",
+     "Is my BP 150/95 too high?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension"
+    ],
+    "source": "model",
+    "ms": 1357,
+    "relevance": 0.255,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/report/hi",
+    "items": [
+     "मेरी रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में खान-पान कैसा रखें?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 1992,
+    "relevance": 0.217,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/none/en",
+    "items": [
+     "Why is Tetanus-diphtheria (Td) dose 2 important?",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?"
+    ],
+    "source": "model",
+    "ms": 1419,
+    "relevance": 0.051,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/none/hi",
+    "items": [
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "model",
+    "ms": 1600,
+    "relevance": 0.053,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 1476,
+    "relevance": 0.334,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 1471,
+    "relevance": 0.309,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "What should I eat with Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 1508,
+    "relevance": 0.274,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/acidity/hi",
+    "items": [
+     "Acidिटी क्यों होता है?",
+     "Acidिटी में क्या खाना चाहिए?",
+     "Acidिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "model",
+    "ms": 1652,
+    "relevance": 0.033,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/food/en",
+    "items": [
+     "Simple meal plan for a day",
+     "Why is Tetanus-diphtheria (Td) dose 2 important?",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight"
+    ],
+    "source": "model",
+    "ms": 1448,
+    "relevance": 0.128,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता"
+    ],
+    "source": "model",
+    "ms": 1492,
+    "relevance": 0.081,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/none/en",
+    "items": [
+     "What does my TSH result mean?",
+     "How does my TSH result mean?",
+     "Diet tips for Hypothyroidism",
+     "Safe exercise with Hypothyroidism"
+    ],
+    "source": "model",
+    "ms": 1357,
+    "relevance": 0.199,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/none/hi",
+    "items": [
+     "मेरी TSH रिपोर्ट का क्या मतलब है?",
+     "थायॉइड की कमी में खान-पान कैसा रखें?",
+     "थायॉइड की कमी में कौन-सा व्यायाम सुरक्षित है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?"
+    ],
+    "source": "model",
+    "ms": 1491,
+    "relevance": 0.089,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "What should I eat with Viral fever?",
+     "How long does Viral fever usually last?",
+     "What else can I do at home?"
+    ],
+    "source": "model",
+    "ms": 1377,
+    "relevance": 0.335,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 2005,
+    "relevance": 0.181,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   }
+  ]
+ },
+ "rules_rotating": {
+  "relevance": 0.176,
+  "personal_pct": 100.0,
+  "lang_ok_pct": 100.0,
+  "medicine_chips": 0,
+  "variety": 0.4,
+  "p50_ms": 3,
+  "p95_ms": 6,
+  "within_budget_pct": 100.0,
+  "fallback_pct": null,
+  "rows": [
+   {
+    "id": "none/none/en",
+    "items": [
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?",
+     "Which health check-ups should I get at my age?"
+    ],
+    "source": "rules",
+    "ms": 1,
+    "relevance": 0.019,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/none/hi",
+    "items": [
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?",
+     "मेरी उम्र में कौन-सी जाँचें करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.005,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "How is Viral fever checked?",
+     "When should I see a doctor for Viral fever?",
+     "How do I know if it is Dengue?"
+    ],
+    "source": "rules",
+    "ms": 2,
+    "relevance": 0.287,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में डॉक्टर को कब दिखाएँ?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.158,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "How is Acidity (GERD) checked?",
+     "When should I see a doctor for Acidity (GERD)?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.153,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी दोबारा न हो, इसके लिए क्या करें?",
+     "एसिडिटी की जाँच कैसे होती है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.012,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/food/en",
+    "items": [
+     "Give me a simple meal plan for a day",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?"
+    ],
+    "source": "rules",
+    "ms": 1,
+    "relevance": 0.001,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "none/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 2,
+    "relevance": 0.002,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/none/en",
+    "items": [
+     "What does my HbA1c result mean?",
+     "How often should I check my Type 2 diabetes?",
+     "Diet tips for Type 2 diabetes",
+     "How can I avoid cold and flu this winter?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.202,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/none/hi",
+    "items": [
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?",
+     "टाइप 2 डायबिटीज़ की जाँच कितनी बार करानी चाहिए?",
+     "सर्दी-ज़ुकाम से कैसे बचें?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.027,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "How long does Viral fever usually last?",
+     "How can I prevent Viral fever next time?",
+     "How do I know if it is Dengue?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.319,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार दोबारा न हो, इसके लिए क्या करें?",
+     "वायरल बुखार की जाँच कैसे होती है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 6,
+    "relevance": 0.241,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "How can I prevent Acidity (GERD) next time?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.219,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 8,
+    "relevance": 0.085,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/food/en",
+    "items": [
+     "Give me a simple meal plan for a day",
+     "What does my HbA1c result mean?",
+     "How often should I check my Type 2 diabetes?",
+     "Diet tips for Type 2 diabetes"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.36,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?",
+     "टाइप 2 डायबिटीज़ की जाँच कितनी बार करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.073,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/report/en",
+    "items": [
+     "Which values in my report need attention?",
+     "What does my HbA1c result mean?",
+     "Safe exercise with Type 2 diabetes",
+     "How often should I check my Type 2 diabetes?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.228,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "diabetes/report/hi",
+    "items": [
+     "मेरी रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में खान-पान कैसा रखें?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.138,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/none/en",
+    "items": [
+     "Is my BP 150/95 too high?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension",
+     "Where can I get my medicines cheaper?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.248,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/none/hi",
+    "items": [
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?",
+     "हाई BP की जाँच कितनी बार करानी चाहिए?",
+     "मेरी दवाएँ सस्ती कहाँ मिलेंगी?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.237,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "How long does Viral fever usually last?",
+     "How can I prevent Viral fever next time?",
+     "How do I know if it is Dengue?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.436,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार दोबारा न हो, इसके लिए क्या करें?",
+     "वायरल बुखार की जाँच कैसे होती है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 8,
+    "relevance": 0.305,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "How can I prevent Acidity (GERD) next time?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.243,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.043,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/food/en",
+    "items": [
+     "Give me a simple meal plan for a day",
+     "Is my BP 150/95 too high?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension"
+    ],
+    "source": "rules",
+    "ms": 2,
+    "relevance": 0.388,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?",
+     "हाई BP की जाँच कितनी बार करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.228,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/report/en",
+    "items": [
+     "Which values in my report need attention?",
+     "Is my BP 150/95 too high?",
+     "How often should I check my Hypertension?",
+     "Diet tips for Hypertension"
+    ],
+    "source": "rules",
+    "ms": 2,
+    "relevance": 0.259,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "bp/report/hi",
+    "items": [
+     "मेरी रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में खान-पान कैसा रखें?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.217,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/none/en",
+    "items": [
+     "Why is Tetanus-diphtheria (Td) dose 2 important?",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?"
+    ],
+    "source": "rules",
+    "ms": 1,
+    "relevance": 0.051,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/none/hi",
+    "items": [
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.053,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "How long does Viral fever usually last?",
+     "How can I prevent Viral fever next time?",
+     "How do I know if it is Dengue?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.348,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार दोबारा न हो, इसके लिए क्या करें?",
+     "वायरल बुखार की जाँच कैसे होती है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 6,
+    "relevance": 0.237,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "How can I prevent Acidity (GERD) next time?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.302,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.118,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/food/en",
+    "items": [
+     "Give me a simple meal plan for a day",
+     "Why is Tetanus-diphtheria (Td) dose 2 important?",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight"
+    ],
+    "source": "rules",
+    "ms": 2,
+    "relevance": 0.112,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "pregnant/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.081,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/none/en",
+    "items": [
+     "What does my TSH result mean?",
+     "How often should I check my Hypothyroidism?",
+     "Diet tips for Hypothyroidism",
+     "How can I avoid cold and flu this winter?"
+    ],
+    "source": "rules",
+    "ms": 2,
+    "relevance": 0.064,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/none/hi",
+    "items": [
+     "मेरी TSH रिपोर्ट का क्या मतलब है?",
+     "थायरॉइड की कमी में खान-पान कैसा रखें?",
+     "थायरॉइड की कमी में कौन-सा व्यायाम सुरक्षित है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.119,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "When should I see a doctor for Viral fever?",
+     "What should I eat with Viral fever?",
+     "How do I know if it is Dengue?"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.232,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   },
+   {
+    "id": "thyroid/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.171,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": []
+   }
+  ]
+ },
+ "rules_v2": {
+  "relevance": 0.176,
+  "personal_pct": 100.0,
+  "lang_ok_pct": 100.0,
+  "medicine_chips": 0,
+  "variety": 0.4,
+  "p50_ms": 7,
+  "p95_ms": 16,
+  "within_budget_pct": 100.0,
+  "within_3s_pct": 100.0,
+  "fallback_pct": null,
+  "rows": [
+   {
+    "id": "none/none/en",
+    "items": [
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?",
+     "Which health check-ups should I get at my age?"
+    ],
+    "source": "rules",
+    "ms": 2,
+    "relevance": 0.019,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "none/none/hi",
+    "items": [
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?",
+     "मेरी उम्र में कौन-सी जाँचें करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.005,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     4,
+     2
+    ]
+   },
+   {
+    "id": "none/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "How is Viral fever checked?",
+     "When should I see a doctor for Viral fever?",
+     "How do I know if it is Dengue?"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.287,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "none/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में डॉक्टर को कब दिखाएँ?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 8,
+    "relevance": 0.158,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "none/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "How is Acidity (GERD) checked?",
+     "When should I see a doctor for Acidity (GERD)?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 7,
+    "relevance": 0.153,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     4
+    ]
+   },
+   {
+    "id": "none/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी दोबारा न हो, इसके लिए क्या करें?",
+     "एसिडिटी की जाँच कैसे होती है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.012,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     4
+    ]
+   },
+   {
+    "id": "none/food/en",
+    "items": [
+     "Give me a simple meal plan for a day",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.001,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     4
+    ]
+   },
+   {
+    "id": "none/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.002,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/none/en",
+    "items": [
+     "What does my HbA1c result mean?",
+     "How often should I check my Type 2 diabetes?",
+     "Diet tips for Type 2 diabetes",
+     "How can I avoid cold and flu this winter?"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.202,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "diabetes/none/hi",
+    "items": [
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?",
+     "टाइप 2 डायबिटीज़ की जाँच कितनी बार करानी चाहिए?",
+     "सर्दी-ज़ुकाम से कैसे बचें?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.027,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "diabetes/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "How long does Viral fever usually last?",
+     "How can I prevent Viral fever next time?",
+     "How do I know if it is Dengue?"
+    ],
+    "source": "rules",
+    "ms": 8,
+    "relevance": 0.319,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार दोबारा न हो, इसके लिए क्या करें?",
+     "वायरल बुखार की जाँच कैसे होती है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 16,
+    "relevance": 0.241,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "How can I prevent Acidity (GERD) next time?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 7,
+    "relevance": 0.219,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     2
+    ]
+   },
+   {
+    "id": "diabetes/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 9,
+    "relevance": 0.085,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     4
+    ]
+   },
+   {
+    "id": "diabetes/food/en",
+    "items": [
+     "Give me a simple meal plan for a day",
+     "What does my HbA1c result mean?",
+     "How often should I check my Type 2 diabetes?",
+     "Diet tips for Type 2 diabetes"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.36,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "diabetes/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?",
+     "टाइप 2 डायबिटीज़ की जाँच कितनी बार करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 10,
+    "relevance": 0.073,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     5,
+     3,
+     2
+    ]
+   },
+   {
+    "id": "diabetes/report/en",
+    "items": [
+     "Which values in my report need attention?",
+     "What does my HbA1c result mean?",
+     "Safe exercise with Type 2 diabetes",
+     "How often should I check my Type 2 diabetes?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.228,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     5,
+     2,
+     3
+    ]
+   },
+   {
+    "id": "diabetes/report/hi",
+    "items": [
+     "मेरी रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में खान-पान कैसा रखें?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 8,
+    "relevance": 0.138,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     5,
+     2,
+     3
+    ]
+   },
+   {
+    "id": "bp/none/en",
+    "items": [
+     "Is my BP 150/95 too high?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension",
+     "Where can I get my medicines cheaper?"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.248,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "bp/none/hi",
+    "items": [
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?",
+     "हाई BP की जाँच कितनी बार करानी चाहिए?",
+     "मेरी दवाएँ सस्ती कहाँ मिलेंगी?"
+    ],
+    "source": "rules",
+    "ms": 6,
+    "relevance": 0.237,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "bp/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "How long does Viral fever usually last?",
+     "How can I prevent Viral fever next time?",
+     "How do I know if it is Dengue?"
+    ],
+    "source": "rules",
+    "ms": 11,
+    "relevance": 0.436,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "bp/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार दोबारा न हो, इसके लिए क्या करें?",
+     "वायरल बुखार की जाँच कैसे होती है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 12,
+    "relevance": 0.305,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "bp/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "How can I prevent Acidity (GERD) next time?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 8,
+    "relevance": 0.243,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     2
+    ]
+   },
+   {
+    "id": "bp/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 16,
+    "relevance": 0.043,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     4
+    ]
+   },
+   {
+    "id": "bp/food/en",
+    "items": [
+     "Give me a simple meal plan for a day",
+     "Is my BP 150/95 too high?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension"
+    ],
+    "source": "rules",
+    "ms": 7,
+    "relevance": 0.388,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "bp/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?",
+     "हाई BP की जाँच कितनी बार करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 11,
+    "relevance": 0.228,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "bp/report/en",
+    "items": [
+     "Which values in my report need attention?",
+     "Is my BP 150/95 too high?",
+     "How often should I check my Hypertension?",
+     "Diet tips for Hypertension"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.259,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     4
+    ]
+   },
+   {
+    "id": "bp/report/hi",
+    "items": [
+     "मेरी रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में खान-पान कैसा रखें?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 8,
+    "relevance": 0.217,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/none/en",
+    "items": [
+     "Why is Tetanus-diphtheria (Td) dose 2 important?",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.051,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     2
+    ]
+   },
+   {
+    "id": "pregnant/none/hi",
+    "items": [
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 6,
+    "relevance": 0.053,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "How long does Viral fever usually last?",
+     "How can I prevent Viral fever next time?",
+     "How do I know if it is Dengue?"
+    ],
+    "source": "rules",
+    "ms": 6,
+    "relevance": 0.348,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार दोबारा न हो, इसके लिए क्या करें?",
+     "वायरल बुखार की जाँच कैसे होती है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 11,
+    "relevance": 0.237,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/acidity/en",
+    "items": [
+     "What causes Acidity (GERD)?",
+     "How long does Acidity (GERD) usually last?",
+     "How can I prevent Acidity (GERD) next time?",
+     "What else can I do at home?"
+    ],
+    "source": "rules",
+    "ms": 5,
+    "relevance": 0.302,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     2
+    ]
+   },
+   {
+    "id": "pregnant/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 20,
+    "relevance": 0.118,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/food/en",
+    "items": [
+     "Give me a simple meal plan for a day",
+     "Why is Tetanus-diphtheria (Td) dose 2 important?",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight"
+    ],
+    "source": "rules",
+    "ms": 3,
+    "relevance": 0.112,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता"
+    ],
+    "source": "rules",
+    "ms": 12,
+    "relevance": 0.081,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "thyroid/none/en",
+    "items": [
+     "What does my TSH result mean?",
+     "How often should I check my Hypothyroidism?",
+     "Diet tips for Hypothyroidism",
+     "How can I avoid cold and flu this winter?"
+    ],
+    "source": "rules",
+    "ms": 4,
+    "relevance": 0.064,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "thyroid/none/hi",
+    "items": [
+     "मेरी TSH रिपोर्ट का क्या मतलब है?",
+     "थायरॉइड की कमी में खान-पान कैसा रखें?",
+     "थायरॉइड की कमी में कौन-सा व्यायाम सुरक्षित है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?"
+    ],
+    "source": "rules",
+    "ms": 9,
+    "relevance": 0.119,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "thyroid/fever/en",
+    "items": [
+     "What causes Viral fever?",
+     "When should I see a doctor for Viral fever?",
+     "What should I eat with Viral fever?",
+     "How do I know if it is Dengue?"
+    ],
+    "source": "rules",
+    "ms": 8,
+    "relevance": 0.232,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "thyroid/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 17,
+    "relevance": 0.171,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   }
+  ],
+  "judge_mean": 2.86,
+  "judge_4plus_pct": 34.4
+ },
+ "gemma3:1b_v2": {
+  "relevance": 0.14,
+  "personal_pct": 72.2,
+  "lang_ok_pct": 100.0,
+  "medicine_chips": 0,
+  "variety": 0.75,
+  "p50_ms": 4473,
+  "p95_ms": 5957,
+  "within_budget_pct": 0.0,
+  "within_3s_pct": 2.5,
+  "fallback_pct": 12.5,
+  "rows": [
+   {
+    "id": "none/none/en",
+    "items": [
+     "How’s your temperature?",
+     "Do you feel cold?",
+     "Is it snowing outside?",
+     "What’s your usual activity level?"
+    ],
+    "source": "model",
+    "ms": 2893,
+    "relevance": 0.21,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     2
+    ]
+   },
+   {
+    "id": "none/none/hi",
+    "items": [
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?",
+     "मेरी उम्र में कौन-सी जाँचें करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 3542,
+    "relevance": 0.005,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     4,
+     2
+    ]
+   },
+   {
+    "id": "none/fever/en",
+    "items": [
+     "How long does viral fever last?",
+     "What are the symptoms?",
+     "What should I do if the fever persists?",
+     "When should I see a doctor?"
+    ],
+    "source": "model",
+    "ms": 4751,
+    "relevance": 0.214,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "none/fever/hi",
+    "items": [
+     "वायरल बुखार कितने दिन रहता है?",
+     "डेंगू की जाँच कब करानी चाहिए?",
+     "बुखार में क्या खाना चाहिए?",
+     "क्या कल काम पर जा सकता हूँ?"
+    ],
+    "source": "model",
+    "ms": 4848,
+    "relevance": 0.203,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "none/acidity/en",
+    "items": [
+     "What triggers GERD?",
+     "How often does GERD occur?",
+     "What's a good diet for GERD?",
+     "Can I avoid lying down after eating?"
+    ],
+    "source": "model",
+    "ms": 5034,
+    "relevance": 0.012,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "none/acidity/hi",
+    "items": [
+     "एसिडिटी कब होती है?",
+     "खाने के बाद सीने में जलन कैसे कम करें?",
+     "क्या खाने के बाद तुरंत लेटने से बचें?",
+     "क्या मैं रात में खाना खाऊं?"
+    ],
+    "source": "model",
+    "ms": 4287,
+    "relevance": 0.221,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "none/food/en",
+    "items": [
+     "What vegetables are good?",
+     "What kind of dal is recommended?",
+     "What’s a balanced meal?",
+     "Can I have more fiber?"
+    ],
+    "source": "model",
+    "ms": 4075,
+    "relevance": 0.0,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "none/food/hi",
+    "items": [
+     "सब्जी कब खाना चाहिए?",
+     "दाल का कौन सा रूप अच्छा है?",
+     "रोटी का कितना आकार चाहिए?",
+     "शर्करा कम करने के लिए क्या करें?"
+    ],
+    "source": "model",
+    "ms": 4501,
+    "relevance": 0.0,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/none/en",
+    "items": [
+     "How’s my blood sugar lately?",
+     "What’s my current HbA1c level?",
+     "Is it winter or summer affecting my health?",
+     "Have I been taking any medications?"
+    ],
+    "source": "model",
+    "ms": 5937,
+    "relevance": 0.068,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     4
+    ]
+   },
+   {
+    "id": "diabetes/none/hi",
+    "items": [
+     "मुझे सर्दी कितनी गंभीर है?",
+     "मुझे कितना ब्लड शुगर है?",
+     "मुझे सर्दी के मौसम में क्या करना चाहिए?",
+     "मुझे डॉक्टर को कब दिखाना चाहिए?"
+    ],
+    "source": "model",
+    "ms": 5134,
+    "relevance": 0.002,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "diabetes/fever/en",
+    "items": [
+     "How long does a viral fever last?",
+     "What are the symptoms of dengue?",
+     "What should I do if I feel worse?",
+     "Can I see a doctor?"
+    ],
+    "source": "model",
+    "ms": 5549,
+    "relevance": 0.147,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "diabetes/fever/hi",
+    "items": [
+     "वायरल बुखार कितने दिन रहता है?",
+     "डेंगू की जाँच कब करानी चाहिए?",
+     "बुखार में क्या खाना चाहिए?",
+     "क्या कल काम पर जा सकता हूँ?"
+    ],
+    "source": "model",
+    "ms": 4995,
+    "relevance": 0.177,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/acidity/en",
+    "items": [
+     "What is GERD?",
+     "How often does GERD occur?",
+     "What are the best foods for GERD?",
+     "Can I manage GERD with diet?"
+    ],
+    "source": "model",
+    "ms": 5957,
+    "relevance": 0.049,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     4
+    ]
+   },
+   {
+    "id": "diabetes/acidity/hi",
+    "items": [
+     "एसिडिटी क्या है?",
+     "खाने के बाद सीने में जलन कब कम होती है?",
+     "क्या खाने के बाद तुरंत लेटने से बचें?",
+     "एसिडिटी के लिए क्या करें?"
+    ],
+    "source": "model",
+    "ms": 7030,
+    "relevance": 0.24,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "diabetes/food/en",
+    "items": [
+     "What’s a good lunch for someone with diabetes?",
+     "What’s a balanced lunch?",
+     "What’s a simple meal?",
+     "What’s a healthy lunch option?"
+    ],
+    "source": "model",
+    "ms": 5622,
+    "relevance": 0.255,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/food/hi",
+    "items": [
+     "दोपहर में क्या खाना चाहिए?",
+     "सब्जियों से शुगर कैसे कम होती है?",
+     "दाल और रोटी से क्या फायदा?",
+     "क्या कोई खास भोजन है जोDiabetes के लिए अच्छा है?"
+    ],
+    "source": "model",
+    "ms": 4943,
+    "relevance": 0.245,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/report/en",
+    "items": [
+     "What is a normal HbA1c?",
+     "What is a 8.1% HbA1c?",
+     "How does this affect my diabetes?",
+     "What are the potential risks?"
+    ],
+    "source": "model",
+    "ms": 4756,
+    "relevance": 0.231,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     4
+    ]
+   },
+   {
+    "id": "diabetes/report/hi",
+    "items": [
+     "HbA1c क्या है?",
+     "1% का मतलब है क्या?",
+     "इसका मतलब क्या है?",
+     "मैं अपने रक्त शर्करा को नियंत्रित कैसे करूँ?"
+    ],
+    "source": "model",
+    "ms": 4473,
+    "relevance": 0.018,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     5,
+     3,
+     2
+    ]
+   },
+   {
+    "id": "bp/none/en",
+    "items": [
+     "Is my BP 150/95 too high?",
+     "Diet tips for Hypertension",
+     "Safe exercise with Hypertension",
+     "Where can I get my medicines cheaper?"
+    ],
+    "source": "rules",
+    "ms": 5648,
+    "relevance": 0.248,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "bp/none/hi",
+    "items": [
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?",
+     "हाई BP की जाँच कितनी बार करानी चाहिए?",
+     "मेरी दवाएँ सस्ती कहाँ मिलेंगी?"
+    ],
+    "source": "rules",
+    "ms": 5313,
+    "relevance": 0.237,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "bp/fever/en",
+    "items": [
+     "How long does this last?",
+     "What are the symptoms?",
+     "What should I do if it doesn't go away?",
+     "Can I see a doctor?"
+    ],
+    "source": "model",
+    "ms": 3890,
+    "relevance": 0.006,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "bp/fever/hi",
+    "items": [
+     "वायरल बुखार कितने दिन रहता है?",
+     "डेंगू की जाँच कब करानी चाहिए?",
+     "बुखार में क्या खाना चाहिए?",
+     "क्या कल काम पर जा सकता हूँ?"
+    ],
+    "source": "model",
+    "ms": 3922,
+    "relevance": 0.205,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "bp/acidity/en",
+    "items": [
+     "What is GERD?",
+     "How often does GERD occur?",
+     "What are good foods to avoid?",
+     "Can I drink more water?"
+    ],
+    "source": "model",
+    "ms": 3902,
+    "relevance": 0.047,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     2
+    ]
+   },
+   {
+    "id": "bp/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होती है?",
+     "खाने के बाद सीने में जलन कब कम होती है?",
+     "एसिडिटी से कैसे निपटें?",
+     "क्या मैं दिन में कितनी बार खाना चाहिए?"
+    ],
+    "source": "model",
+    "ms": 4304,
+    "relevance": 0.169,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "bp/food/en",
+    "items": [
+     "What’s a balanced lunch?",
+     "What’s a good vegetable option?",
+     "What’s a low-carb option?",
+     "Can I have lentils?"
+    ],
+    "source": "model",
+    "ms": 3736,
+    "relevance": 0.005,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "bp/food/hi",
+    "items": [
+     "दोपहर में क्या खाना चाहिए?",
+     "शबर रहने के लिए क्या खाना चाहिए?",
+     "सब्जियां और रोटी से क्या फायदा?",
+     "क्या ज्यादा पानी पीना चाहिए?"
+    ],
+    "source": "model",
+    "ms": 3638,
+    "relevance": 0.221,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "bp/report/en",
+    "items": [
+     "What is HbA1c?",
+     "What is a 8.1% HbA1c?",
+     "What does this mean?",
+     "How does it affect my blood sugar?"
+    ],
+    "source": "model",
+    "ms": 4046,
+    "relevance": 0.189,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "bp/report/hi",
+    "items": [
+     "HbA1c क्या है?",
+     "7% से ज़्यादा शुगर का मतलब क्या है?",
+     "मेरा BP कैसे प्रभावित होता है?",
+     "मुझे अपने ब्लड शुगर को कंट्रोल कैसे रखें?"
+    ],
+    "source": "model",
+    "ms": 3816,
+    "relevance": 0.022,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/none/en",
+    "items": [
+     "Why is Tetanus-diphtheria (Td) dose 2 important?",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight",
+     "How much water should I drink in a day?"
+    ],
+    "source": "rules",
+    "ms": 4906,
+    "relevance": 0.051,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     2
+    ]
+   },
+   {
+    "id": "pregnant/none/hi",
+    "items": [
+     "मुझे कितने साल की उम्र है?",
+     "अभी तक कोई खास स्वास्थ्य समस्या है?",
+     "इस सर्दी में क्या ध्यान रखना चाहिए?",
+     "इस सर्दी में शरीर को गर्म रखने के लिए क्या करना चाहिए?"
+    ],
+    "source": "model",
+    "ms": 4013,
+    "relevance": 0.003,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/fever/en",
+    "items": [
+     "How long does a viral fever last?",
+     "What are the symptoms of dengue?",
+     "What should I do if fever persists?",
+     "Can I see a doctor?"
+    ],
+    "source": "model",
+    "ms": 3932,
+    "relevance": 0.208,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "pregnant/fever/hi",
+    "items": [
+     "वायरल बुखार कितने दिन रहता है?",
+     "डेंगू की जाँच कब करानी चाहिए?",
+     "बुखार में क्या खाना चाहिए?",
+     "क्या कल काम पर जा सकता हूँ?"
+    ],
+    "source": "model",
+    "ms": 3608,
+    "relevance": 0.222,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/acidity/en",
+    "items": [
+     "What is GERD?",
+     "How often does GERD occur?",
+     "Can I manage GERD with diet?",
+     "What are the symptoms of GERD?"
+    ],
+    "source": "model",
+    "ms": 3901,
+    "relevance": 0.07,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "pregnant/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होती है?",
+     "खाने के बाद सीने में जलन कब कम होती है?",
+     "क्या खाने के बाद तुरंत लेटने से बचें?",
+     "एसिडिटी के लिए क्या करें?"
+    ],
+    "source": "model",
+    "ms": 4282,
+    "relevance": 0.279,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "pregnant/food/en",
+    "items": [
+     "What’s a good lunch for diabetes?",
+     "What’s a diabetic-friendly meal?",
+     "What’s a balanced lunch?",
+     "Can I eat more carbs?"
+    ],
+    "source": "model",
+    "ms": 3582,
+    "relevance": 0.255,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/food/hi",
+    "items": [
+     "डायबिटीज में दोपहर में क्या खाना चाहिए?",
+     "सब्जियां और रोटी से शुगर कैसे कंट्रोल होती है?",
+     "क्या दोपहर में कोई खास भोजन चाहिए?",
+     "डाइट में क्या शामिल होना चाहिए?"
+    ],
+    "source": "model",
+    "ms": 4117,
+    "relevance": 0.362,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "thyroid/none/en",
+    "items": [
+     "What does my TSH result mean?",
+     "How often should I check my Hypothyroidism?",
+     "Diet tips for Hypothyroidism",
+     "How can I avoid cold and flu this winter?"
+    ],
+    "source": "rules",
+    "ms": 5090,
+    "relevance": 0.064,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "thyroid/none/hi",
+    "items": [
+     "मुझे सर्दी से कैसे बचाऊं?",
+     "मुझे थकान महसूस हो रही है, क्या इसका कारण है?",
+     "मुझे नींद कम आती है, क्या इसका मतलब है?",
+     "मुझे लगता है कि मेरा थायरॉइड कमजोर है, क्या इसका असर है इस सर्दी में?"
+    ],
+    "source": "model",
+    "ms": 6631,
+    "relevance": 0.133,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "thyroid/fever/en",
+    "items": [
+     "How long does a viral fever last?",
+     "What’s the best way to manage fever?",
+     "What’s the expected duration?",
+     "What’s the best course of action for fever and body aches?"
+    ],
+    "source": "model",
+    "ms": 4608,
+    "relevance": 0.127,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "thyroid/fever/hi",
+    "items": [
+     "वायरल बुखार कितने दिन रहता है?",
+     "डेंगू की जाँच कब करानी चाहिए?",
+     "बुखार में क्या खाना चाहिए?",
+     "क्या कल काम पर जा सकता हूँ?"
+    ],
+    "source": "model",
+    "ms": 4200,
+    "relevance": 0.164,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   }
+  ],
+  "judge_mean": 2.89,
+  "judge_4plus_pct": 35.0
+ },
+ "qwen3:1.7b_v2": {
+  "relevance": 0.146,
+  "personal_pct": 80.6,
+  "lang_ok_pct": 100.0,
+  "medicine_chips": 0,
+  "variety": 0.525,
+  "p50_ms": 5037,
+  "p95_ms": 6921,
+  "within_budget_pct": 0.0,
+  "within_3s_pct": 25.0,
+  "fallback_pct": 47.5,
+  "rows": [
+   {
+    "id": "none/none/en",
+    "items": [
+     "What is my temperature today?",
+     "How is the weather in my area?",
+     "What should I wear in winter?",
+     "What are the common cold symptoms in winter?"
+    ],
+    "source": "model",
+    "ms": 2787,
+    "relevance": 0.202,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "none/none/hi",
+    "items": [
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?",
+     "मेरी उम्र में कौन-सी जाँचें करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 5220,
+    "relevance": 0.005,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     4,
+     2
+    ]
+   },
+   {
+    "id": "none/fever/en",
+    "items": [
+     "How long does viral fever last?",
+     "When should I get the dengue test?",
+     "What should I eat during fever?",
+     "Can I go to work tomorrow?"
+    ],
+    "source": "model",
+    "ms": 3120,
+    "relevance": 0.201,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "none/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में डॉक्टर को कब दिखाएँ?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 6921,
+    "relevance": 0.158,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "none/acidity/en",
+    "items": [
+     "How long does acid reflux last?",
+     "What should I eat to avoid flare-ups?",
+     "When should I take antacids?",
+     "Can I continue working after meals?"
+    ],
+    "source": "model",
+    "ms": 3373,
+    "relevance": 0.001,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "none/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी दोबारा न हो, इसके लिए क्या करें?",
+     "एसिडिटी की जाँच कैसे होती है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 6069,
+    "relevance": 0.012,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     4
+    ]
+   },
+   {
+    "id": "none/food/en",
+    "items": [
+     "What should I eat for lunch with diabetes?",
+     "What foods should I avoid?",
+     "How can I manage blood sugar during lunch?",
+     "What should I drink with lunch?"
+    ],
+    "source": "model",
+    "ms": 2809,
+    "relevance": 0.254,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "none/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 5795,
+    "relevance": 0.002,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/none/en",
+    "items": [
+     "What is my HbA1c level?",
+     "How does winter affect my diabetes?",
+     "What should I eat during winter?",
+     "What tests do I need in winter?"
+    ],
+    "source": "model",
+    "ms": 2791,
+    "relevance": 0.31,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/none/hi",
+    "items": [
+     "हबए1c कितना है?",
+     "अब जल्दी क्या होगा?",
+     "अब बाहर क्या जाने वाला है?",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?"
+    ],
+    "source": "model",
+    "ms": 5854,
+    "relevance": 0.025,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     5,
+     4,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "diabetes/fever/en",
+    "items": [
+     "How long does viral fever last?",
+     "When should I get the dengue test?",
+     "What should I eat during fever?",
+     "Can I go to work tomorrow?"
+    ],
+    "source": "model",
+    "ms": 3197,
+    "relevance": 0.133,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार दोबारा न हो, इसके लिए क्या करें?",
+     "वायरल बुखार की जाँच कैसे होती है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 5861,
+    "relevance": 0.241,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/acidity/en",
+    "items": [
+     "How long does acid reflux last?",
+     "What should I do to relieve symptoms?",
+     "What foods should I avoid?",
+     "When should I see a doctor?"
+    ],
+    "source": "model",
+    "ms": 2900,
+    "relevance": 0.001,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "diabetes/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 6445,
+    "relevance": 0.085,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "diabetes/food/en",
+    "items": [
+     "What should I eat for lunch with diabetes?",
+     "What's a good snack for blood sugar control?",
+     "How can I manage sugar levels during winter?",
+     "What should I avoid when eating with diabetes?"
+    ],
+    "source": "model",
+    "ms": 3301,
+    "relevance": 0.316,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?",
+     "टाइप 2 डायबिटीज़ की जाँच कितनी बार करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 7220,
+    "relevance": 0.073,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     5,
+     3,
+     2
+    ]
+   },
+   {
+    "id": "diabetes/report/en",
+    "items": [
+     "What is the target HbA1c level?",
+     "What should I do if my HbA1c is above target?",
+     "How often should I check my HbA1c?",
+     "What should I eat to help lower HbA1c?"
+    ],
+    "source": "model",
+    "ms": 4770,
+    "relevance": 0.15,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/report/hi",
+    "items": [
+     "मेरी रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में खान-पान कैसा रखें?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 6319,
+    "relevance": 0.138,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     5,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "bp/none/en",
+    "items": [
+     "What is my current blood pressure?",
+     "What is the weather like in winter?",
+     "How does cold affect my hypertension?",
+     "What should I do in winter for my condition?"
+    ],
+    "source": "model",
+    "ms": 2880,
+    "relevance": 0.119,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "bp/none/hi",
+    "items": [
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?",
+     "हाई BP की जाँच कितनी बार करानी चाहिए?",
+     "मेरी दवाएँ सस्ती कहाँ मिलेंगी?"
+    ],
+    "source": "rules",
+    "ms": 5353,
+    "relevance": 0.237,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "bp/fever/en",
+    "items": [
+     "How long does viral fever last?",
+     "When should I get the dengue test?",
+     "What should I eat during fever?",
+     "Can I go to work tomorrow?"
+    ],
+    "source": "model",
+    "ms": 2979,
+    "relevance": 0.19,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "bp/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार दोबारा न हो, इसके लिए क्या करें?",
+     "वायरल बुखार की जाँच कैसे होती है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 6266,
+    "relevance": 0.305,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "bp/acidity/en",
+    "items": [
+     "How long does acid reflux last?",
+     "What should I do to relieve symptoms?",
+     "What foods should I avoid?",
+     "When should I see a doctor?"
+    ],
+    "source": "model",
+    "ms": 2995,
+    "relevance": 0.001,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "bp/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 6040,
+    "relevance": 0.043,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     4
+    ]
+   },
+   {
+    "id": "bp/food/en",
+    "items": [
+     "What should I eat for lunch with diabetes?",
+     "What are good snacks for blood sugar control?",
+     "How can I manage blood pressure with diet?",
+     "What foods should I avoid with diabetes?"
+    ],
+    "source": "model",
+    "ms": 3384,
+    "relevance": 0.257,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "bp/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?",
+     "हाई BP की जाँच कितनी बार करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 6801,
+    "relevance": 0.228,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "bp/report/en",
+    "items": [
+     "What is HbA1c 8.1%",
+     "What should I do about this?",
+     "What is the target HbA1c?",
+     "How can I manage my blood sugar?"
+    ],
+    "source": "model",
+    "ms": 3479,
+    "relevance": 0.235,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     5,
+     3
+    ]
+   },
+   {
+    "id": "bp/report/hi",
+    "items": [
+     "मेरी रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में खान-पान कैसा रखें?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 6011,
+    "relevance": 0.217,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/none/en",
+    "items": [
+     "What is my age?",
+     "What is the current season?",
+     "What is the Td dose number?",
+     "What is the recommended vaccination schedule?"
+    ],
+    "source": "model",
+    "ms": 2674,
+    "relevance": 0.089,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     5,
+     2
+    ]
+   },
+   {
+    "id": "pregnant/none/hi",
+    "items": [
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 5037,
+    "relevance": 0.053,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/fever/en",
+    "items": [
+     "How long does viral fever last?",
+     "When should I get the dengue test?",
+     "What should I eat during fever?",
+     "Can I go to work tomorrow?"
+    ],
+    "source": "model",
+    "ms": 2856,
+    "relevance": 0.118,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार दोबारा न हो, इसके लिए क्या करें?",
+     "वायरल बुखार की जाँच कैसे होती है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 6008,
+    "relevance": 0.237,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/acidity/en",
+    "items": [
+     "How long does acid reflux last?",
+     "What should I do to relieve symptoms?",
+     "What foods should I avoid?",
+     "When should I see a doctor?"
+    ],
+    "source": "model",
+    "ms": 2762,
+    "relevance": 0.001,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "pregnant/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 6870,
+    "relevance": 0.118,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/food/en",
+    "items": [
+     "What should I eat for lunch with diabetes?",
+     "How can I manage blood sugar during lunch?",
+     "What foods are good for diabetes control?",
+     "What should I avoid when eating with diabetes?"
+    ],
+    "source": "model",
+    "ms": 3925,
+    "relevance": 0.311,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता"
+    ],
+    "source": "rules",
+    "ms": 6853,
+    "relevance": 0.081,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "thyroid/none/en",
+    "items": [
+     "What is my TSH level?",
+     "What does a high TSH mean?",
+     "What should I do in winter?",
+     "How does winter affect hypothyroidism?"
+    ],
+    "source": "model",
+    "ms": 3357,
+    "relevance": 0.27,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "thyroid/none/hi",
+    "items": [
+     "मेरी TSH रिपोर्ट का क्या मतलब है?",
+     "थायरॉइड की कमी में खान-पान कैसा रखें?",
+     "थायरॉइड की कमी में कौन-सा व्यायाम सुरक्षित है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?"
+    ],
+    "source": "rules",
+    "ms": 6245,
+    "relevance": 0.119,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "thyroid/fever/en",
+    "items": [
+     "How long does viral fever last?",
+     "When should I get the dengue test?",
+     "What should I eat during fever?",
+     "Can I go to work tomorrow?"
+    ],
+    "source": "model",
+    "ms": 3382,
+    "relevance": 0.152,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "thyroid/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 7380,
+    "relevance": 0.171,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   }
+  ],
+  "judge_mean": 2.86,
+  "judge_4plus_pct": 35.0
+ },
+ "qwen2.5:0.5b_v2": {
+  "relevance": 0.206,
+  "personal_pct": 88.9,
+  "lang_ok_pct": 100.0,
+  "medicine_chips": 0,
+  "variety": 0.575,
+  "p50_ms": 2177,
+  "p95_ms": 3358,
+  "within_budget_pct": 47.5,
+  "within_3s_pct": 90.0,
+  "fallback_pct": 50.0,
+  "rows": [
+   {
+    "id": "none/none/en",
+    "items": [
+     "What are the symptoms of the winter season?",
+     "How does the winter season affect the immune system?",
+     "Are there any specific health conditions in winter?",
+     "What are the typical cold and flu symptoms?"
+    ],
+    "source": "model",
+    "ms": 1759,
+    "relevance": 0.472,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "none/none/hi",
+    "items": [
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?",
+     "मेरी उम्र में कौन-सी जाँचें करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 2177,
+    "relevance": 0.005,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     4,
+     2
+    ]
+   },
+   {
+    "id": "none/fever/en",
+    "items": [
+     "How long does viral fever last?",
+     "When should I get the dengue test?",
+     "What should I eat during fever?",
+     "Can I go to work tomorrow?"
+    ],
+    "source": "model",
+    "ms": 1872,
+    "relevance": 0.201,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "none/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में डॉक्टर को कब दिखाएँ?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 3581,
+    "relevance": 0.158,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "none/acidity/en",
+    "items": [
+     "What is the burning in chest after meals?",
+     "What is acid reflux (GERD)?",
+     "How to avoid acid reflux?",
+     "What causes Acidity (GERD)?"
+    ],
+    "source": "model",
+    "ms": 1628,
+    "relevance": 0.415,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "none/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी दोबारा न हो, इसके लिए क्या करें?",
+     "एसिडिटी की जाँच कैसे होती है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 3621,
+    "relevance": 0.012,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     4
+    ]
+   },
+   {
+    "id": "none/food/en",
+    "items": [
+     "What should I eat for lunch with diabetes?",
+     "Give me a simple meal plan for a day",
+     "How can I avoid cold and flu this winter?",
+     "Tips to sleep better tonight"
+    ],
+    "source": "model",
+    "ms": 1435,
+    "relevance": 0.251,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     2
+    ]
+   },
+   {
+    "id": "none/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 2502,
+    "relevance": 0.002,
+    "personal": null,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/none/en",
+    "items": [
+     "When is the winter season?",
+     "What is the HbA1c level?",
+     "Are there any symptoms of type 2 diabetes?",
+     "How has the winter season affected your health?"
+    ],
+    "source": "model",
+    "ms": 1595,
+    "relevance": 0.151,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "diabetes/none/hi",
+    "items": [
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?",
+     "टाइप 2 डायबिटीज़ की जाँच कितनी बार करानी चाहिए?",
+     "सर्दी-ज़ुकाम से कैसे बचें?"
+    ],
+    "source": "rules",
+    "ms": 2533,
+    "relevance": 0.027,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "diabetes/fever/en",
+    "items": [
+     "How long does viral fever last?",
+     "When should I get the dengue test?",
+     "What should I eat during fever?",
+     "Can I go to work tomorrow?"
+    ],
+    "source": "model",
+    "ms": 1644,
+    "relevance": 0.133,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार दोबारा न हो, इसके लिए क्या करें?",
+     "वायरल बुखार की जाँच कैसे होती है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 2955,
+    "relevance": 0.241,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/acidity/en",
+    "items": [
+     "What is the acid reflux (GERD) condition?",
+     "How can I prevent acid reflux?",
+     "What should I eat after meals?",
+     "Is it related to the winter season?"
+    ],
+    "source": "model",
+    "ms": 1386,
+    "relevance": 0.344,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "diabetes/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 2692,
+    "relevance": 0.085,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     4
+    ]
+   },
+   {
+    "id": "diabetes/food/en",
+    "items": [
+     "What should I eat for lunch?",
+     "What food is better for diabetes?",
+     "Give me a simple meal plan for a day",
+     "What does my HbA1c result mean?"
+    ],
+    "source": "model",
+    "ms": 1202,
+    "relevance": 0.402,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     1,
+     5
+    ]
+   },
+   {
+    "id": "diabetes/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?",
+     "टाइप 2 डायबिटीज़ की जाँच कितनी बार करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 2686,
+    "relevance": 0.073,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     5,
+     3,
+     2
+    ]
+   },
+   {
+    "id": "diabetes/report/en",
+    "items": [
+     "What is the normal range for HbA1c?",
+     "What does an HbA1c of 8.1% mean?",
+     "Why is it important for my doctor to review my treatment?",
+     "What is an HbA1c of 7%?"
+    ],
+    "source": "model",
+    "ms": 1850,
+    "relevance": 0.287,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "diabetes/report/hi",
+    "items": [
+     "मेरी रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "मेरी HbA1c रिपोर्ट का क्या मतलब है?",
+     "टाइप 2 डायबिटीज़ में खान-पान कैसा रखें?",
+     "टाइप 2 डायबिटीज़ में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 2558,
+    "relevance": 0.138,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     5,
+     2,
+     3
+    ]
+   },
+   {
+    "id": "bp/none/en",
+    "items": [
+     "What is your current medication?",
+     "Are you taking any new medications?",
+     "What are you most concerned about during the winter season?",
+     "Is my BP 150/95 too high?"
+    ],
+    "source": "model",
+    "ms": 1451,
+    "relevance": 0.251,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     4
+    ]
+   },
+   {
+    "id": "bp/none/hi",
+    "items": [
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?",
+     "हाई BP की जाँच कितनी बार करानी चाहिए?",
+     "मेरी दवाएँ सस्ती कहाँ मिलेंगी?"
+    ],
+    "source": "rules",
+    "ms": 2079,
+    "relevance": 0.237,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "bp/fever/en",
+    "items": [
+     "What is the patient's age?",
+     "What is the patient's condition?",
+     "How long has the patient had fever?",
+     "What is the patient's latest blood pressure level?"
+    ],
+    "source": "model",
+    "ms": 1607,
+    "relevance": 0.476,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "bp/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार दोबारा न हो, इसके लिए क्या करें?",
+     "वायरल बुखार की जाँच कैसे होती है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 2485,
+    "relevance": 0.305,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "bp/acidity/en",
+    "items": [
+     "How long does acid reflux last?",
+     "What can I do to prevent acid reflux?",
+     "What does acid reflux mean?",
+     "When should I see a doctor?"
+    ],
+    "source": "model",
+    "ms": 1504,
+    "relevance": 0.003,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "bp/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 2554,
+    "relevance": 0.043,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     4
+    ]
+   },
+   {
+    "id": "bp/food/en",
+    "items": [
+     "What should I eat for lunch?",
+     "What is the best meal for diabetes?",
+     "Give me a simple meal plan for a day",
+     "Is my BP 150/95 too high?"
+    ],
+    "source": "model",
+    "ms": 1118,
+    "relevance": 0.52,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     1,
+     4
+    ]
+   },
+   {
+    "id": "bp/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?",
+     "हाई BP की जाँच कितनी बार करानी चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 2514,
+    "relevance": 0.228,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "bp/report/en",
+    "items": [
+     "What is the normal HbA1c level?",
+     "Why is it important?",
+     "What should I do if my HbA1c is high?",
+     "How often should I have a blood test for HbA1c?"
+    ],
+    "source": "model",
+    "ms": 1620,
+    "relevance": 0.159,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     4,
+     3,
+     2
+    ]
+   },
+   {
+    "id": "bp/report/hi",
+    "items": [
+     "मेरी रिपोर्ट में किन चीज़ों पर ध्यान दें?",
+     "क्या मेरा BP 150/95 ज़्यादा है?",
+     "हाई BP में खान-पान कैसा रखें?",
+     "हाई BP में कौन-सा व्यायाम सुरक्षित है?"
+    ],
+    "source": "rules",
+    "ms": 2874,
+    "relevance": 0.217,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/none/en",
+    "items": [
+     "What is the tetanus-diphtheria (Td) dose for?",
+     "Does the patient have a history of tetanus?",
+     "Is the patient's age 27?",
+     "What is the season for tetanus-diphtheria (Td) dose?"
+    ],
+    "source": "model",
+    "ms": 1926,
+    "relevance": 0.676,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     1,
+     3
+    ]
+   },
+   {
+    "id": "pregnant/none/hi",
+    "items": [
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता",
+     "दिन में कितना पानी पीना चाहिए?"
+    ],
+    "source": "rules",
+    "ms": 2228,
+    "relevance": 0.053,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/fever/en",
+    "items": [
+     "How long does viral fever last?",
+     "When should I get the dengue test?",
+     "What should I eat during fever?",
+     "Can I go to work tomorrow?"
+    ],
+    "source": "model",
+    "ms": 1495,
+    "relevance": 0.118,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार दोबारा न हो, इसके लिए क्या करें?",
+     "वायरल बुखार की जाँच कैसे होती है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 2910,
+    "relevance": 0.237,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/acidity/en",
+    "items": [
+     "How long does tetanus-diphtheria last?",
+     "What can cause burning in chest after meals?",
+     "When should I get the acid reflux test?",
+     "Can I go to work tomorrow?"
+    ],
+    "source": "model",
+    "ms": 1713,
+    "relevance": 0.262,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     5
+    ]
+   },
+   {
+    "id": "pregnant/acidity/hi",
+    "items": [
+     "एसिडिटी क्यों होता है?",
+     "एसिडिटी में क्या खाना चाहिए?",
+     "एसिडिटी आम तौर पर कितने दिन रहता है?",
+     "घर पर और क्या कर सकते हैं?"
+    ],
+    "source": "rules",
+    "ms": 3358,
+    "relevance": 0.118,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/food/en",
+    "items": [
+     "What should I eat for lunch with diabetes?",
+     "How can I keep sugar steady?",
+     "What is the best meal for diabetes?",
+     "Give me a simple meal plan for a day"
+    ],
+    "source": "model",
+    "ms": 1385,
+    "relevance": 0.325,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   },
+   {
+    "id": "pregnant/food/hi",
+    "items": [
+     "एक दिन का आसान भोजन प्लान बताइए",
+     "Tetanus-diphtheria (Td) dose 2 क्यों ज़रूरी है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?",
+     "आज के लिए सेहतमंद नाश्ता"
+    ],
+    "source": "rules",
+    "ms": 2995,
+    "relevance": 0.081,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "thyroid/none/en",
+    "items": [
+     "What is your current age?",
+     "Are you experiencing any symptoms?",
+     "What is your current condition?",
+     "Is it winter?"
+    ],
+    "source": "model",
+    "ms": 2284,
+    "relevance": 0.099,
+    "personal": false,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     5,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "thyroid/none/hi",
+    "items": [
+     "मेरी TSH रिपोर्ट का क्या मतलब है?",
+     "थायरॉइड की कमी में खान-पान कैसा रखें?",
+     "थायरॉइड की कमी में कौन-सा व्यायाम सुरक्षित है?",
+     "सर्दी-ज़ुकाम से कैसे बचें?"
+    ],
+    "source": "rules",
+    "ms": 2822,
+    "relevance": 0.119,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     5
+    ]
+   },
+   {
+    "id": "thyroid/fever/en",
+    "items": [
+     "How long does viral fever last?",
+     "When should I get the dengue test?",
+     "What should I eat during fever?",
+     "Can I go to work tomorrow?"
+    ],
+    "source": "model",
+    "ms": 1977,
+    "relevance": 0.152,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     3,
+     2,
+     1
+    ]
+   },
+   {
+    "id": "thyroid/fever/hi",
+    "items": [
+     "वायरल बुखार क्यों होता है?",
+     "वायरल बुखार में क्या खाना चाहिए?",
+     "वायरल बुखार आम तौर पर कितने दिन रहता है?",
+     "कैसे पता चले कि यह डेंगू है?"
+    ],
+    "source": "rules",
+    "ms": 3281,
+    "relevance": 0.171,
+    "personal": true,
+    "lang_ok": true,
+    "medicines": [],
+    "judge": [
+     4,
+     2,
+     3,
+     1
+    ]
+   }
+  ],
+  "judge_mean": 2.92,
+  "judge_4plus_pct": 37.5
+ }
+}
