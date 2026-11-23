@@ -78,14 +78,13 @@ class CurrentUser:
         return self.cipher if not self.is_member else Cipher(self.account.dek_wrapped, self.account.id)
 
 
-async def authenticate_token(
-    raw_token: str,
+async def resolve_current_user(
+    uid: str,
     db: AsyncSession,
     *,
     x_profile_id: str | None = None,
 ) -> CurrentUser:
-    """Validate an access JWT and resolve user + family profile cipher + RLS scope."""
-    uid = decode_token(raw_token, "access")
+    """Resolve an already-authenticated account id + optional family profile cipher + RLS scope."""
     pid = x_profile_id if x_profile_id and x_profile_id != uid else None
     current_user_id.set(pid or uid)
     current_account_id.set(uid)
@@ -100,6 +99,17 @@ async def authenticate_token(
     if member is None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Not a profile you manage")
     return CurrentUser(user=member, cipher=Cipher(member.dek_wrapped, member.id), account=account)
+
+
+async def authenticate_token(
+    raw_token: str,
+    db: AsyncSession,
+    *,
+    x_profile_id: str | None = None,
+) -> CurrentUser:
+    """Validate an access JWT and resolve user + family profile cipher + RLS scope."""
+    uid = decode_token(raw_token, "access")
+    return await resolve_current_user(uid, db, x_profile_id=x_profile_id)
 
 
 async def current_user(

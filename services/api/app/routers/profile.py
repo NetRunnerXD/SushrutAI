@@ -115,6 +115,14 @@ async def put_profile(body: ProfileIn, cu: CurrentUser = Depends(current_user), 
     return await _profile_out(db, cu)
 
 
+@router.delete("/profile")
+async def clear_profile(cu: CurrentUser = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    """Clear the current user's PatientProfile (name, DOB, sex, demographics) so onboarding can restart fresh."""
+    await db.execute(delete(PatientProfile).where(PatientProfile.user_id == cu.id))
+    await db.commit()
+    return {"cleared": True}
+
+
 # ---------------------------------------------------------------- allergies / conditions / meds
 class AllergyIn(BaseModel):
     substance: str = Field(min_length=1, max_length=120)

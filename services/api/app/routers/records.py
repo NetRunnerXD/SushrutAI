@@ -32,12 +32,26 @@ class SettingsIn(BaseModel):
     large_text: bool | None = None
     voice_autoplay: bool | None = None
     model_pref: Literal["auto", "balanced", "fast", "instant", "cloud", "gemini", "gemini_fast"] | None = None
+    tts_voice_gender: Literal["female", "male"] | None = None
+    tts_engine: Literal["auto", "kokoro", "indic_tiny", "parler", "mms"] | None = None
+    translation_model: Literal["auto", "indictrans2", "llm", "gemini"] | None = None
+    sos_enabled: bool | None = None
+    neural_correlation_enabled: bool | None = None
+    speech_mode: Literal["general", "elderly"] | None = None
+    response_style: Literal["direct", "detailed"] | None = None
 
 
 def _settings_out(s) -> dict:
     return {"offline_mode": s.offline_mode or server_offline(), "offline_forced_by_server": server_offline(),
             "reminder_times": s.reminder_times, "large_text": s.large_text, "voice_autoplay": s.voice_autoplay,
-            "model_pref": s.model_pref or "auto", "model_options": model_options()}
+            "model_pref": s.model_pref or "auto", "model_options": model_options(),
+            "tts_voice_gender": getattr(s, "tts_voice_gender", None) or "female",
+            "tts_engine": getattr(s, "tts_engine", None) or "auto",
+            "translation_model": getattr(s, "translation_model", None) or "auto",
+            "sos_enabled": bool(getattr(s, "sos_enabled", True)),
+            "neural_correlation_enabled": bool(getattr(s, "neural_correlation_enabled", True)),
+            "speech_mode": getattr(s, "speech_mode", None) or "general",
+            "response_style": getattr(s, "response_style", None) or "direct"}
 
 
 @router.get("/settings")
