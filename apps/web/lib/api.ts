@@ -77,6 +77,22 @@ export class ApiError extends Error {
   }
 }
 
+export const SERVICE_ERROR_EVENT = "sushrut:service-error";
+export type ServiceErrorDetail = { service: string; reason: string; hint?: string; status?: number };
+
+export function reportServiceFailure(detail: ServiceErrorDetail) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<ServiceErrorDetail>(SERVICE_ERROR_EVENT, { detail }));
+}
+
+function serviceLabel(path: string): string {
+  if (path.startsWith("/chat")) return "Chat & AI Model";
+  if (path.startsWith("/tts") || path.startsWith("/stt") || path.startsWith("/voice")) return "Speech Service";
+  if (path.startsWith("/clinical")) return "Clinical Context";
+  if (path.startsWith("/me")) return "Profile & Settings API";
+  return "Backend API";
+}
+
 // One refresh at a time: the refresh token rotates, so two parallel refreshes would spend it twice.
 let refreshing: Promise<boolean> | null = null;
 function refresh(): Promise<boolean> {
@@ -105,18 +121,30 @@ export async function authFetch(url: string, init: RequestInit = {}): Promise<Re
   return r.status === 401 && (await refresh()) ? open() : r;
 }
 
-export async function api<T = unknown>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+export async function api<T = unknown>(path: string, init: RequestInit = {}, retry = true, silent = false): Promise<T> {
   const headers = new Headers(init.headers);
   for (const [k, v] of Object.entries(authHeaders())) headers.set(k, v);
   if (init.body && !(init.body instanceof FormData)) headers.set("Content-Type", "application/json");
-  const r = await fetch(`${API}${path}`, { ...init, headers });
-  if (r.status === 401 && retry && (await refresh())) return api<T>(path, init, false);
+  let r: Response;
+  try {
+    r = await fetch(`${API}${path}`, { ...init, headers });
+  } catch (e: any) {
+    if (!silent && e?.name !== "AbortError") {
+      reportServiceFailure({
+        service: serviceLabel(path),
+        reason: e?.message || "Network connection failed",
+        hint: "Check that the SushrutAI backend server is running.",
+      });
+    }
+    throw e;
+  }
+  if (r.status === 401 && retry && (await refresh())) return api<T>(path, init, false, silent);
   if (r.status === 403 && retry && getProfile()) {
     // the family profile was removed (or belongs to an old guest session): fall back to the account holder
     const detail = await r.clone().json().catch(() => ({}));
     if (detail?.detail === "Not a profile you manage") {
       try { localStorage.removeItem(PROFILE_KEY); } catch { /* ignore */ }
-      return api<T>(path, init, false);
+      return api<T>(path, init, false, silent);
     }
   }
   if (!r.ok) {
@@ -125,6 +153,10 @@ export async function api<T = unknown>(path: string, init: RequestInit = {}, ret
       const j = await r.json();
       msg = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);
     } catch {}
+    // Do not popup on 501 TTS fallback (expected when device speech synthesis handles playback)
+    if (!silent && !(path.startsWith("/tts") && r.status === 501)) {
+      reportServiceFailure({ service: serviceLabel(path), reason: msg || `HTTP ${r.status}`, status: r.status });
+    }
     throw new ApiError(r.status, msg);
   }
   return (r.status === 204 ? undefined : await r.json()) as T;
@@ -141,7 +173,7 @@ async function createOrReuseSession(): Promise<Tokens> {
   const t = getTokens();
   if (t) {
     try {
-      await api("/me/profile");
+      await api("/me/profile", {}, true, true);
       return getTokens()!;
     } catch {
       setTokens(null);
@@ -156,11 +188,24 @@ async function createOrReuseSession(): Promise<Tokens> {
 /** POST and read a server-sent event stream. `signal` aborts it (Stop): the server then stops the model too. */
 export async function postSSE(path: string, body: unknown, onEvent: (event: string, data: any) => void,
                               signal?: AbortSignal) {
-  const r = await authFetch(`${API}${path}`, {  // renews a token that expired mid-chat
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal });
+  let r: Response;
+  try {
+    r = await authFetch(`${API}${path}`, {  // renews a token that expired mid-chat
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal });
+  } catch (e: any) {
+    if (e?.name !== "AbortError") {
+      reportServiceFailure({
+        service: serviceLabel(path),
+        reason: e?.message || "Connection failed while streaming",
+        hint: "Check that the SushrutAI backend server is running.",
+      });
+    }
+    throw e;
+  }
   if (!r.ok || !r.body) {
     let msg = r.statusText;
     try { msg = (await r.json()).detail; } catch {}
+    reportServiceFailure({ service: serviceLabel(path), reason: msg || `HTTP ${r.status}`, status: r.status });
     throw new ApiError(r.status, msg);
   }
   const reader = r.body.getReader();
@@ -176,7 +221,17 @@ export async function postSSE(path: string, body: unknown, onEvent: (event: stri
       buf = buf.slice(idx + 2);
       const ev = /^event: (.+)$/m.exec(block)?.[1];
       const data = /^data: (.+)$/m.exec(block)?.[1];
-      if (ev && data) onEvent(ev, JSON.parse(data));
+      if (ev && data) {
+        const parsed = JSON.parse(data);
+        if (ev === "error") {
+          reportServiceFailure({
+            service: parsed?.busy ? "AI Model (Busy)" : "AI Model",
+            reason: parsed?.message || "Model failed to generate a response",
+            hint: parsed?.hint,
+          });
+        }
+        onEvent(ev, parsed);
+      }
     }
   }
 }

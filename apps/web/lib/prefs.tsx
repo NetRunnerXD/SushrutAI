@@ -14,10 +14,11 @@ export type Prefs = {
   deskRail: "icons" | "pinned";       // desktop rail: icons (expands on hover) or the labelled menu pinned open // layout: automatic by screen, or forced (docs/DESKTOP_UI_SPEC.md §1)
   profileStrip: boolean;              // Ask page: "who this is for" strip expanded (collapsed by default)
   sections: Record<string, boolean>;  // Answer sections the person opened/closed (overrides the default)
+  chatUi: "v1" | "v2";                // Chat response layout: v1 (classic) or v2 (modular cards)
 };
 const DEFAULT: Prefs = { text: "md", theme: "auto", contrast: "normal", motion: "auto", rate: "normal", simple: false,
                          home: { order: [], hidden: [] }, sidebar: "full", chatList: true,
-                         profileStrip: false, sections: {}, ui: "auto", deskRail: "icons" };
+                         profileStrip: false, sections: {}, ui: "auto", deskRail: "icons", chatUi: "v2" };
 import { PREFS_KEY as KEY } from "./prefs-boot";
 import { applyMode, useAutoMode } from "./ui-mode";
 
