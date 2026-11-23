@@ -74,7 +74,8 @@ async def get_db() -> AsyncIterator[AsyncSession]:
 # Columns added after a table first shipped: create_all() does not alter existing tables.
 _LATE_COLUMNS = {
     "chat_sessions": {"title_enc": "BLOB", "pinned": "BOOLEAN NOT NULL DEFAULT FALSE"},
-    "user_settings": {"model_pref": "VARCHAR(12) NOT NULL DEFAULT 'balanced'"},
+    "user_settings": {"model_pref": "VARCHAR(12) NOT NULL DEFAULT 'balanced'",
+                      "sos_enabled": "BOOLEAN NOT NULL DEFAULT TRUE"},
     "documents": {"title": "VARCHAR(120)", "report_date": "DATE", "reviewed_at": "TIMESTAMP", "extracted": "JSON"},
     "triage_sessions": {"chat_session_id": "VARCHAR(36)"},
 }

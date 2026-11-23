@@ -60,6 +60,26 @@ _COLUMN_MIGRATIONS: list[tuple[str, str, dict[str, str]]] = [
         "interview_outcome": "VARCHAR(36)",
         "questions_asked": "INTEGER NOT NULL DEFAULT 0",
     }),
+    ("2026_11_v4_ai_backend_settings", "user_settings", {
+        "tts_voice_gender": "VARCHAR(10) NOT NULL DEFAULT 'female'",
+        "tts_engine": "VARCHAR(16) NOT NULL DEFAULT 'auto'",
+        "translation_model": "VARCHAR(16) NOT NULL DEFAULT 'auto'",
+    }),
+    ("2026_11_v5_sos_toggle", "user_settings", {
+        "sos_enabled": "BOOLEAN NOT NULL DEFAULT TRUE",
+    }),
+    ("2026_11_v6_neural_correlation", "user_settings", {
+        "neural_correlation_enabled": "BOOLEAN NOT NULL DEFAULT TRUE",
+    }),
+    ("2026_11_v7_speech_mode", "user_settings", {
+        "speech_mode": "VARCHAR(12) NOT NULL DEFAULT 'general'",
+    }),
+    ("2026_11_v8_response_style", "user_settings", {
+        "response_style": "VARCHAR(12) NOT NULL DEFAULT 'direct'",
+    }),
+    ("2026_11_v9_profile_name", "patient_profiles", {
+        "name_enc": "BLOB",
+    }),
 ]
 
 _INDEX_MIGRATIONS: list[tuple[str, str, str]] = [

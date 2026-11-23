@@ -116,6 +116,13 @@ class UserSettings(Base):
     large_text: Mapped[bool] = mapped_column(Boolean, default=False)
     voice_autoplay: Mapped[bool] = mapped_column(Boolean, default=True)
     model_pref: Mapped[str] = mapped_column(String(12), default="auto")  # auto | balanced | fast | instant | cloud
+    tts_voice_gender: Mapped[str] = mapped_column(String(10), default="female")  # female | male
+    tts_engine: Mapped[str] = mapped_column(String(16), default="auto")  # auto | kokoro | parler | mms
+    translation_model: Mapped[str] = mapped_column(String(16), default="auto")  # auto | indictrans2 | llm | gemini
+    sos_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    neural_correlation_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    speech_mode: Mapped[str] = mapped_column(String(12), default="general")  # general | elderly
+    response_style: Mapped[str] = mapped_column(String(12), default="direct")  # direct | detailed
 
 
 class FollowUp(Base):
@@ -261,6 +268,7 @@ class LabResult(Base):
 class PatientProfile(Base):
     __tablename__ = "patient_profiles"
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    name_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     dob_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     sex: Mapped[str | None] = mapped_column(String(16))
     gender_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
