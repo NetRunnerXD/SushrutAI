@@ -9,7 +9,7 @@ from app.config import get_settings
 from app.db import init_db
 from app.routers import (
     auth, chat, clinical, consent, conversation, documents, family, medicines, prescriptions, profile, records, reports, system, triage, visit,
-    assistant, care, emergency, home, memory, search, today, voice,
+    assistant, care, emergency, home, memory, search, today, twin, aegi, voice,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -51,7 +51,7 @@ async def security_headers(request, call_next):
 API = "/api/v1"
 for r in (auth, consent, profile, family, records, visit, reports, documents, chat, clinical, conversation, prescriptions, medicines, triage, search,
           assistant, care, home, today, memory, emergency,
-          voice, system):
+          twin, aegi, voice, system):
     app.include_router(r.router, prefix=API)
 
 

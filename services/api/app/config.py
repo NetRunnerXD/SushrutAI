@@ -64,14 +64,16 @@ class Settings(BaseSettings):
     sarvam_api_key: str = ""
     # Gemini (Google AI Studio key): the "Gemini" answer model. Flash-Lite has the larger free daily quota.
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.8-flash"
     gemini_fast_model: str = "gemini-3.5-flash-lite"
     # Live API (WebSocket audio). Separate from the text chat models above.
     gemini_live_model: str = "gemini-3.8-live"
     gemini_flash_live_model: str = "gemini-3.1-flash-live-preview"  # legacy; Google recommends gemini-3.8-live
     gemini_transcribe_live_model: str = "gemini-3.5-transcribe-live"
+    gemini_transcribe_model: str = "gemini-3.5-transcribe"
     gemini_translate_live_model: str = "gemini-3.5-live-translate-preview"
     gemini_tts_model: str = "gemini-3.8-flash-tts"
+    gemini_tts_fallback_model: str = "gemini-3.8-flash-lite-tts"
     gemini_tts_voice: str = "Kore"
     # ElevenLabs: speech-to-text (Scribe) and read-aloud voices
     elevenlabs_api_key: str = ""

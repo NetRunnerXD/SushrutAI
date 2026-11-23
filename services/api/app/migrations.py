@@ -60,6 +60,10 @@ _COLUMN_MIGRATIONS: list[tuple[str, str, dict[str, str]]] = [
         "interview_outcome": "VARCHAR(36)",
         "questions_asked": "INTEGER NOT NULL DEFAULT 0",
     }),
+    ("2026_11_v4_patient_name_age", "patient_profiles", {
+        "name_enc": "BLOB",
+        "age_years": "INTEGER",
+    }),
 ]
 
 _INDEX_MIGRATIONS: list[tuple[str, str, str]] = [

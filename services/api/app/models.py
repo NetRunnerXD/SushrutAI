@@ -261,7 +261,9 @@ class LabResult(Base):
 class PatientProfile(Base):
     __tablename__ = "patient_profiles"
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    name_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     dob_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    age_years: Mapped[int | None] = mapped_column(Integer)
     sex: Mapped[str | None] = mapped_column(String(16))
     gender_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     blood_group: Mapped[str | None] = mapped_column(String(4))
