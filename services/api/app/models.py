@@ -130,6 +130,57 @@ class FollowUp(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
 
+class HealthFact(Base):
+    """One thing learnt about the person's health, from what they said, a document or a form: a value (101 F,
+    BP 140/90), a symptom ("fever", absent: "cough"), a duration, how a medicine worked, a habit… Schema-free:
+    `kind` and `name` are open strings and the value is JSON, so new kinds of information need no migration.
+    The value is encrypted; kind / name / time stay plain so the timeline can be queried."""
+
+    __tablename__ = "health_facts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(32), index=True)       # vital | symptom | duration | medicine_response | lab | note …
+    name: Mapped[str] = mapped_column(String(80), index=True)       # "temperature", "fever", "paracetamol" (lower case)
+    value_enc: Mapped[bytes] = mapped_column(LargeBinary)           # JSON: {"value": 101, "unit": "F", "present": true, …}
+    observed_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+    source: Mapped[str] = mapped_column(String(16), default="chat")  # chat | voice | document | manual
+    source_ref: Mapped[str | None] = mapped_column(String(64), nullable=True)  # chat session / document id
+    episode_id: Mapped[str | None] = mapped_column(String(36), index=True, nullable=True)
+    confidence: Mapped[float] = mapped_column(Float, default=1.0)
+    confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+class Episode(Base):
+    """A health thread that spans hours or days ("fever and body ache, this week"): what was said, measured,
+    tried and how it went is linked to it, so later turns ("the temperature is 102 now") and later questions
+    ("has this happened before?") connect to it."""
+
+    __tablename__ = "episodes"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    title_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    symptoms: Mapped[list] = mapped_column(JSON, default=list)      # lower-case symptom names (for matching)
+    tags_enc: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)  # JSON list: "after the wedding", "monsoon"…
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+    last_activity_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    status: Mapped[str] = mapped_column(String(12), default="open")  # open | closed
+
+
+class CalendarEvent(Base):
+    """An appointment, reminder or note the person put on their care calendar (the title is encrypted)."""
+
+    __tablename__ = "calendar_events"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    day: Mapped[date] = mapped_column(Date, index=True)
+    kind: Mapped[str] = mapped_column(String(16), default="note")  # appointment | reminder | note
+    time: Mapped[str | None] = mapped_column(String(5), nullable=True)  # "HH:MM"
+    title_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
 class VisitQuestion(Base):
     """A question the person wants to ask at their next doctor visit (saved from chat or typed)."""
 
@@ -228,6 +279,11 @@ class PatientProfile(Base):
     surgeries_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     family_history_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     emergency_contact_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    occupation_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    sleep_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    hydration_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    healthcare_access: Mapped[str | None] = mapped_column(String(40))
+    literacy_level: Mapped[str | None] = mapped_column(String(24))
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 
 
@@ -240,6 +296,8 @@ class Allergy(Base):
     reaction_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     severity: Mapped[str | None] = mapped_column(String(12))
     generic_id: Mapped[str | None] = mapped_column(String(36))  # resolved drug, for cross-checks
+    verification_status: Mapped[str] = mapped_column(String(24), default="patient_reported")
+    source: Mapped[str] = mapped_column(String(32), default="manual")
 
 
 class Condition(Base):
@@ -252,6 +310,7 @@ class Condition(Base):
     status: Mapped[str] = mapped_column(String(12), default="active")
     onset_date: Mapped[date | None] = mapped_column(Date)
     source: Mapped[str] = mapped_column(String(24), default="user")
+    verification_status: Mapped[str] = mapped_column(String(24), default="patient_reported")
 
 
 class Medication(Base):
@@ -264,10 +323,17 @@ class Medication(Base):
     dose: Mapped[str | None] = mapped_column(String(40))
     frequency: Mapped[dict | None] = mapped_column(JSON)
     timing: Mapped[str | None] = mapped_column(String(20))
+    route: Mapped[str | None] = mapped_column(String(24))
     start_date: Mapped[date | None] = mapped_column(Date)
     end_date: Mapped[date | None] = mapped_column(Date)
     prescription_item_id: Mapped[str | None] = mapped_column(String(36))
     status: Mapped[str] = mapped_column(String(12), default="active")
+    reason_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    reported_effectiveness: Mapped[str | None] = mapped_column(String(24))
+    adverse_effects_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    prescribed_or_self: Mapped[str] = mapped_column(String(24), default="unknown")
+    verification_status: Mapped[str] = mapped_column(String(24), default="patient_reported")
+    source: Mapped[str] = mapped_column(String(32), default="manual")
 
 
 class Vital(Base):
@@ -279,6 +345,8 @@ class Vital(Base):
     unit: Mapped[str] = mapped_column(String(12))
     measured_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
     source: Mapped[str] = mapped_column(String(16), default="user")
+    is_estimate: Mapped[bool] = mapped_column(Boolean, default=False)
+    original_statement_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     __table_args__ = (Index("ix_vitals_user_type_time", "user_id", "type", "measured_at"),)
 
 
@@ -360,6 +428,7 @@ class TriageSession(Base):
     state: Mapped[dict] = mapped_column(JSON)
     status: Mapped[str] = mapped_column(String(12), default="open")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    chat_session_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)  # asked inside a chat
 
 
 # ---------------------------------------------------------------- drug master (public data, not PHI)
@@ -472,3 +541,354 @@ class DataRequest(Base):
     status: Mapped[str] = mapped_column(String(12), default="open")
     opened_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class SchemaMigration(Base):
+    __tablename__ = "schema_migrations"
+    version: Mapped[str] = mapped_column(String(64), primary_key=True)
+    description: Mapped[str] = mapped_column(String(200))
+    applied_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+# ---------------------------------------------------------------- longitudinal clinical intelligence
+class Encounter(Base):
+    """One clinical consultation/interaction session for a patient, persisting across days and restarts."""
+    __tablename__ = "encounters"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    chat_session_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    episode_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    status: Mapped[str] = mapped_column(String(16), default="active")  # active | completed | escalated | closed
+    channel: Mapped[str] = mapped_column(String(12), default="text")    # voice | text
+    language: Mapped[str] = mapped_column(String(8), default="en")
+    chief_complaint_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    summary_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    urgency: Mapped[str | None] = mapped_column(String(24))
+    specialist: Mapped[str | None] = mapped_column(String(64))
+    conversation_state: Mapped[str] = mapped_column(String(32), default="IDLE")
+    active_generation_id: Mapped[str | None] = mapped_column(String(64))
+    open_fragment_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    interview_outcome: Mapped[str | None] = mapped_column(String(36))
+    questions_asked: Mapped[int] = mapped_column(Integer, default=0)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    __table_args__ = (Index("ix_encounters_user_started", "user_id", "started_at"),)
+
+
+class ConversationTurn(Base):
+    """Per-turn speech & text record inside an encounter, preserving raw + normalized transcripts."""
+    __tablename__ = "conversation_turns"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    encounter_id: Mapped[str] = mapped_column(ForeignKey("encounters.id", ondelete="CASCADE"), index=True)
+    session_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    turn_index: Mapped[int] = mapped_column(Integer, default=0)
+    role: Mapped[str] = mapped_column(String(12))  # user | assistant
+    raw_transcript_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    normalized_transcript_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    detected_lang: Mapped[str] = mapped_column(String(16), default="en")
+    code_switched: Mapped[bool] = mapped_column(Boolean, default=False)
+    asr_confidence: Mapped[float | None] = mapped_column(Float)
+    asr_engine: Mapped[str | None] = mapped_column(String(64))
+    speech_segments: Mapped[list | None] = mapped_column(JSON)
+    extracted_payload_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+
+
+class ClinicalSymptom(Base):
+    """Persistent longitudinal symptom record for a patient across encounters."""
+    __tablename__ = "symptoms"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    episode_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    encounter_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    name: Mapped[str] = mapped_column(String(120), index=True)
+    normalized_concept: Mapped[str] = mapped_column(String(160))
+    anatomical_location: Mapped[str | None] = mapped_column(String(80))
+    status: Mapped[str] = mapped_column(String(16), default="active")        # active|improving|worsening|resolved|unknown
+    progression: Mapped[str] = mapped_column(String(16), default="unknown")  # new|worsening|improving|stable|recurrent|resolved|unknown
+    onset_text: Mapped[str | None] = mapped_column(String(120))
+    estimated_onset: Mapped[datetime | None] = mapped_column(DateTime)
+    onset_approximate: Mapped[bool] = mapped_column(Boolean, default=True)
+    duration_text: Mapped[str | None] = mapped_column(String(80))
+    frequency: Mapped[str | None] = mapped_column(String(80))
+    severity: Mapped[str] = mapped_column(String(16), default="unknown")
+    character: Mapped[str | None] = mapped_column(String(80))
+    functional_impact_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    triggers_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    relieving_factors_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    associated_symptoms_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    original_statement_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    confidence: Mapped[float] = mapped_column(Float, default=0.8)
+    verification_status: Mapped[str] = mapped_column(String(24), default="patient_reported")
+    source: Mapped[str] = mapped_column(String(32), default="patient_report")
+    first_reported_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    last_reported_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    __table_args__ = (Index("ix_symptoms_user_status", "user_id", "status"),)
+
+
+class SymptomObservation(Base):
+    """Individual timestamped observation of a symptom (preserves every statement & contradictions)."""
+    __tablename__ = "symptom_observations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    symptom_id: Mapped[str] = mapped_column(ForeignKey("symptoms.id", ondelete="CASCADE"), index=True)
+    encounter_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    turn_id: Mapped[str | None] = mapped_column(String(36))
+    observed_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+    reported_status: Mapped[str] = mapped_column(String(16), default="active")
+    progression: Mapped[str] = mapped_column(String(16), default="unknown")
+    severity: Mapped[str] = mapped_column(String(16), default="unknown")
+    duration_text: Mapped[str | None] = mapped_column(String(80))
+    frequency: Mapped[str | None] = mapped_column(String(80))
+    triggers_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    relieving_factors_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    functional_impact_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    original_statement_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    discrepancy_note_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    is_contradictory: Mapped[bool] = mapped_column(Boolean, default=False)
+    confidence: Mapped[float] = mapped_column(Float, default=0.8)
+    verification_status: Mapped[str] = mapped_column(String(24), default="patient_reported")
+    source: Mapped[str] = mapped_column(String(32), default="patient_report")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+class ClinicalEvent(Base):
+    """Append-only auditable clinical timeline event log."""
+    __tablename__ = "clinical_events"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    encounter_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    event_type: Mapped[str] = mapped_column(String(40), index=True)
+    entity_type: Mapped[str] = mapped_column(String(32))
+    entity_id: Mapped[str] = mapped_column(String(36), index=True)
+    source_turn_id: Mapped[str | None] = mapped_column(String(36))
+    source: Mapped[str] = mapped_column(String(32), default="patient_report")
+    verification_status: Mapped[str] = mapped_column(String(24), default="patient_reported")
+    discrepancy_flag: Mapped[bool] = mapped_column(Boolean, default=False)
+    payload_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    __table_args__ = (Index("ix_clinical_events_user_time", "user_id", "occurred_at"),)
+
+
+class MedicalHistoryEntry(Base):
+    """Structured long-term medical history: diagnoses, surgeries, hospitalizations, evaluations, family history."""
+    __tablename__ = "medical_history"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    category: Mapped[str] = mapped_column(String(32), index=True)
+    normalized_name: Mapped[str | None] = mapped_column(String(160))
+    description_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    status: Mapped[str] = mapped_column(String(16), default="historical")
+    onset_or_date_text: Mapped[str | None] = mapped_column(String(80))
+    verification_status: Mapped[str] = mapped_column(String(24), default="patient_reported")
+    source: Mapped[str] = mapped_column(String(32), default="patient_report")
+    source_ref: Mapped[str | None] = mapped_column(String(64))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+class FollowUpQuestion(Base):
+    """Clinical follow-up questions generated for a specific encounter and patient context."""
+    __tablename__ = "followup_questions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    encounter_id: Mapped[str] = mapped_column(ForeignKey("encounters.id", ondelete="CASCADE"), index=True)
+    symptom_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    question_key: Mapped[str] = mapped_column(String(64), index=True)
+    category: Mapped[str] = mapped_column(String(24), default="symptom")
+    priority: Mapped[int] = mapped_column(Integer, default=3)
+    question_text_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    answer_text_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    status: Mapped[str] = mapped_column(String(16), default="pending", index=True)  # pending|answered|skipped|superseded
+    reason: Mapped[str | None] = mapped_column(String(200))
+    asked_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    answered_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    __table_args__ = (Index("ix_fq_user_status", "user_id", "status"),)
+
+
+class PatientMemoryItem(Base):
+    """Two-layer patient memory (long_term vs short_term) separating facts from AI hypotheses."""
+    __tablename__ = "patient_memory"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    memory_layer: Mapped[str] = mapped_column(String(16), index=True)  # long_term | short_term
+    fact_type: Mapped[str] = mapped_column(String(32), index=True)
+    topic_key: Mapped[str] = mapped_column(String(120), index=True)
+    content_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    verification_status: Mapped[str] = mapped_column(String(24), default="patient_reported")
+    source: Mapped[str] = mapped_column(String(32), default="patient_report")
+    source_ref: Mapped[str | None] = mapped_column(String(64))
+    confidence: Mapped[float] = mapped_column(Float, default=0.8)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    superseded_by: Mapped[str | None] = mapped_column(String(36))
+    last_accessed_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
+    __table_args__ = (Index("ix_pm_user_layer_active", "user_id", "memory_layer", "active"),)
+
+
+class SafetyAlert(Base):
+    """Persisted clinical safety / emergency escalation alert."""
+    __tablename__ = "safety_alerts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    encounter_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    turn_id: Mapped[str | None] = mapped_column(String(36))
+    severity: Mapped[str] = mapped_column(String(20))  # emergency | mental_health | urgent
+    rule_ids: Mapped[list] = mapped_column(JSON, default=list)
+    guidance_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    call_numbers: Mapped[list] = mapped_column(JSON, default=list)
+    acknowledged: Mapped[bool] = mapped_column(Boolean, default=False)
+    triggered_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+
+
+class ClinicalRecommendation(Base):
+    """Persisted clinical guidance & urgency summary for an encounter."""
+    __tablename__ = "clinical_recommendations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    encounter_id: Mapped[str] = mapped_column(ForeignKey("encounters.id", ondelete="CASCADE"), index=True)
+    urgency: Mapped[str] = mapped_column(String(24))
+    specialist: Mapped[str | None] = mapped_column(String(64))
+    summary_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    self_care_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    watch_for_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    verification_status: Mapped[str] = mapped_column(String(24), default="ai_hypothesis")
+    source: Mapped[str] = mapped_column(String(32), default="assistant")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+
+
+class Transcript(Base):
+    """Canonical transcript entity for one conversation turn, linking raw/corrected versions."""
+    __tablename__ = "transcripts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    encounter_id: Mapped[str] = mapped_column(ForeignKey("encounters.id", ondelete="CASCADE"), index=True)
+    turn_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    speaker: Mapped[str] = mapped_column(String(16), default="patient")  # patient | assistant | caregiver
+    raw_text_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    corrected_text_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    clinical_interpretation_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    primary_language: Mapped[str] = mapped_column(String(16), default="en")
+    detected_languages: Mapped[list | None] = mapped_column(JSON)
+    code_switched: Mapped[bool] = mapped_column(Boolean, default=False)
+    confidence: Mapped[float | None] = mapped_column(Float)
+    is_partial: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+
+
+class TranscriptVersion(Base):
+    """Immutable version history of raw recognition, contextual refinement, and edits."""
+    __tablename__ = "transcript_versions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    transcript_id: Mapped[str] = mapped_column(ForeignKey("transcripts.id", ondelete="CASCADE"), index=True)
+    version_no: Mapped[int] = mapped_column(Integer, default=1)
+    stage: Mapped[str] = mapped_column(String(32))  # raw_asr | contextual_refinement | user_correction
+    text_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    model_or_actor: Mapped[str | None] = mapped_column(String(64))
+    reason: Mapped[str | None] = mapped_column(String(200))
+    safety_preserved: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+class ClinicalFact(Base):
+    """Normalized atomic clinical fact with exact transcript span, provenance, scope, and correction lineage."""
+    __tablename__ = "clinical_facts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    encounter_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    conversation_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    source_turn_id: Mapped[str | None] = mapped_column(String(36))
+    transcript_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    scope: Mapped[str] = mapped_column(String(16), default="encounter")  # patient | encounter
+    category: Mapped[str] = mapped_column(String(32), index=True)  # complaint|symptom|history|medication|allergy|vital|functional|unknown|contradiction
+    fact_key: Mapped[str] = mapped_column(String(120), index=True)
+    value_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    original_quote_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    span_start: Mapped[int | None] = mapped_column(Integer)
+    span_end: Mapped[int | None] = mapped_column(Integer)
+    speaker: Mapped[str] = mapped_column(String(16), default="patient")
+    temporal_info: Mapped[dict | None] = mapped_column(JSON)
+    verification_status: Mapped[str] = mapped_column(String(24), default="PATIENT_REPORTED")  # PATIENT_REPORTED|CLINICIAN_CONFIRMED|MEASURED|IMPORTED_FROM_RECORD|AI_INFERRED
+    source_type: Mapped[str] = mapped_column(String(32), default="voice_transcript")
+    confidence: Mapped[float] = mapped_column(Float, default=0.85)
+    uncertainty_note: Mapped[str | None] = mapped_column(String(200))
+    is_contradiction: Mapped[bool] = mapped_column(Boolean, default=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    superseded_by: Mapped[str | None] = mapped_column(String(36))
+    correction_history: Mapped[list | None] = mapped_column(JSON)
+    observed_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    __table_args__ = (Index("ix_cf_user_scope_active", "user_id", "scope", "active"),)
+
+
+class ClinicalAssessment(Base):
+    """Evolving clinician-facing / patient-transparent clinical assessment per encounter."""
+    __tablename__ = "clinical_assessments"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    encounter_id: Mapped[str] = mapped_column(ForeignKey("encounters.id", ondelete="CASCADE"), index=True)
+    version_no: Mapped[int] = mapped_column(Integer, default=1)
+    summary_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    established_facts_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    missing_evidence_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    safety_status: Mapped[str] = mapped_column(String(24), default="routine_uncertain")
+    interview_outcome: Mapped[str] = mapped_column(String(36), default="ADDITIONAL_INFORMATION_REQUIRED")
+    verification_status: Mapped[str] = mapped_column(String(24), default="AI_INFERRED")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+
+
+class DifferentialConsideration(Base):
+    """Dynamic hypothesis tracked by ClinicalReasoningEngine with for/against/missing evidence."""
+    __tablename__ = "differential_considerations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    encounter_id: Mapped[str] = mapped_column(ForeignKey("encounters.id", ondelete="CASCADE"), index=True)
+    assessment_id: Mapped[str | None] = mapped_column(ForeignKey("clinical_assessments.id", ondelete="CASCADE"), index=True)
+    explanation: Mapped[str] = mapped_column(String(180))
+    supporting_evidence_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    against_evidence_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    missing_evidence_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    next_assessment: Mapped[str | None] = mapped_column(String(240))
+    likelihood_band: Mapped[str] = mapped_column(String(24), default="possible")
+    review_status: Mapped[str] = mapped_column(String(24), default="AI_INFERRED")  # AI_INFERRED | CLINICIAN_CONFIRMED | RULED_OUT
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
+
+
+class ClinicalInvestigation(Base):
+    """Patient-dependent investigation consideration matched against existing LabResults."""
+    __tablename__ = "clinical_investigations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    encounter_id: Mapped[str] = mapped_column(ForeignKey("encounters.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(160))
+    purpose_category: Mapped[str] = mapped_column(String(24), default="diagnostic")  # screening | diagnostic | monitoring
+    urgency: Mapped[str] = mapped_column(String(16), default="routine")  # urgent | routine
+    clinician_decision_required: Mapped[bool] = mapped_column(Boolean, default=True)
+    rationale_enc: Mapped[bytes] = mapped_column(LargeBinary)
+    supporting_findings_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    limitations_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    already_in_records: Mapped[bool] = mapped_column(Boolean, default=False)
+    matched_lab_id: Mapped[str | None] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+
+
+class AuditEvent(Base):
+    """Patient-scoped immutable audit trail for clinical corrections, state transitions, and provenance."""
+    __tablename__ = "audit_events"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    actor_id: Mapped[str] = mapped_column(String(64))
+    actor_role: Mapped[str] = mapped_column(String(24), default="patient")  # patient | clinician | system
+    action: Mapped[str] = mapped_column(String(48))
+    entity_type: Mapped[str] = mapped_column(String(32))
+    entity_id: Mapped[str] = mapped_column(String(36), index=True)
+    detail_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)

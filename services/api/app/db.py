@@ -38,7 +38,12 @@ current_account_id: ContextVar[str | None] = ContextVar("current_account_id", de
 # (drug_*, kb_chunks) are not row-scoped.
 RLS_TABLES = ["patient_profiles", "allergies", "conditions", "medications", "vitals", "documents", "jobs",
               "prescriptions", "chat_sessions", "triage_sessions", "lab_results", "user_settings", "consents", "dose_logs",
-              "household_members", "checkins", "care_records", "pregnancies", "visit_questions", "follow_ups"]
+              "household_members", "checkins", "care_records", "pregnancies", "visit_questions", "follow_ups",
+              "calendar_events", "health_facts", "episodes",
+              "encounters", "conversation_turns", "symptoms", "symptom_observations", "clinical_events",
+              "medical_history", "followup_questions", "patient_memory", "safety_alerts", "clinical_recommendations",
+              "transcripts", "transcript_versions", "clinical_facts", "clinical_assessments",
+              "differential_considerations", "clinical_investigations", "audit_events"]
 # Account-level rows (the guardian's consents and privacy settings, and the family list) stay visible while a
 # family member's profile is active.
 ACCOUNT_TABLES = {"user_settings", "consents", "household_members"}
@@ -71,6 +76,7 @@ _LATE_COLUMNS = {
     "chat_sessions": {"title_enc": "BLOB", "pinned": "BOOLEAN NOT NULL DEFAULT FALSE"},
     "user_settings": {"model_pref": "VARCHAR(12) NOT NULL DEFAULT 'balanced'"},
     "documents": {"title": "VARCHAR(120)", "report_date": "DATE", "reviewed_at": "TIMESTAMP", "extracted": "JSON"},
+    "triage_sessions": {"chat_session_id": "VARCHAR(36)"},
 }
 
 
@@ -91,10 +97,11 @@ def _add_missing_columns(sync_conn) -> None:
 
 async def init_db() -> None:
     from app import models  # noqa: F401  (register tables)
+    from app.migrations import run_migrations
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        await conn.run_sync(_add_missing_columns)
+        await conn.run_sync(run_migrations)
         if IS_POSTGRES:
             for t in RLS_TABLES:
                 await conn.execute(text(f"ALTER TABLE {t} ENABLE ROW LEVEL SECURITY"))
