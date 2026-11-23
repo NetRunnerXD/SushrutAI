@@ -61,7 +61,7 @@ def parse_guard(text: str) -> tuple[bool, list[str]]:
 _NO_RX = re.compile(
     r"(?i)((where|which (pharmacy|chemist|shop|store|medical|website|site|app)|how (can|do|to) (i |we )?(get|buy|order)|"
     r"(get|buy|order|sells?|available).{0,40}online|kaha(n|an)?( se)?|कहाँ|कहां).{0,80}"
-    r"(without|w/o|no) (a |any |asking for (a )?|needing (a )?)?(prescription|doctor'?s? (note|slip)|rx)"
+    r"(without|w/o|no) (a |any |asking for (a )?|needing (a )?)?(prescription|doctor'?s? (note|slip)|rx\b)"
     r"|(without|w/o) (a |any |asking for (a )?)?prescription.{0,60}(where|which (pharmacy|chemist|shop|store)|kaha|कहाँ|कहां)"
     r"|(forge|fake|make up|create)( a)? (doctor'?s? )?prescription"
     r"|(bina|बिना) (parch[ae]|parchi|prescription|पर्च[ेा]|पर्ची|प्रिस्क्रिप्शन).{0,60}(kaha|कहाँ|कहां|kharid|खरीद|mil(e|ega)|मिल))")
