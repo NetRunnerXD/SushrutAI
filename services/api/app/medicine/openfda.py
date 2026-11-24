@@ -4,6 +4,7 @@ Docs: https://open.fda.gov/apis/drug/label/
 """
 from __future__ import annotations
 
+import logging
 import re
 from datetime import timedelta
 
@@ -16,6 +17,7 @@ from app.medicine.inn import to_usan
 from app.models import MonographCache
 from app.models import _now as utcnow
 
+log = logging.getLogger("sushrut.openfda")
 URL = "https://api.fda.gov/drug/label.json"
 SECTIONS = {
     "indications": ["indications_and_usage", "purpose"],
@@ -41,8 +43,8 @@ def _clean(s: str, limit: int = 1800) -> str:
 async def label(db: AsyncSession, generic: str) -> dict | None:
     generic = generic.lower()
     cached = (await db.scalars(select(MonographCache).where(MonographCache.generic == generic))).first()
-    if cached and utcnow() - cached.fetched_at < TTL:
-        return cached.payload or None
+    if cached and cached.payload and utcnow() - cached.fetched_at < TTL:
+        return cached.payload
     params = {"search": f'openfda.generic_name:"{to_usan(generic)}"', "limit": 5}
     if key := get_settings().openfda_api_key:
         params["api_key"] = key
@@ -50,11 +52,18 @@ async def label(db: AsyncSession, generic: str) -> dict | None:
         async with httpx.AsyncClient(timeout=20) as c:
             r = await c.get(URL, params=params)
     except httpx.HTTPError:
-        return cached.payload if cached else None
+        return cached.payload if cached and cached.payload else None
+    if r.status_code == 429:
+        log.warning("openFDA rate limit for %s", generic)
+        if cached and cached.payload:
+            return cached.payload
+        return {"_error": "rate_limited"}
     if r.status_code == 404:
-        payload: dict = {}
+        return cached.payload if cached and cached.payload else None
+    if r.status_code >= 400:
+        log.warning("openFDA %s for %s: %s", r.status_code, generic, r.text[:160])
+        return cached.payload if cached and cached.payload else {"_error": f"http_{r.status_code}"}
     else:
-        r.raise_for_status()
         results = r.json().get("results", [])
         # Prefer single-ingredient prescription labels (most complete sections)
         results.sort(key=lambda x: (len(x.get("openfda", {}).get("generic_name", ["", ""])[0].split(" and ")),
@@ -73,9 +82,11 @@ async def label(db: AsyncSession, generic: str) -> dict | None:
                 "us_generic_name": (ofda.get("generic_name") or [None])[0],
                 "url": f"https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid={best.get('set_id')}",
             }
+    if not payload:
+        return cached.payload if cached and cached.payload else None
     if cached:
         cached.payload, cached.fetched_at = payload, utcnow()
     else:
         db.add(MonographCache(generic=generic, payload=payload, source="openfda"))
     await db.commit()
-    return payload or None
+    return payload

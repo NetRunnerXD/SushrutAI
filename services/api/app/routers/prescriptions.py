@@ -46,9 +46,11 @@ async def _run_job(job_id: str, cu: CurrentUser, doc_id: str) -> None:
             for m in await db.scalars(select(Medication).where(Medication.user_id == cu.id,
                                                                Medication.status == "active")):
                 current += [i.generic for i in parse_composition(cu.cipher.dec(m.name_enc)).ingredients]
-            from app.security.settings import get_settings_row
+            from app.llm.providers import full_cloud_allowed
+            from app.security.settings import cloud_allowed, get_settings_row
 
             pref = (await get_settings_row(db, cu.account_id)).model_pref or "balanced"
+            full_cloud_allowed.set(await cloud_allowed(db, cu.account_id, "cloud_llm_full"))
             parsed = await parse_prescription(db, read_document(cu, doc), doc.mime, progress=progress,
                                               allergies=allergies, current_generics=current, model_pref=pref)
             raw_ocr = parsed.pop("raw_ocr", None)
@@ -159,5 +161,7 @@ async def confirm_rx(rx_id: str, cu: CurrentUser = Depends(current_user), db: As
                           dose=it.get("strength") or None, frequency=it.get("frequency"), timing=it.get("timing"),
                           start_date=today, end_date=end, prescription_item_id=f"{rx.id}:{i}"))
     rx.status, rx.confirmed_at = "confirmed", utcnow()
+    from app.memory.trajectory import start_trajectory
+    start_trajectory(db, cu, [it.get("name") or "" for it in parsed.get("medications", [])])  # day 1 / 2 check-ins
     await db.commit()
     return _rx_out(rx, cu)

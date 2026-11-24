@@ -142,9 +142,16 @@ async def guidance(generic: str, lang: str = "en", explain: bool = False,
                        "text": f"Interaction between {d['a']} and {d['b']} ({d['severity']}). Ask your doctor or "
                                f"pharmacist.", "source": d["source"]})
 
+    label_error = (label or {}).get("_error") if isinstance(label, dict) else None
+    if label_error:
+        label = None
     out = {"generic": generic, "label": label, "alerts": alerts, "disclaimer": disclaimer(lang),
-           "note": None if label else "No openFDA label found for this molecule; ask your pharmacist for the "
-                                      "package insert."}
+           "note": ("The medicine-label service is busy right now. Alerts from your record are still shown. "
+                    "Ask your pharmacist for the package insert." if label_error == "rate_limited" else
+                    "The medicine-label service did not answer. Alerts from your record are still shown."
+                    if label_error else
+                    None if label else
+                    "No openFDA label found for this molecule; ask your pharmacist for the package insert.")}
     if explain and label:
         sections = {k: v for k, v in label.items() if k in
                     ("indications", "dosage_and_administration", "contraindications", "warnings",
@@ -182,3 +189,28 @@ async def interactions(body: InteractionQuery, db: AsyncSession = Depends(get_db
     return {"generics": sorted(set(generics)), "interactions": await service.interactions(db, generics),
             "banned_fdc": await service.banned_check(db, generics),
             "note": "Absence of a listed interaction does not guarantee safety — confirm with a pharmacist."}
+
+
+class StorylineIn(BaseModel):
+    names: list[str] = Field(min_length=1, max_length=8)
+    printed: list[str] = Field(default_factory=list)  # composition written next to each name, when known
+    lang: str = "en"
+    given_by_doctor: bool = True
+
+
+@router.post("/storyline")
+async def medicine_storyline(body: StorylineIn, cu: CurrentUser = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    """For each medicine: its salt (verified or not), cheaper same-salt options and how it went for this person
+    before, told as one short narrative (spoken and shown)."""
+    from app.medicine.resolve import resolve
+    from app.medicine.storyline import storyline
+
+    out = []
+    for i, n in enumerate(body.names):
+        r = await resolve(db, n, printed=body.printed[i] if i < len(body.printed) else "")
+        out.append(await storyline(db, cu, r, given_by_doctor=body.given_by_doctor))
+    if body.lang != "en":
+        from app.llm.orchestrator import translate_answer
+        holder = {"storylines": out}
+        await translate_answer(holder, body.lang)
+    return out

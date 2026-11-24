@@ -328,9 +328,9 @@ _FORM_SUFFIX = re.compile(r"\s+(tab|tabs|tablets?|cap|caps|capsules?|syrup|susp|
                           r"ophthalmic|opthalmic|use|[a-z])$")
 _FRAGMENTS = {"human", "pant", "per", "pre", "solvent", "oxide", "malate", "orotate", "iodide", "wfi", "ferrous",
               "silver", "copper", "in flavour base", "dil oil", "madhu", "karpura", "cocoa", "tetanus", "rabies"}
-_NOT_A_DRUG = re.compile(r"(size|napkin|mask|needle|stick|cane|belt|pillow|tape|gauze|dressing|bandage|glove|"
+_NOT_A_DRUG = re.compile(r"\b(size|napkin|mask|needle|stick|cane|belt|pillow|tape|gauze|dressing|bandage|glove|"
                          r"cap|suture|braided|polyster|cotton|syringe|catheter|sterile|support|repellent|"
-                         r"suvidha|janaushadhi|thermometer|kit|strip|test|wheel|chair)")
+                         r"suvidha|janaushadhi|thermometer|kit|strip|test|wheel|chair)\b")
 
 
 def _clean_generic_name(g: str) -> str | None:
