@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from contextvars import ContextVar
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -125,6 +126,17 @@ class Ollama:
         self.base = s.ollama_base_url.rstrip("/")
         self.timeout = s.llm_timeout_s
 
+    async def running(self) -> list[dict]:
+        """Models Ollama holds in memory now, with their size in VRAM (GB)."""
+        try:
+            async with httpx.AsyncClient(timeout=3) as c:
+                r = await c.get(f"{self.base}/api/ps")
+                r.raise_for_status()
+                return [{"name": m["name"], "vram_gb": round(m.get("size_vram", 0) / 1e9, 1), "until": m.get("expires_at")}
+                        for m in r.json().get("models", [])]
+        except httpx.HTTPError:
+            return []
+
     async def models(self) -> list[str]:
         try:
             async with httpx.AsyncClient(timeout=3) as c:
@@ -155,6 +167,8 @@ class Ollama:
             body["format"] = schema
         if model.startswith("qwen3:"):  # qwen3 text models "think" aloud by default; we want the answer only
             body["think"] = False
+        s_ = get_settings()
+        body["keep_alive"] = s_.keep_alive_vision if (images or "vl" in model) else s_.keep_alive_chat
         t0 = time.perf_counter()
         if on_token is not None:
             return await self._chat_streamed(model, body, on_token, t0)
@@ -231,6 +245,100 @@ class Ollama:
         return r.json()["embeddings"]
 
 
+def _cloud_error(name: str, status: int, body: str) -> ProviderUnavailable:
+    """Every cloud HTTP failure is ProviderUnavailable, so the caller can fall back to the local model."""
+    if status == 429:
+        e = ProviderUnavailable(f"{name} rate limit or quota reached")
+        e.hint = (f"{name}'s free quota is used up for now. Try again later, or choose a model on this device.")
+        return e
+    e = ProviderUnavailable(f"{name} error {status}: {body[:200]}")
+    e.hint = f"{name} could not answer ({status}). Try again in a minute, or choose a model on this device."
+    return e
+
+
+def _network_error(name: str, exc: Exception) -> ProviderUnavailable:
+    if isinstance(exc, httpx.TimeoutException):
+        e = ProviderUnavailable(f"{name} did not answer in time")
+        e.hint = f"{name} took too long. Try again, or choose a model on this device."
+        return e
+    e = ProviderUnavailable(f"{name} is unreachable: {exc}")
+    e.hint = f"{name} could not be reached. Check the connection, or choose a model on this device."
+    return e
+
+
+def _response_formats(schema: dict | None) -> list[dict | None]:
+    """Try the real schema first. A 400 retries as a plain JSON object (Groq and Gemini both reject some schemas)."""
+    if schema is None:
+        return [None]
+    return [
+        {"type": "json_schema", "json_schema": {"name": "answer", "strict": False, "schema": schema}},
+        {"type": "json_object"},
+    ]
+
+
+async def _read_openai_stream(response: httpx.Response, on_token: Callable[[str], None]) -> str:
+    """OpenAI-style server-sent chunks. on_token receives the whole text so far, matching Ollama."""
+    text = ""
+    async for line in response.aiter_lines():
+        if not line.startswith("data:"):
+            continue
+        data = line[5:].strip()
+        if not data or data == "[DONE]":
+            if data == "[DONE]":
+                break
+            continue
+        try:
+            chunk = json.loads(data)
+        except json.JSONDecodeError:
+            continue
+        choice = (chunk.get("choices") or [{}])[0]
+        tok = (choice.get("delta") or {}).get("content") or ""
+        if tok:
+            text += tok
+            on_token(text)
+        if choice.get("finish_reason"):
+            break
+    return text
+
+
+async def _openai_chat(name: str, url: str, key: str, model: str, messages: list[dict], *,
+                       schema: dict | None, temperature: float, num_predict: int | None,
+                       on_token: Callable[[str], None] | None, timeout: float) -> str:
+    headers = {"Authorization": f"Bearer {key}"}
+    formats = _response_formats(schema)
+    last: ProviderUnavailable | None = None
+    for i, fmt in enumerate(formats):
+        body: dict[str, Any] = {"model": model, "messages": messages, "temperature": temperature,
+                                "stream": on_token is not None}
+        if fmt is not None:
+            body["response_format"] = fmt
+        if num_predict:
+            body["max_tokens"] = num_predict
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as c:
+                if on_token is not None:
+                    async with c.stream("POST", url, json=body, headers=headers) as r:
+                        if r.status_code == 400 and schema is not None and i < len(formats) - 1:
+                            await r.aread()
+                            continue
+                        if r.status_code >= 400:
+                            await r.aread()
+                            raise _cloud_error(name, r.status_code, r.text)
+                        return await _read_openai_stream(r, on_token)
+                r = await c.post(url, json=body, headers=headers)
+        except ProviderUnavailable:
+            raise
+        except httpx.HTTPError as e:
+            raise _network_error(name, e) from e
+        if r.status_code == 400 and schema is not None and i < len(formats) - 1:
+            last = _cloud_error(name, r.status_code, r.text)
+            continue
+        if r.status_code >= 400:
+            raise _cloud_error(name, r.status_code, r.text)
+        return r.json()["choices"][0]["message"]["content"]
+    raise last or ProviderUnavailable(f"{name} rejected the request")
+
+
 class Groq:
     """Groq free tier (OpenAI-compatible). Tier C — only de-identified text, never images."""
 
@@ -246,33 +354,76 @@ class Groq:
         return bool(self.key)
 
     async def chat(self, model: str, messages: list[dict], *, schema: dict | None = None,
-                   images: list[str] | None = None, temperature: float = 0.2, **_: Any) -> LlmResult:
+                   images: list[str] | None = None, temperature: float = 0.2,
+                   num_predict: int | None = None, on_token: Callable[[str], None] | None = None,
+                   **_: Any) -> LlmResult:
         if not self.available:
             raise ProviderUnavailable("GROQ_API_KEY not set")
         if images:
             raise PrivacyViolation("Images are never sent to Tier C providers")
         clean, total = [], {}
         for m in messages:
-            text, counts = scrub(m["content"])
+            raw = m.get("content")
+            if not isinstance(raw, str):
+                raw = json.dumps(raw, ensure_ascii=False)
+            text, counts = scrub(raw)
             for k, v in counts.items():
                 total[k] = total.get(k, 0) + v
             clean.append({"role": m["role"], "content": text})
-        body: dict[str, Any] = {"model": model, "messages": clean, "temperature": temperature}
-        if schema is not None:
-            body["response_format"] = {"type": "json_object"}
         t0 = time.perf_counter()
-        async with httpx.AsyncClient(timeout=60) as c:
-            r = await c.post(f"{self.base}/chat/completions", json=body,
-                             headers={"Authorization": f"Bearer {self.key}"})
-        if r.status_code == 429:
-            raise ProviderUnavailable("Groq free-tier rate limit reached")
-        r.raise_for_status()
-        return LlmResult(r.json()["choices"][0]["message"]["content"], self.name, model, self.tier,
-                         int((time.perf_counter() - t0) * 1000), total)
+        text = await _openai_chat("Groq", f"{self.base}/chat/completions", self.key, model, clean,
+                                  schema=schema, temperature=temperature, num_predict=num_predict,
+                                  on_token=on_token, timeout=60)
+        return LlmResult(text, self.name, model, self.tier, int((time.perf_counter() - t0) * 1000), total)
 
+
+class Gemini:
+    """Google Gemini through its OpenAI-compatible endpoint. Chosen explicitly by the person ("Gemini" answer
+    model) with the `cloud_llm_full` consent: it receives the question, the needed health context and photos
+    as they are (the person's choice; offline mode still blocks it)."""
+
+    tier = "G"
+    name = "gemini"
+    base = "https://generativelanguage.googleapis.com/v1beta/openai"
+
+    def __init__(self) -> None:
+        self.key = get_settings().gemini_api_key
+
+    @property
+    def available(self) -> bool:
+        return bool(self.key)
+
+    async def chat(self, model: str, messages: list[dict], *, schema: dict | None = None,
+                   images: list[str] | None = None, temperature: float = 0.2,
+                   num_predict: int | None = None, on_token: Callable[[str], None] | None = None,
+                   **_: Any) -> LlmResult:
+        if not self.available:
+            raise ProviderUnavailable("GEMINI_API_KEY not set")
+        msgs = [{"role": m["role"], "content": m["content"]} for m in messages]
+        if images:
+            last = msgs[-1]
+            text = last["content"] if isinstance(last["content"], str) else json.dumps(last["content"], ensure_ascii=False)
+            last["content"] = [{"type": "text", "text": text}] + [
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b}"}} for b in images]
+        t0 = time.perf_counter()
+        text = await _openai_chat("Gemini", f"{self.base}/chat/completions", self.key, model, msgs,
+                                  schema=schema, temperature=temperature, num_predict=num_predict,
+                                  on_token=on_token, timeout=90)
+        return LlmResult(text, self.name, model, self.tier, int((time.perf_counter() - t0) * 1000), {})
+
+
+# Set per request by the routers: the person chose Gemini and gave the `cloud_llm_full` consent (offline mode off)
+full_cloud_allowed: ContextVar[bool] = ContextVar("full_cloud_allowed", default=False)
 
 _ollama: Ollama | None = None
 _groq: Groq | None = None
+_gemini: Gemini | None = None
+
+
+def gemini() -> Gemini:
+    global _gemini
+    _gemini = _gemini or Gemini()
+    return _gemini
 
 
 def ollama() -> Ollama:
@@ -287,11 +438,21 @@ def groq() -> Groq:
     return _groq
 
 
+def gemini_model_for(pref: str) -> str | None:
+    """Gemini model id when this request may send the question, health context and photos. None otherwise."""
+    if pref not in ("gemini", "gemini_fast"):
+        return None
+    if not full_cloud_allowed.get() or not gemini().available:
+        return None
+    s = get_settings()
+    return s.gemini_fast_model if pref == "gemini_fast" else s.gemini_model
+
+
 def model_options() -> list[str]:
     """Answer-speed choices offered in Settings. 'cloud' is listed but still needs consent per request."""
     s = get_settings()
     return (["auto"] + ["balanced"] + (["fast"] if s.fast_model_enabled else []) + (["instant"] if s.instant_model_enabled else [])
-            + (["cloud"] if s.groq_api_key else []))
+            + (["cloud"] if s.groq_api_key else []) + (["gemini", "gemini_fast"] if s.gemini_api_key else []))
 
 
 def doc_model_for(pref: str, kind: str = "prescription") -> str:
@@ -322,10 +483,22 @@ async def clinical_chat(messages: list[dict], *, schema: dict | None = None,
                         prefer_cloud: bool = False, num_predict: int | None = None,
                         repeat_penalty: float | None = None,
                         on_token: Callable[[str], None] | None = None, model_pref: str = "balanced") -> LlmResult:
-    """Local first. Cloud (Tier C) only when explicitly allowed by consent AND requested/needed.
-    model_pref: the user's answer-speed choice ('cloud' = prefer the cloud model when consent allows; photos always
-    go to the local vision model)."""
+    """Answer with the model the person chose.
+
+    Gemini only when model_pref is gemini or gemini_fast and this request set full_cloud_allowed (consent).
+    Groq ("cloud" / prefer_cloud) only with allow_cloud, and only de-identified text — photos stay on the local
+    vision model. A cloud failure falls back to the local model instead of failing the turn.
+    """
     s = get_settings()
+    if (g_model := gemini_model_for(model_pref)):
+        try:
+            return await gemini().chat(g_model, messages, schema=schema, images=images,
+                                       num_predict=num_predict, on_token=on_token)
+        except ProviderUnavailable as e:
+            log.warning("Gemini unavailable (%s); answering locally", e)
+        model_pref = "balanced"
+    elif model_pref in ("gemini", "gemini_fast"):
+        model_pref = "balanced"  # chosen but not allowed / no key: the careful local model answers
     prefer_cloud = prefer_cloud or model_pref == "cloud"
     if images:
         model = s.vlm_model
@@ -335,9 +508,10 @@ async def clinical_chat(messages: list[dict], *, schema: dict | None = None,
             num_predict = min(num_predict or cap, cap)
     if prefer_cloud and allow_cloud and not images and groq().available:
         try:
-            return await groq().chat(s.groq_llm_model, messages, schema=schema)
-        except ProviderUnavailable:
-            pass
+            return await groq().chat(s.groq_llm_model, messages, schema=schema,
+                                     num_predict=num_predict, on_token=on_token)
+        except ProviderUnavailable as e:
+            log.warning("Groq unavailable (%s); answering locally", e)
     try:
         return await ollama().chat(model, messages, schema=schema, images=images, num_predict=num_predict,
                                    repeat_penalty=repeat_penalty, on_token=on_token)
@@ -346,9 +520,10 @@ async def clinical_chat(messages: list[dict], *, schema: dict | None = None,
             # the "Faster" model failed (seen in the safety eval: it looped until Ollama aborted with "token repeat
             # limit reached") — answer with the careful model instead of showing the person an error
             log.warning("fast model %s failed (%s); retrying with %s", model, e, s.llm_model)
-            return await clinical_chat(messages, schema=schema, allow_cloud=allow_cloud, prefer_cloud=prefer_cloud,
+            return await clinical_chat(messages, schema=schema, allow_cloud=allow_cloud, prefer_cloud=False,
                                        num_predict=num_predict, repeat_penalty=repeat_penalty, on_token=on_token,
                                        model_pref="balanced")
-        if allow_cloud and not images and groq().available:
-            return await groq().chat(s.groq_llm_model, messages, schema=schema)
+        if allow_cloud and not images and groq().available and not prefer_cloud:
+            # local model is down: Groq is the consented de-identified fallback, not a second try after Groq itself failed
+            return await groq().chat(s.groq_llm_model, messages, schema=schema, num_predict=num_predict)
         raise

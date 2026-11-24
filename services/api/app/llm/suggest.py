@@ -315,5 +315,23 @@ async def for_user(db, cu, lang: str, session_id: str | None = None, mode: str =
     s = get_settings()
     indic = c.lang != "en"
     model = None if mode == "rules" else ((s.suggest_model_indic if indic else s.suggest_model) or None)
-    return await suggest(c, model, await _medicine_names(db),
-                         timeout=s.suggest_timeout_indic_s if indic else s.suggest_timeout_s)
+    res = await suggest(c, model, await _medicine_names(db),
+                        timeout=s.suggest_timeout_indic_s if indic else s.suggest_timeout_s)
+    # Languages without their own chip templates (Tamil, Punjabi, Urdu, …): the chips are written in English and
+    # translated on this device — unless the person is chatting in English.
+    if lang not in T and c.lang == "en" and not (c.last_question and c.last_question.isascii()):
+        res["items"] = await translate_chips(res["items"], lang)
+    return res
+
+
+async def translate_chips(items: list[str], lang: str) -> list[str]:
+    import asyncio
+
+    from app.speech import models as speech
+
+    if lang not in speech.LANGS or not items or not speech.available("transformers"):
+        return items
+    try:
+        return await asyncio.to_thread(lambda: [speech.translate(x, "en", lang) for x in items])
+    except Exception:  # noqa: BLE001 — chips stay in English rather than disappear
+        return items

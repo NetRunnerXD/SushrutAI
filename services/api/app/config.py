@@ -62,8 +62,31 @@ class Settings(BaseSettings):
     groq_llm_model: str = "openai/gpt-oss-120b"
     groq_stt_model: str = "whisper-large-v3"
     sarvam_api_key: str = ""
+    # Gemini (Google AI Studio key): the "Gemini" answer model. Flash-Lite has the larger free daily quota.
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
+    gemini_fast_model: str = "gemini-3.5-flash-lite"
+    # Live API (WebSocket audio). Separate from the text chat models above.
+    gemini_live_model: str = "gemini-3.8-live"
+    gemini_flash_live_model: str = "gemini-3.1-flash-live-preview"  # legacy; Google recommends gemini-3.8-live
+    gemini_transcribe_live_model: str = "gemini-3.5-transcribe-live"
+    gemini_translate_live_model: str = "gemini-3.5-live-translate-preview"
+    gemini_tts_model: str = "gemini-3.8-flash-tts"
+    gemini_tts_voice: str = "Kore"
+    # ElevenLabs: speech-to-text (Scribe) and read-aloud voices
+    elevenlabs_api_key: str = ""
+    elevenlabs_voice_id: str = "21m00Tcm4TlvDq8ikWAM"   # a stock multilingual voice; any voice id from your account
+    elevenlabs_tts_model: str = "eleven_multilingual_v2"
+    elevenlabs_stt_model: str = "scribe_v1"
+    sarvam_tts_speaker: str = "anushka"
+    # Ollama: how long models stay loaded after use (frees GPU memory sooner for the rarely used ones)
+    keep_alive_chat: str = "10m"
+    keep_alive_vision: str = "2m"
+    speech_idle_unload_s: int = 600   # Python speech / translation models are released after this much idle time
+    google_places_api_key: str = ""   # optional: fills missing hospital phone numbers (Google Places API, New)
     bhashini_user_id: str = ""
     bhashini_api_key: str = ""
+    bhashini_pipeline_id: str = ""  # optional ULCA pipeline id; empty lets the config call pick a model
     openfda_api_key: str = ""
     nhs_api_key: str = ""  # free key from https://developer.api.nhs.uk (NHS website content API); KB ingest skips NHS without it
 

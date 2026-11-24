@@ -8,8 +8,8 @@ from app import __version__
 from app.config import get_settings
 from app.db import init_db
 from app.routers import (
-    auth, chat, consent, documents, family, medicines, prescriptions, profile, records, reports, system, triage, visit,
-    assistant, care, home, search, today, voice,
+    auth, chat, clinical, consent, conversation, documents, family, medicines, prescriptions, profile, records, reports, system, triage, visit,
+    assistant, care, emergency, home, memory, search, today, voice,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -21,7 +21,15 @@ async def lifespan(_: FastAPI):
     if not s.is_dev and (len(s.jwt_secret) < 32 or "change-me" in s.jwt_secret or "insecure" in s.jwt_secret):
         raise RuntimeError("Set a strong JWT_SECRET (>= 32 random chars) before running outside dev")
     await init_db()
+    import asyncio
+
+    from app.runtime.device import housekeeping, profile
+    profile()  # read once: RAM, GPU memory, cores (shown in Settings)
+    stop = asyncio.Event()
+    task = asyncio.create_task(housekeeping(stop))  # releases idle speech / translation models
     yield
+    stop.set()
+    task.cancel()
 
 
 app = FastAPI(title="SushrutAI API", version=__version__, lifespan=lifespan,
@@ -41,8 +49,8 @@ async def security_headers(request, call_next):
 
 
 API = "/api/v1"
-for r in (auth, consent, profile, family, records, visit, reports, documents, chat, prescriptions, medicines, triage, search,
-          assistant, care, home, today,
+for r in (auth, consent, profile, family, records, visit, reports, documents, chat, clinical, conversation, prescriptions, medicines, triage, search,
+          assistant, care, home, today, memory, emergency,
           voice, system):
     app.include_router(r.router, prefix=API)
 
