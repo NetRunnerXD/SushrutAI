@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import json
 from typing import Literal
 
@@ -12,14 +13,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import SessionLocal, get_db
 from app.llm import orchestrator
-from app.llm.providers import ModelBusy, ProviderUnavailable
+from app.llm.providers import ModelBusy, ProviderUnavailable, full_cloud_allowed
 from app.models import ChatSession, Document, Message
 from app.llm.context_refs import resolve as resolve_refs
 from app.ocr.images import classify_attachment, classify_modality, doc_image_b64
 from app.security.auth import CurrentUser, current_user
+from app.medicine.pack import MED_PHOTO_Q
 from app.security.settings import cloud_allowed, get_settings_row
 from app.security.consent import active_purposes
+from app.langs import LangCode
 
+log = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 # Attachments that have their own reader: chat points to it instead of guessing from a photo.
@@ -73,7 +77,7 @@ async def detect_attachment(b64: str) -> str:
     except ProviderUnavailable:
         return "photo"
 
-Lang = Literal["en", "hi", "bn", "ta", "te", "mr", "gu", "kn", "ml", "or"]
+Lang = LangCode
 
 
 class SessionPatch(BaseModel):
@@ -97,7 +101,14 @@ class MessageIn(BaseModel):
     history: list[HistoryItem] = []  # used when history_storage consent is not given
     image_document_ids: list[str] = Field(default_factory=list, max_length=3)
     context_refs: list[str] = Field(default_factory=list, max_length=3)  # "Ask about this": e.g. ["lab:<id>"]
-    model_pref: Literal["auto", "balanced", "fast", "instant", "cloud"] | None = None  # the chat's model switch
+    model_pref: Literal["auto", "balanced", "fast", "instant", "cloud", "gemini", "gemini_fast"] | None = None  # the chat's model switch
+    replace_history: bool = False  # the screen's thread is the one to keep (edit / answer again)
+    channel: Literal["text", "voice"] = "text"
+    voice_meta: dict | None = None  # raw_transcript, normalized_transcript, asr_confidence, asr_engine, segments, code_switched
+    generation_id: str | None = None
+    spoken_prefix: str | None = None  # assistant prefix spoken aloud before patient barge-in
+    force_english: bool = False  # spoken question: answer in English, then translate back to the heard language
+    context_scope: Literal["chat", "record"] = "chat"  # chat: this thread only. record: read and update the patient record
 
 
 @router.post("/sessions", status_code=201)
@@ -158,6 +169,16 @@ async def update_session(sid: str, body: SessionPatch, cu: CurrentUser = Depends
     return {"id": s.id, "pinned": bool(s.pinned)}
 
 
+@router.delete("/sessions", status_code=204)
+async def delete_all_sessions(cu: CurrentUser = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    """Delete every chat of this person (all messages included). Other people's chats are never touched."""
+    ids = list(await db.scalars(select(ChatSession.id).where(ChatSession.user_id == cu.id)))
+    if ids:
+        await db.execute(delete(Message).where(Message.session_id.in_(ids)))
+        await db.execute(delete(ChatSession).where(ChatSession.id.in_(ids)))
+    await db.commit()
+
+
 @router.delete("/sessions/{sid}", status_code=204)
 async def delete_session(sid: str, cu: CurrentUser = Depends(current_user), db: AsyncSession = Depends(get_db)):
     s = await _own_session(db, cu, sid)
@@ -177,6 +198,296 @@ async def get_session(sid: str, cu: CurrentUser = Depends(current_user), db: Asy
          "citations": m.citations, "safety": m.safety, "created_at": m.created_at} for m in msgs]}
 
 
+async def medicine_photo_reply(db: AsyncSession, cu: CurrentUser, b64: str, text: str, lang: str,
+                               model_pref: str = "balanced") -> dict | None:
+    """Answer for a photo of a medicine pack, or None when it is not one."""
+    from app.medicine.pack import SAME_Q, compare_with_prescribed, read_pack
+    from app.medicine.resolve import resolve
+    from app.medicine.storyline import storyline
+
+    pack = await read_pack(b64, model_pref=model_pref)
+    if pack is None:
+        return None
+    r = await resolve(db, pack["brand"] or pack["composition"], printed=pack["composition"])
+    story = await storyline(db, cu, r, given_by_doctor=False)
+    cmp = await compare_with_prescribed(db, cu, r)
+    reply = ((cmp["say"] + " ") if cmp and SAME_Q.search(text) else "") + story["text"]
+    out = {"kind": "medicine_photo", "reply": reply, "storylines": [story], "comparison": cmp,
+           "pack": pack, "suggest_check": False}
+    if lang != "en":
+        from app.llm.orchestrator import translate_answer
+        await translate_answer(out, lang)
+    return out
+
+
+MEMORY_SKIP_KINDS = {"greeting", "thanks_bye", "about_app", "off_topic"}
+
+
+async def _persist_clinical_turn(
+    db: AsyncSession,
+    cu: CurrentUser,
+    *,
+    sid: str,
+    body: MessageIn,
+    user_text: str,
+    result: orchestrator.TurnResult,
+) -> dict:
+    """Validate, refine transcript, extract facts with span highlights, run clinical reasoning,
+    select dynamic uncapped interview question, recommend tailored investigations, and update state."""
+    import os
+    from app.clinical.extract import extract_clinical_turn
+    from app.clinical.facts import record_clinical_facts
+    from app.clinical.followup import record_followup_answer
+    from app.clinical.interview import AdaptiveClinicalInterviewEngine
+    from app.clinical.investigations import InvestigationRecommendationEngine
+    from app.clinical.persistence import (
+        get_or_create_encounter,
+        persist_extraction,
+        record_recommendation,
+        record_safety_alert,
+        record_turn,
+    )
+    from app.clinical.reasoning import ClinicalReasoningEngine
+    from app.conversation.state import ConversationState, conversation_orchestrator
+    from app.memory.context import PatientContextBuilder
+    from app.safety.clinical_safety import evaluate_safety
+    from app.speech.refine import persist_transcript, refine_transcript
+
+    vm = body.voice_meta or {}
+    raw_text = str(vm.get("raw_transcript") or user_text)
+    in_isolated_test = os.environ.get("OLLAMA_BASE_URL", "").endswith(":9")
+    refine_res = await refine_transcript(
+        raw_text,
+        lang_hint=str(vm.get("lang") or body.lang),
+        audio_conf=vm.get("asr_confidence"),
+        use_llm=not in_isolated_test and body.channel == "voice",
+    )
+    analysis = refine_res.analysis
+    norm_text = str(vm.get("normalized_transcript") or refine_res.corrected_transcript or analysis.normalized_transcript or raw_text)
+    det_lang = str(vm.get("lang") or analysis.primary_language or body.lang)
+    code_switched = bool(vm.get("code_switched", analysis.code_switched))
+
+    enc = await get_or_create_encounter(
+        db,
+        cu,
+        chat_session_id=sid,
+        channel=body.channel,
+        language=det_lang,
+        chief_complaint=norm_text[:240],
+    )
+    user_turn = await record_turn(
+        db,
+        cu,
+        encounter_id=enc.id,
+        session_id=sid,
+        role="user",
+        raw_text=raw_text,
+        normalized_text=norm_text,
+        detected_lang=det_lang,
+        code_switched=code_switched,
+        asr_confidence=vm.get("asr_confidence") or analysis.confidence,
+        asr_engine=vm.get("asr_engine"),
+        speech_segments=vm.get("segments"),
+    )
+    transcript_row = await persist_transcript(
+        db,
+        cu,
+        encounter_id=enc.id,
+        turn_id=user_turn.id,
+        speaker="patient",
+        result=refine_res,
+    )
+
+    nlp_input = f"{norm_text}\n{result.english}" if result.english and result.english.strip() != norm_text.strip() else norm_text
+    skip_llm = in_isolated_test or (result.kind or "") in MEMORY_SKIP_KINDS or bool(result.red_flag.get("triggered"))
+    extraction = await extract_clinical_turn(
+        nlp_input,
+        patient_id=cu.id,
+        encounter_id=enc.id,
+        language=det_lang,
+        raw_transcript=raw_text,
+        source="voice_transcript" if body.channel == "voice" else "chat_text",
+        use_llm=not skip_llm and body.model_pref not in ("instant",),
+    )
+    user_turn.extracted_payload_enc = cu.cipher.enc(json.dumps(extraction.model_dump(), ensure_ascii=False, default=str))
+
+    persist_summary = await persist_extraction(
+        db, cu, extraction, encounter_id=enc.id, turn_id=user_turn.id
+    )
+    await record_clinical_facts(
+        db,
+        cu,
+        encounter_id=enc.id,
+        conversation_id=sid,
+        turn_id=user_turn.id,
+        transcript_id=transcript_row.id,
+        transcript_text=raw_text,
+        payload=extraction,
+        discrepancy_notes=persist_summary.get("discrepancies"),
+    )
+    completed_fqs = await record_followup_answer(
+        db, cu, encounter_id=enc.id, answer_text=norm_text, extraction=extraction
+    )
+
+    safety = evaluate_safety(nlp_input, lang=body.lang, extraction=extraction)
+    if result.red_flag.get("triggered") or safety.escalate_now:
+        rules = list(dict.fromkeys((result.red_flag.get("rules") or []) + safety.rule_ids))
+        msgs = list(dict.fromkeys((result.red_flag.get("messages") or []) + safety.messages))
+        nums = list(dict.fromkeys((result.red_flag.get("call_numbers") or []) + safety.call_numbers))
+        await record_safety_alert(
+            db,
+            cu,
+            encounter_id=enc.id,
+            turn_id=user_turn.id,
+            severity=result.red_flag.get("kind") or safety.severity,
+            rule_ids=rules,
+            guidance="\n".join(msgs)[:1500] or result.reply[:500],
+            call_numbers=nums,
+        )
+
+    mem_ctx = await PatientContextBuilder().build(
+        db,
+        cu,
+        query_text=nlp_input,
+        current_symptoms=[s.name for s in extraction.symptoms],
+        encounter_id=enc.id,
+    )
+
+    assessment_info = await ClinicalReasoningEngine().evaluate_and_persist(
+        db,
+        cu,
+        encounter_id=enc.id,
+        user_text=norm_text,
+        extraction=extraction,
+        mem=mem_ctx,
+        safety=safety,
+    )
+
+    investigations = []
+    if result.structured is not None and (result.kind or "") not in MEMORY_SKIP_KINDS:
+        investigations = await InvestigationRecommendationEngine().recommend(
+            db, cu, encounter_id=enc.id, mem=mem_ctx, safety=safety, user_text=nlp_input
+        )
+
+    interview_res = {"outcome": "SUFFICIENT_INFORMATION", "question": None, "candidates_remaining": 0}
+    if result.structured is not None and (result.kind or "") not in (*MEMORY_SKIP_KINDS, "clarify"):
+        interview_res = await AdaptiveClinicalInterviewEngine().evaluate_and_next_question(
+            db,
+            cu,
+            encounter_id=enc.id,
+            user_text=norm_text,
+            extraction=extraction,
+            mem=mem_ctx,
+            safety=safety,
+            lang=body.lang,
+        )
+    followup_q = interview_res.get("question")
+
+    if isinstance(result.structured, dict) and (result.kind or "") not in MEMORY_SKIP_KINDS:
+        pcs = result.structured.get("possible_conditions") or []
+        urg = (pcs[0].get("urgency") if pcs else None) or ("emergency" if safety.escalate_now else "see_doctor_week")
+        spec = result.structured.get("specialist")
+        await record_recommendation(
+            db,
+            cu,
+            encounter_id=enc.id,
+            urgency=urg,
+            specialist=spec,
+            summary_text=result.reply[:2000],
+            self_care=result.structured.get("self_care") or result.structured.get("tips"),
+            watch_for=result.structured.get("watch_for"),
+        )
+
+    await record_turn(
+        db,
+        cu,
+        encounter_id=enc.id,
+        session_id=sid,
+        role="assistant",
+        raw_text=result.reply,
+        normalized_text=result.reply,
+        detected_lang=body.lang,
+        extracted_payload={
+            "kind": result.kind,
+            "followup_question": followup_q,
+            "interview_outcome": interview_res.get("outcome"),
+            "spoken_prefix": body.spoken_prefix,
+        },
+    )
+    target_state = (
+        ConversationState.CLARIFICATION
+        if refine_res.needs_clarification
+        else ConversationState.SPEAKING if body.channel == "voice" else ConversationState.IDLE
+    )
+    await conversation_orchestrator.transition(db, cu, enc.id, target_state, reason="Turn processed")
+
+    return {
+        "encounter_id": enc.id,
+        "transcript_id": transcript_row.id,
+        "generation_id": conversation_orchestrator.runtime_for(enc.id, cu.id).generation_id,
+        "state": target_state.value,
+        "language": det_lang,
+        "raw_transcript": raw_text,
+        "corrected_transcript": norm_text,
+        "normalized_transcript": norm_text,
+        "code_switched": code_switched,
+        "safety_preserved": refine_res.safety_preserved,
+        "needs_clarification": refine_res.needs_clarification,
+        "clarification_prompt": refine_res.clarification_prompt,
+        "returning_patient": mem_ctx.returning_patient,
+        "prior_encounter_summary": mem_ctx.prior_encounter_summary,
+        "completed_followups": completed_fqs,
+        "persisted": persist_summary,
+        "extraction": extraction.model_dump(),
+        "safety": safety.as_dict(),
+        "assessment": assessment_info,
+        "investigations": investigations,
+        "interview_outcome": interview_res.get("outcome"),
+        "followup_question": followup_q,
+    }
+
+
+async def remember_turn(db: AsyncSession, cu: CurrentUser, text: str, english: str, sid: str) -> list[dict]:
+    from app.memory.extract import quick_facts
+    from app.memory.store import save_facts
+
+    facts = quick_facts(text)
+    if english:  # a translated question: read the English too, keep the first of each name
+        names = {f.name for f in facts}
+        facts += [f for f in quick_facts(english) if f.name not in names]
+    try:
+        return await save_facts(db, cu, facts, source="chat", source_ref=sid)
+    except Exception:  # noqa: BLE001 — memory must never break an answer
+        log.exception("saving facts failed")
+        return []
+
+
+async def remember_turn_later(cu: CurrentUser, text_en: str, sid: str) -> None:
+    """The model pass: symptoms present / absent, severity, triggers, medicine responses, context anchors."""
+    from app.memory.extract import model_facts
+    from app.memory.store import save_facts
+
+    try:
+        facts = await model_facts(text_en)
+        if facts:
+            async with SessionLocal() as db:
+                await save_facts(db, cu, facts, source="chat", source_ref=sid, write_vitals=False)
+    except Exception:  # noqa: BLE001
+        log.exception("background memory extraction failed")
+
+
+def _history_prefix(client: list[dict], stored: list[dict]) -> bool:
+    """True when the screen's thread is the leading part of the saved one (including both empty)."""
+    if len(client) > len(stored):
+        return False
+    for item, row in zip(client, stored):
+        if item.get("role") != row.get("role"):
+            return False
+        if (item.get("content") or "").strip() != (row.get("content") or "").strip():
+            return False
+    return True
+
+
 def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False, default=str)}\n\n"
 
@@ -191,7 +502,8 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
     if "core_service" not in consents:
         raise HTTPException(403, "Please accept the privacy notice (core_service consent) first")
     store = "history_storage" in consents
-    allow_cloud = await cloud_allowed(db, cu.account_id, "cloud_llm_deidentified")
+    allow_cloud = await cloud_allowed(db, cu.account_id, "cloud_llm_deidentified")  # Groq: scrubbed text, never photos
+    allow_full = await cloud_allowed(db, cu.account_id, "cloud_llm_full")  # Gemini, only when the person chose it
     model_pref = body.model_pref or (await get_settings_row(db, cu.account_id)).model_pref or "auto"
 
     if not body.text.strip() and not body.image_document_ids:
@@ -204,18 +516,39 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
     context, hint_kind = await resolve_refs(db, cu, body.context_refs) if body.context_refs else ("", None)
     text = body.text.strip() or {"hi": "इस तस्वीर में क्या दिख रहा है?"}.get(body.lang, "What does this show?")
 
+    client_history = [h.model_dump() for h in body.history]
     if store:
-        prior = await db.scalars(select(Message).where(Message.session_id == sid).order_by(Message.created_at))
-        history = [{"role": m.role, "content": cu.cipher.dec(m.content_enc),
-                    **({"structured": m.structured} if m.role == "assistant" and m.structured else {})} for m in prior]
+        prior_rows = list(await db.scalars(select(Message).where(Message.session_id == sid).order_by(Message.created_at)))
+        stored = [{"role": m.role, "content": cu.cipher.dec(m.content_enc),
+                   **({"structured": m.structured} if m.role == "assistant" and m.structured else {})} for m in prior_rows]
+        # Edit / Answer again sends the thread still on screen. Drop the saved tail so the model does not
+        # answer the question the person just replaced, and so the old copy is not stored a second time.
+        if body.replace_history and _history_prefix(client_history, stored):
+            drop = [m.id for m in prior_rows[len(client_history):]]
+            if drop:
+                await db.execute(delete(Message).where(Message.id.in_(drop)))
+                await db.commit()
+            history = stored[:len(client_history)]
+        else:
+            history = stored
     else:
-        history = [h.model_dump() for h in body.history]
+        history = client_history
 
     async def gen():
+        full_cloud_allowed.set(allow_full)
         yield _sse("status", {"stage": "reading_attachment" if attachments else "thinking"})
         async with SessionLocal() as wdb:  # request-scoped session is closed once streaming starts
             if attachments:
-                structured = attachment_reply(await detect_attachment(attachments[0][1]), attachments[0][0], body.lang)
+                # A medicine strip / bottle: "what is this?", "is this what the doctor gave?" → salt + story
+                structured = None
+                if MED_PHOTO_Q.search(text):
+                    structured = await medicine_photo_reply(wdb, cu, attachments[0][1], text, body.lang, model_pref)
+                if structured is None:
+                    att_kind = await detect_attachment(attachments[0][1])
+                    if att_kind == "photo":
+                        structured = await medicine_photo_reply(wdb, cu, attachments[0][1], text, body.lang, model_pref)
+                    if structured is None:
+                        structured = attachment_reply(att_kind, attachments[0][0], body.lang)
                 if structured is not None:
                     reply = structured["reply"]
                     payload = {"reply": reply, "structured": structured, "citations": [], "disclaimer": "",
@@ -231,17 +564,36 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
                     yield _sse("done", {})
                     return
                 yield _sse("status", {"stage": "thinking"})
+            cancel_ev: asyncio.Event | None = None
+            if body.generation_id:
+                from app.clinical.persistence import get_or_create_encounter
+                from app.conversation.state import conversation_orchestrator
+                enc_pre = await get_or_create_encounter(wdb, cu, chat_session_id=sid, channel=body.channel, language=body.lang)
+                await wdb.commit()
+                ok_bind, cancel_ev = conversation_orchestrator.bind_generation(enc_pre.id, cu.id, body.generation_id)
+                if not ok_bind:
+                    yield _sse("cancelled", {"generation_id": body.generation_id})
+                    yield _sse("done", {})
+                    return
             drafts: asyncio.Queue[str] = asyncio.Queue()
-            task = asyncio.create_task(orchestrator.answer(wdb, cu, text, lang=body.lang, history=history,
+            task = asyncio.create_task(orchestrator.answer(wdb, cu, text, lang=body.lang, session_id=sid, history=history,
                                                            images=images or None, allow_cloud=allow_cloud,
                                                            context=context, hint_kind=hint_kind,
-                                                           on_delta=drafts.put_nowait, model_pref=model_pref))
+                                                           on_delta=drafts.put_nowait, model_pref=model_pref,
+                                                           spoken_prefix=body.spoken_prefix,
+                                                           force_english=body.force_english,
+                                                           use_record=body.context_scope == "record"))
             try:
                 # "delta" carries the whole reply written so far (a draft; "answer" replaces it). Only the newest
                 # draft is sent, at most ~8 times a second; a comment line keeps quiet connections open.
                 while not task.done():
+                    if cancel_ev is not None and cancel_ev.is_set():
+                        task.cancel()
+                        yield _sse("cancelled", {"generation_id": body.generation_id})
+                        yield _sse("done", {})
+                        return
                     try:
-                        latest = await asyncio.wait_for(drafts.get(), timeout=2)
+                        latest = await asyncio.wait_for(drafts.get(), timeout=0.5 if cancel_ev is not None else 2.0)
                     except asyncio.TimeoutError:
                         yield ": keep-alive\n\n"
                         continue
@@ -255,9 +607,21 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
                     task.cancel()
             try:
                 r = task.result()
+            except asyncio.CancelledError:
+                yield _sse("cancelled", {"generation_id": body.generation_id or ""})
+                yield _sse("done", {})
+                return
             except ProviderUnavailable as e:
                 yield _sse("error", {"message": str(e), "hint": e.hint, "busy": isinstance(e, ModelBusy)})
                 return
+            if body.generation_id:
+                from app.clinical.persistence import get_or_create_encounter
+                from app.conversation.state import conversation_orchestrator
+                enc_chk = await get_or_create_encounter(wdb, cu, chat_session_id=sid, channel=body.channel, language=body.lang)
+                if not conversation_orchestrator.is_generation_current(enc_chk.id, cu.id, body.generation_id):
+                    yield _sse("cancelled", {"generation_id": body.generation_id})
+                    yield _sse("done", {})
+                    return
             if r.red_flag.get("triggered"):
                 yield _sse("red_flag", r.red_flag)
             payload = {"reply": r.reply, "structured": r.structured, "citations": r.citations,
@@ -271,8 +635,27 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
                 wdb.add(m)
                 await wdb.commit()
                 payload["message_id"] = m.id
+                # Health memory: values said in this turn are saved now ("Saving: 101 °F · 2 days", with undo);
+                # symptoms, triggers and medicine responses follow from a small model in the background.
+                if body.context_scope == "record" and r.structured is not None and (r.kind or "") not in MEMORY_SKIP_KINDS:
+                    payload["saved_facts"] = await remember_turn(wdb, cu, text, r.english, sid)
+                if body.context_scope == "record":
+                    try:
+                        payload["clinical"] = await _persist_clinical_turn(
+                            wdb, cu, sid=sid, body=body, user_text=text, result=r
+                        )
+                        if payload["clinical"].get("followup_question") and isinstance(r.structured, dict):
+                            fq_q = payload["clinical"]["followup_question"]["question"]
+                            existing_fqs = list(r.structured.get("follow_up_questions") or [])
+                            if fq_q and fq_q not in existing_fqs:
+                                r.structured["follow_up_questions"] = [fq_q] + existing_fqs[:2]
+                    except Exception:  # noqa: BLE001 — clinical persistence never breaks delivery of answer
+                        log.exception("clinical turn persistence failed")
             yield _sse("answer", payload)
             yield _sse("done", {})
+            if (store and body.context_scope == "record" and r.structured is not None
+                    and (r.kind or "") not in MEMORY_SKIP_KINDS):
+                asyncio.create_task(remember_turn_later(cu, r.english or text, sid))
 
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})

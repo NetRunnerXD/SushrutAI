@@ -58,9 +58,30 @@ async def test_warning_signs_split_across_messages_are_caught(client, guest):
     assert "red_flag" in names  # stroke signs, although neither message alone matches
 
 
+def test_edit_history_is_a_prefix_of_the_saved_thread():
+    from app.routers.chat import _history_prefix
+    stored = [{"role": "user", "content": "fever"}, {"role": "assistant", "content": "rest"}]
+    assert _history_prefix([{"role": "user", "content": "fever"}], stored)
+    assert _history_prefix([], stored)  # edited back to the first question
+    assert _history_prefix(stored, stored)
+    assert not _history_prefix([{"role": "user", "content": "cough"}], stored)
+    assert not _history_prefix(stored + [{"role": "user", "content": "more"}], stored)
+
+
 def test_partial_reply_decodes_a_reply_still_being_written():
     assert partial_reply('{"reply": "Hello\\nwor') == "Hello\nwor"
     assert partial_reply('{"reply": "a \\u0939') == "a ह"
     assert partial_reply('{"reply": "a \\u09') == "a "  # escape cut in half is dropped, not shown raw
     assert partial_reply('{"reply": "say \\"x\\') == 'say "x'
     assert partial_reply('{"tips": []}') == ""
+
+
+
+async def test_delete_all_chats(client, guest):
+    a = await _chat_with_one_question(client, guest)
+    b = await _chat_with_one_question(client, guest, "mujhe sar dard hai")
+    assert (await client.get("/chat/sessions", headers=guest)).json()
+    assert (await client.delete("/chat/sessions", headers=guest)).status_code == 204
+    assert (await client.get("/chat/sessions", headers=guest)).json() == []
+    assert (await client.get(f"/chat/sessions/{a}", headers=guest)).status_code == 404
+    assert (await client.delete("/chat/sessions", headers=guest)).status_code == 204  # nothing left: still fine

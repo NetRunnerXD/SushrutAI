@@ -60,3 +60,15 @@ async def guest(client):
     h = {"Authorization": f"Bearer {tok}"}
     await client.post("/consents", json={"purposes": ["core_service", "history_storage"]}, headers=h)
     return h
+
+
+async def current_user_for(headers: dict):
+    """The CurrentUser behind a guest's auth header (for tests that call services directly)."""
+    from fastapi.security import HTTPAuthorizationCredentials
+
+    from app.db import SessionLocal
+    from app.security.auth import current_user
+
+    tok = headers["Authorization"].split(" ", 1)[1]
+    async with SessionLocal() as db:
+        return await current_user(HTTPAuthorizationCredentials(scheme="Bearer", credentials=tok), None, db)
