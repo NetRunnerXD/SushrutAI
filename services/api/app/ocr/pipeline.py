@@ -1,4 +1,6 @@
-"""Prescription parsing pipeline (all local).
+"""Prescription parsing pipeline.
+
+Local vision models read the page. Gemini is used only when the person chose it and allowed full cloud answers.
 
 1 load (PDF→image)  2 preprocess  3 OCR text (Surya if installed)  4 VLM structured read (Ollama)
 5 fuse + normalise (abbreviations, drug-name resolution)  6 validate (allergy, interactions, banned FDC,
@@ -91,6 +93,18 @@ async def vlm_read(img: Image.Image, ocr: str | None, model_pref: str = "balance
     b64 = base64.b64encode(buf.getvalue()).decode()
     hint = f"\nOCR text detected on the page (may contain errors):\n{ocr[:3000]}\n" if ocr else ""
     msgs = [{"role": "user", "content": TRANSCRIBE_PROMPT.format(ocr_hint=hint)}]
+    from app.llm.providers import gemini, gemini_model_for
+    if g_model := gemini_model_for(model_pref):
+        try:
+            res = await gemini().chat(g_model, msgs, images=[b64], temperature=0.0, num_predict=700)
+            from app.ocr.indic import normalise_transcript
+            text = await normalise_transcript(res.text)
+            parsed = parse_transcript(text)
+            parsed["_transcript"] = res.text
+            if parsed.get("medicines"):
+                return parsed, g_model
+        except ProviderUnavailable as e:
+            log.warning("Gemini prescription read failed (%s); using the local reader", e)
     available = await ollama().models()
     order = list(dict.fromkeys(m for m in (doc_model_for(model_pref), s.rx_vlm_model, s.vlm_model) if m))
     usable = [m for m in order if m in available or f"{m}:latest" in available]
@@ -108,8 +122,11 @@ async def vlm_read(img: Image.Image, ocr: str | None, model_pref: str = "balance
     if failed and model != s.rx_vlm_model and s.rx_vlm_model in usable:
         model = s.rx_vlm_model  # the faster reader failed or read nothing: the default reader tries
         res = await ollama().chat(model, msgs, images=[b64], temperature=0.0, num_ctx=4096, num_predict=700)
-    # Step 2: deterministic structuring of the transcript.
-    parsed = parse_transcript(res.text)
+    # Step 2: deterministic structuring of the transcript. Lines written in an Indian language are normalised
+    # first (local dosing words → shorthand, Indian-script medicine names → English spelling); others unchanged.
+    from app.ocr.indic import normalise_transcript
+    text = await normalise_transcript(res.text)
+    parsed = parse_transcript(text)
     parsed["_transcript"] = res.text
     return parsed, model
 
