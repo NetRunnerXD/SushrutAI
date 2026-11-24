@@ -107,6 +107,8 @@ def match_medicines(text: str, meds: list[dict]) -> list[dict]:
 _OPEN = re.compile(r"(?i)\b(open|show|go to|take me to|see|view|kholo|khol do|dikhao|dikha do)\b|खोलो|खोल दो|दिखाओ|दिखा दो|ले चलो")
 PLACES: list[tuple[str, str]] = [
     (r"visit summary|doctor summary|summary for (the )?doctor", "/me/visit"),
+    (r"calendar|appointments?|कैलेंडर", "/"),
+    (r"timeline|health history|my history", "/records?tab=timeline"),
     (r"chats?|conversations?|baatcheet|बातचीत|चैट", "/ask?chats=1"),
     (r"(sugar|glucose|शुगर)( trend| graph| chart)?", "/records?tab=vitals"),
     (r"report library|my documents|documents|uploads|दस्तावेज़", "/records?tab=library"),
@@ -132,10 +134,61 @@ _SWITCH = re.compile(r"(?i)\b(switch to|change to|open)\s+(.+?)(?:'s)?\s*(profil
 _SELF = re.compile(r"(?i)^(me|myself|my own|mine|mera|meri|main|मैं|मेरा|मेरी)$")
 
 
+# Conversation controls, matched on the whole (short) utterance in English (other languages arrive here already
+# translated to English by the router). The web app runs these itself: stop / pause / resume the voice loop,
+# repeat, a simpler or a longer explanation, yes / no for a pending confirmation, open the emergency sheet.
+CONTROLS: list[tuple[str, str]] = [
+    ("emergency", r"help( me)?|emergency|sos|(call )?(an )?ambulance|call 108|call 112|save me"),
+    ("stop", r"stop( it| talking| speaking)?|quiet|be quiet|shut up|enough|that'?s enough"),
+    ("pause", r"pause|wait|hold on|one (minute|moment|second)|just a (minute|moment|second)"),
+    ("resume", r"resume|continue|go on|carry on|start (listening )?again|i'?m back"),
+    ("repeat", r"repeat( that| it)?|say (that |it )?again|again|once more|what did you say|pardon"),
+    ("simpler", r"explain (it |that )?(more )?simply|simpler|in simple words|i (don'?t|do not|didn'?t) understand|make it simple|easy words"),
+    ("more", r"tell me more|more( details?)?|explain more|in detail|go deeper|continue explaining|read (the )?(full|whole|rest)( answer)?"),
+    ("yes", r"yes|yeah|yep|ok(ay)?|sure|go ahead|do it|confirm|correct|right|that'?s right|proceed"),
+    ("no", r"no|nope|cancel|don'?t|do not|never ?mind|not now|leave it"),
+    ("read", r"read (this|the page|it|this page|aloud|the screen)|read it out"),
+]
+_CONTROL_RX = [(name, re.compile(rf"(?i)^\s*(please\s+)?(?:{pat})(\s+please)?[\s.!?]*$")) for name, pat in CONTROLS]
+_SUMMARY = re.compile(r"(?i)\b(prepare|make|create|generate|give me|show)\b.{0,20}\b(summary|report|brief|overview)\b.{0,20}\b(for )?(the )?(doctor|visit)?|"
+                      r"\bdoctor('?s)? summary\b|\bsummary for (the )?doctor\b|\bvisit summary\b")
+
+
+_MY_PERIOD = re.compile(r"(?i)\bhow (was|has been) my (week|month)\b|\b(weekly|monthly) (health )?summary\b|"
+                        r"\bsummary of my (week|month)\b|\bmera (hafta|mahina) kaisa\b")
+
+
+_CALL_NEAREST = re.compile(r"(?i)\b(call|phone|dial)\b.{0,15}\b(hospital|ambulance|clinic)\b.{0,15}(near me|nearby|nearest|closest|paas)|\b(call|phone|dial|connect)\b.{0,25}\b(nearest|nearby|closest|near me|paas ka|nazdeeki)\b.{0,20}\b(hospital|ambulance|clinic|doctor)\b|\b(nazdeeki|paas ke) (hospital|aspatal)\b.{0,15}(call|phone|lagao)|नज़दीकी अस्पताल.{0,15}(फ़ोन|कॉल)")
+
+
+_FILLER = re.compile(r"(?i)^(?:(?:uh+|um+|umm+|hmm+|er+|ah+|so|well|acha|achha|accha|arre|haan toh|ok(?:ay)?(?: so)?)[,.]?\s+)+")
+
+
+def control_of(text: str) -> str | None:
+    """'stop', 'pause', 'explain simply', … when the whole utterance is a conversation control (leading filler
+    sounds like "uh", "um", "achha" are ignored)."""
+    t = _FILLER.sub("", text.strip()).strip() or text.strip()
+    if not t or len(t.split()) > 6:
+        return None
+    for name, rx in _CONTROL_RX:
+        if rx.match(t):
+            return name
+    return None
+
+
 def parse(text: str, *, meds: list[dict] | None = None, family: list[dict] | None = None) -> Action | None:
     t = text.strip()
     if not t:
         return None
+    if (c := control_of(t)) is not None:
+        return Action("control", {"intent": c})
+    if _CALL_NEAREST.search(t):
+        return Action("call_nearest")
+    if _SUMMARY.search(t) and not _QUESTION.search(t):
+        return Action("prepare_summary")
+    if m := _MY_PERIOD.search(t):
+        said = (m.group(0) or "").lower()
+        return Action("memory_summary", {"days": 31 if ("month" in said or "mahina" in said) else 7})
     if _READ_LATEST.search(t):
         return Action("read_latest")
     if _DID_I.search(t):

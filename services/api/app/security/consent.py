@@ -35,6 +35,31 @@ PURPOSES: dict[str, dict] = {
         "hi": "जटिल प्रश्नों के लिए, पहचान हटाया गया सारांश (नाम, फ़ोन, आईडी या चित्र नहीं) एक मुफ़्त क्लाउड AI "
               "सेवा (Groq, भारत के बाहर सर्वर) को भेजना।",
     },
+    "cloud_llm_full": {
+        "required": False,
+        "en": "When you choose Gemini as the answer model: send your questions, the health context needed to "
+              "answer them, and attached photos to Google's Gemini API (servers outside India). Google's free tier "
+              "may use what is sent to improve its products.",
+        "hi": "जब आप उत्तर के लिए Gemini चुनें: आपके प्रश्न, उत्तर के लिए ज़रूरी स्वास्थ्य जानकारी और लगाई गई फ़ोटो "
+              "Google की Gemini API (भारत के बाहर सर्वर) को भेजना। Google का मुफ़्त स्तर भेजी गई जानकारी का उपयोग "
+              "अपने उत्पाद सुधारने के लिए कर सकता है।",
+    },
+    "cloud_llm_live": {
+        "required": False,
+        "en": "When you choose a Gemini Live voice: send your microphone audio, and for Talk live the health "
+              "context needed to answer, to Google (servers outside India). Audio is not stored by SushrutAI. "
+              "Google's free tier may use what is sent to improve its products.",
+        "hi": "जब आप Gemini Live आवाज़ चुनें: आपकी माइक्रोफ़ोन की आवाज़, और लाइव बात के लिए उत्तर हेतु ज़रूरी "
+              "स्वास्थ्य जानकारी, Google (भारत के बाहर सर्वर) को भेजना। SushrutAI आवाज़ सहेजता नहीं। Google का "
+              "मुफ़्त स्तर भेजी गई जानकारी का उपयोग अपने उत्पाद सुधारने के लिए कर सकता है।",
+    },
+    "cloud_voice": {
+        "required": False,
+        "en": "When you choose Sarvam AI or ElevenLabs for voice: send your voice recordings and the text to be "
+              "read aloud to that service (Sarvam: India; ElevenLabs: outside India).",
+        "hi": "जब आप आवाज़ के लिए Sarvam AI या ElevenLabs चुनें: आपकी आवाज़ की रिकॉर्डिंग और पढ़कर सुनाया जाने "
+              "वाला पाठ उस सेवा को भेजना (Sarvam: भारत; ElevenLabs: भारत के बाहर)।",
+    },
     "model_improvement": {
         "required": False,
         "en": "Use your corrections to prescription readings (de-identified) to improve SushrutAI's models.",

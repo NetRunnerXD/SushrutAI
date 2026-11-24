@@ -78,16 +78,15 @@ class CurrentUser:
         return self.cipher if not self.is_member else Cipher(self.account.dek_wrapped, self.account.id)
 
 
-async def current_user(
-    creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
-    x_profile_id: str | None = Header(None),
-    db: AsyncSession = Depends(get_db),
+async def authenticate_token(
+    raw_token: str,
+    db: AsyncSession,
+    *,
+    x_profile_id: str | None = None,
 ) -> CurrentUser:
-    if creds is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
-    uid = decode_token(creds.credentials, "access")
+    """Validate an access JWT and resolve user + family profile cipher + RLS scope."""
+    uid = decode_token(raw_token, "access")
     pid = x_profile_id if x_profile_id and x_profile_id != uid else None
-    # Postgres row-level security scope for this request (see app/db.py). Set before the first query.
     current_user_id.set(pid or uid)
     current_account_id.set(uid)
     account = await db.get(User, uid)
@@ -101,6 +100,16 @@ async def current_user(
     if member is None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Not a profile you manage")
     return CurrentUser(user=member, cipher=Cipher(member.dek_wrapped, member.id), account=account)
+
+
+async def current_user(
+    creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
+    x_profile_id: str | None = Header(None),
+    db: AsyncSession = Depends(get_db),
+) -> CurrentUser:
+    if creds is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
+    return await authenticate_token(creds.credentials, db, x_profile_id=x_profile_id)
 
 
 def hash_otp(code: str, identifier_hash: str) -> str:

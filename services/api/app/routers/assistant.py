@@ -7,6 +7,7 @@ Returns {"action": null} when the words are a question for the assistant instead
 """
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime
 
 from fastapi import APIRouter, Depends
@@ -17,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.assistant.actions import describe_readings, parse
 from app.clock import local_now
 from app.db import get_db
+from app.llm.orchestrator import PIVOT_LANGS, to_english
 from app.models import LabResult, Medication
 from app.routers import family as family_router
 from app.routers import records as records_router
@@ -48,9 +50,32 @@ async def parse_command(body: ParseIn, cu: CurrentUser = Depends(current_user), 
     meds = [{"id": m.id, "name": cu.cipher.dec(m.name_enc)}
             for m in await db.scalars(select(Medication).where(Medication.user_id == cu.id, Medication.status == "active"))]
     family = await family_router.list_members(cu=cu, db=db)
-    a = parse(body.text, meds=meds, family=family)
+    text = body.text
+    # Other Indian languages: understood through English (the same IndicTrans2 pivot the chat uses)
+    pivot = lang in PIVOT_LANGS and not text.isascii()
+    if pivot:
+        text = await to_english(text, lang)
+    a = parse(text, meds=meds, family=family)
     if a is None:
         return {"action": None}
+    out = await _describe(a, body, lang, cu, db, family)
+    if lang in PIVOT_LANGS and out.get("say"):
+        out["say"] = await _localise(out["say"], lang)
+    return out
+
+
+async def _localise(say: str, lang: str) -> str:
+    from app.speech import models as speech
+
+    try:
+        return (await asyncio.to_thread(speech.translate_many, [say], "en", lang))[0]
+    except Exception:  # noqa: BLE001 — English is still understood
+        return say
+
+
+async def _describe(a, body: ParseIn, lang: str, cu: CurrentUser, db: AsyncSession, family: list[dict]) -> dict:
+    """What to tell the app (and say aloud) for a parsed action."""
+    lang = "en" if lang in PIVOT_LANGS else lang  # pivot languages: written in English, translated afterwards
     who = f" for {family_name}" if (family_name := _member_name(cu, family)) else ""
     who_hi = f" ({family_name})" if family_name else ""
     out: dict = {"action": a.action, "params": a.params, "confirm": a.confirm}
@@ -116,6 +141,22 @@ async def parse_command(body: ParseIn, cu: CurrentUser = Depends(current_user), 
     elif a.action == "navigate":
         out["href"] = a.params["href"]
         out["say"] = _say(lang, "Opening it.", "खोल रहे हैं।")
+
+    elif a.action == "call_nearest":
+        out["say"] = None  # the app finds the nearest place, says who it will call, and waits for a yes
+
+    elif a.action == "control":
+        out["say"] = None  # the app acts at once (stop / pause / repeat / yes / no …)
+
+    elif a.action == "memory_summary":
+        from app.routers.memory import memory_summary
+        summ = await memory_summary(days=a.params.get("days", 7), cu=cu, db=db)
+        out["say"] = summ["text"]
+        out["href"] = "/records?tab=timeline"
+
+    elif a.action == "prepare_summary":
+        out["href"] = "/me/visit?speak=1"
+        out["say"] = _say(lang, "Preparing your summary for the doctor.", "डॉक्टर के लिए आपका सारांश तैयार कर रहे हैं।")
 
     elif a.action == "switch_profile":
         name = a.params.get("name")

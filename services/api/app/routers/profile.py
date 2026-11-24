@@ -14,11 +14,14 @@ from app.clinical.bmi import bmi, bmi_category
 from app.config import get_settings
 from app.db import get_db, scope_to
 from app.models import (
-    Allergy, AuditLog, CareRecord, FollowUp, ChatSession, CheckIn, HouseholdMember, Pregnancy, VisitQuestion, DoseLog, Condition, Consent, DataRequest, Document, Job, LabResult, Medication,
-    Message, PatientProfile, Prescription, TriageSession, User, UserSettings, Vital,
+    Allergy, AuditLog, CareRecord, ClinicalEvent, ClinicalRecommendation, ClinicalSymptom, Condition, Consent,
+    ConversationTurn, DataRequest, Document, DoseLog, Encounter, Episode, FollowUp, FollowUpQuestion, HealthFact,
+    HouseholdMember, Job, LabResult, MedicalHistoryEntry, Medication, Message, PatientMemoryItem, PatientProfile,
+    Pregnancy, Prescription, SafetyAlert, SymptomObservation, TriageSession, User, UserSettings, VisitQuestion, Vital,
 )
 from app.models import _now as utcnow
 from app.security.auth import CurrentUser, current_user
+from app.langs import LangCode
 
 router = APIRouter(prefix="/me", tags=["profile"])
 
@@ -49,10 +52,22 @@ class ProfileIn(BaseModel):
     surgeries: list[str] | None = None
     family_history: list[str] | None = None
     emergency_contact: str | None = Field(None, max_length=80)
-    preferred_lang: Literal["en", "hi", "bn", "ta", "te", "mr", "gu", "kn", "ml", "or"] | None = None
+    occupation: str | None = Field(None, max_length=80)
+    sleep: str | None = Field(None, max_length=80)
+    hydration: str | None = Field(None, max_length=80)
+    healthcare_access: str | None = Field(None, max_length=40)
+    literacy_level: Literal["fluent", "limited", "non_reader", "not_assessed"] | None = None
+    preferred_lang: LangCode | None = None
 
 
-_ENC_FIELDS = {"dob": "dob_enc", "gender": "gender_enc", "emergency_contact": "emergency_contact_enc"}
+_ENC_FIELDS = {
+    "dob": "dob_enc",
+    "gender": "gender_enc",
+    "emergency_contact": "emergency_contact_enc",
+    "occupation": "occupation_enc",
+    "sleep": "sleep_enc",
+    "hydration": "hydration_enc",
+}
 _ENC_JSON = {"surgeries": "surgeries_enc", "family_history": "family_history_enc"}
 
 
@@ -62,7 +77,7 @@ async def _profile_out(db: AsyncSession, cu: CurrentUser) -> dict:
     if p:
         for f in ("sex", "blood_group", "height_cm", "state_code", "district", "diet", "smoking_status",
                   "pack_years", "tobacco_chewing", "alcohol_units_wk", "activity_level", "pregnancy_status",
-                  "lactating"):
+                  "lactating", "healthcare_access", "literacy_level"):
             out[f] = getattr(p, f)
         for f, col in _ENC_FIELDS.items():
             out[f] = cu.cipher.dec(getattr(p, col))
@@ -188,6 +203,8 @@ async def add_med(body: MedicationIn, cu: CurrentUser = Depends(current_user), d
     d = body.model_dump()
     m = Medication(user_id=cu.id, name_enc=cu.cipher.enc(d.pop("name")), **d)
     db.add(m)
+    from app.memory.trajectory import start_trajectory
+    start_trajectory(db, cu, [body.name])  # "is it better since starting …?" on day 1 and 2
     await db.commit()
     from app.medicine.checks import check_new_medicine
     # allergy and interaction warnings for the medicine just added (shown at once; nothing is blocked)
@@ -250,6 +267,8 @@ async def add_vitals(body: list[VitalIn], cu: CurrentUser = Depends(current_user
 @router.get("/export")
 async def export(cu: CurrentUser = Depends(current_user), db: AsyncSession = Depends(get_db)):
     """Right to access / portability: everything we hold about the user, decrypted."""
+    from app.models import ChatSession, CheckIn
+
     meds = [_med_out(m, cu) for m in await db.scalars(select(Medication).where(Medication.user_id == cu.id))]
     rx = [{"id": r.id, "status": r.status, "created_at": r.created_at, "parsed": json.loads(cu.cipher.dec(r.parsed_enc))}
           for r in await db.scalars(select(Prescription).where(Prescription.user_id == cu.id))]
@@ -259,6 +278,75 @@ async def export(cu: CurrentUser = Depends(current_user), db: AsyncSession = Dep
         chats.append({"id": s.id, "started_at": s.started_at,
                       "messages": [{"role": m.role, "content": cu.cipher.dec(m.content_enc), "at": m.created_at}
                                    for m in msgs]})
+    encounters = [
+        {
+            "id": e.id, "status": e.status, "channel": e.channel, "language": e.language,
+            "chief_complaint": cu.cipher.dec(e.chief_complaint_enc),
+            "summary": cu.cipher.dec(e.summary_enc),
+            "urgency": e.urgency, "specialist": e.specialist,
+            "started_at": e.started_at, "ended_at": e.ended_at,
+        }
+        for e in await db.scalars(select(Encounter).where(Encounter.user_id == cu.id))
+    ]
+    symptoms = [
+        {
+            "id": sx.id, "name": sx.name, "status": sx.status, "progression": sx.progression,
+            "onset_text": sx.onset_text, "duration_text": sx.duration_text, "frequency": sx.frequency,
+            "severity": sx.severity, "verification_status": sx.verification_status,
+            "original_statement": cu.cipher.dec(sx.original_statement_enc),
+            "functional_impact": cu.cipher.dec(sx.functional_impact_enc),
+            "first_reported_at": sx.first_reported_at, "last_reported_at": sx.last_reported_at,
+        }
+        for sx in await db.scalars(select(ClinicalSymptom).where(ClinicalSymptom.user_id == cu.id))
+    ]
+    events = [
+        {
+            "id": ev.id, "event_type": ev.event_type, "entity_type": ev.entity_type, "entity_id": ev.entity_id,
+            "source": ev.source, "verification_status": ev.verification_status, "discrepancy_flag": ev.discrepancy_flag,
+            "payload": json.loads(cu.cipher.dec(ev.payload_enc) or "{}"), "occurred_at": ev.occurred_at,
+        }
+        for ev in await db.scalars(select(ClinicalEvent).where(ClinicalEvent.user_id == cu.id))
+    ]
+    med_hist = [
+        {
+            "id": mh.id, "category": mh.category, "description": cu.cipher.dec(mh.description_enc),
+            "status": mh.status, "verification_status": mh.verification_status, "recorded_at": mh.recorded_at,
+        }
+        for mh in await db.scalars(select(MedicalHistoryEntry).where(MedicalHistoryEntry.user_id == cu.id))
+    ]
+    from app.models import ClinicalAssessment, ClinicalFact, ClinicalInvestigation, Transcript
+    transcripts = [
+        {
+            "id": tr.id, "encounter_id": tr.encounter_id, "speaker": tr.speaker,
+            "raw_text": cu.cipher.dec(tr.raw_text_enc),
+            "corrected_text": cu.cipher.dec(tr.corrected_text_enc),
+            "primary_language": tr.primary_language, "created_at": tr.created_at,
+        }
+        for tr in await db.scalars(select(Transcript).where(Transcript.user_id == cu.id))
+    ]
+    facts = [
+        {
+            "id": f.id, "scope": f.scope, "category": f.category, "fact_key": f.fact_key,
+            "value": json.loads(cu.cipher.dec(f.value_enc) or "{}"),
+            "original_quote": cu.cipher.dec(f.original_quote_enc),
+            "verification_status": f.verification_status, "observed_at": f.observed_at,
+        }
+        for f in await db.scalars(select(ClinicalFact).where(ClinicalFact.user_id == cu.id))
+    ]
+    assessments = [
+        {
+            "id": a.id, "encounter_id": a.encounter_id, "summary": cu.cipher.dec(a.summary_enc),
+            "safety_status": a.safety_status, "interview_outcome": a.interview_outcome, "created_at": a.created_at,
+        }
+        for a in await db.scalars(select(ClinicalAssessment).where(ClinicalAssessment.user_id == cu.id))
+    ]
+    investigations = [
+        {
+            "id": iv.id, "name": iv.name, "purpose_category": iv.purpose_category, "urgency": iv.urgency,
+            "rationale": cu.cipher.dec(iv.rationale_enc), "already_in_records": iv.already_in_records,
+        }
+        for iv in await db.scalars(select(ClinicalInvestigation).where(ClinicalInvestigation.user_id == cu.id))
+    ]
     db.add(DataRequest(user_id=cu.id, type="access", status="closed", closed_at=utcnow()))
     await db.commit()
     return {
@@ -270,6 +358,14 @@ async def export(cu: CurrentUser = Depends(current_user), db: AsyncSession = Dep
         "vitals": await list_vitals(None, cu, db),
         "prescriptions": rx,
         "chats": chats,
+        "encounters": encounters,
+        "symptoms": symptoms,
+        "clinical_events": events,
+        "medical_history": med_hist,
+        "transcripts": transcripts,
+        "clinical_facts": facts,
+        "assessments": assessments,
+        "investigations": investigations,
         "consents": [{"purpose": c.purpose, "granted_at": c.granted_at, "withdrawn_at": c.withdrawn_at}
                      for c in await db.scalars(select(Consent).where(Consent.user_id == cu.id))],
     }
@@ -278,9 +374,26 @@ async def export(cu: CurrentUser = Depends(current_user), db: AsyncSession = Dep
 async def erase_user(db: AsyncSession, uid: str, actor: str) -> None:
     """Delete every row of one user and their files; the DEK goes with the users row (crypto-shredding).
     The caller must have scoped the session to `uid` (scope_to) and commits."""
+    from app.models import (
+        AuditEvent,
+        CalendarEvent,
+        ChatSession,
+        CheckIn,
+        ClinicalAssessment,
+        ClinicalFact,
+        ClinicalInvestigation,
+        DifferentialConsideration,
+        Transcript,
+        TranscriptVersion,
+    )
+
     sessions = select(ChatSession.id).where(ChatSession.user_id == uid)
     await db.execute(delete(Message).where(Message.session_id.in_(sessions)))
-    for model in (ChatSession, TriageSession, Prescription, Job, Document, Vital, Medication, Condition,
+    for model in (DifferentialConsideration, ClinicalAssessment, ClinicalInvestigation, ClinicalFact,
+                  TranscriptVersion, Transcript, AuditEvent, SymptomObservation, ClinicalSymptom,
+                  ConversationTurn, ClinicalRecommendation, FollowUpQuestion,
+                  ClinicalEvent, SafetyAlert, MedicalHistoryEntry, PatientMemoryItem, Encounter, HealthFact, Episode,
+                  CalendarEvent, ChatSession, TriageSession, Prescription, Job, Document, Vital, Medication, Condition,
                   Allergy, Consent, PatientProfile, LabResult, UserSettings, DoseLog, HouseholdMember, CheckIn,
                   CareRecord, Pregnancy, VisitQuestion, FollowUp):
         await db.execute(delete(model).where(model.user_id == uid))
