@@ -29,7 +29,61 @@ from app.security.auth import CurrentUser
 log = logging.getLogger(__name__)
 
 LANG_NAMES = {"en": "English", "hi": "Hindi", "bn": "Bengali", "ta": "Tamil", "te": "Telugu",
-              "mr": "Marathi", "gu": "Gujarati", "kn": "Kannada", "ml": "Malayalam", "or": "Odia"}
+              "mr": "Marathi", "gu": "Gujarati", "kn": "Kannada", "ml": "Malayalam", "or": "Odia",
+              "pa": "Punjabi (Gurmukhi script)", "as": "Assamese", "ur": "Urdu (Nastaliq / Arabic script)"}
+
+# Languages the local chat models write poorly: the answer is written in English (the question is translated with
+# IndicTrans2, which is also what search uses) and translated back with IndicTrans2. English and Hindi go direct.
+PIVOT_LANGS = set(filter(None, os.environ.get("PIVOT_LANGS", "bn,ta,te,mr,gu,kn,ml,or,pa,as,ur").split(",")))
+# Fields of an answer that people read (translated back for a pivot language); enums and English names are kept.
+_READ_LISTS = ("self_care", "tips", "watch_for", "nutrition", "follow_up_questions", "suggested_tests")
+
+
+async def translate_answer(structured: dict, lang: str) -> bool:
+    """English answer -> the person's language, in one batched IndicTrans2 pass. False if translation failed (the
+    answer then stays in English, which is still correct, rather than half-translated)."""
+    from app.speech import models as speech
+
+    texts: list[str] = []
+    where: list[tuple] = []
+
+    def add(t, loc):
+        if isinstance(t, str) and t.strip():
+            texts.append(re.sub(r"\*\*([^*]+)\*\*", r"\1", t))  # bold markers do not survive translation
+            where.append(loc)
+    add(structured.get("reply"), ("reply",))
+    for i, st in enumerate(structured.get("storylines") or []):
+        add(st.get("text"), ("story", i))
+    for k in _READ_LISTS:
+        for i, x in enumerate(structured.get(k) or []):
+            add(x, (k, i))
+    for i, pc in enumerate(structured.get("possible_conditions") or []):
+        add(pc.get("name_en") or pc.get("name"), ("pc", i, "name"))
+        for f in ("supporting", "against"):
+            for j, x in enumerate(pc.get(f) or []):
+                add(x, ("pc", i, f, j))
+    if not texts or not speech.available("transformers"):
+        return False
+    try:
+        out = await asyncio.to_thread(speech.translate_many, texts, "en", lang)
+    except Exception as e:  # noqa: BLE001
+        log.warning("answer translation failed: %s", e)
+        return False
+    for loc, t in zip(where, out):
+        if loc[0] == "reply":
+            structured["reply"] = t
+        elif loc[0] == "story":
+            structured["storylines"][loc[1]]["text"] = t
+        elif loc[0] == "pc":
+            pc = structured["possible_conditions"][loc[1]]
+            if loc[2] == "name":
+                pc["name"] = t
+            else:
+                pc[loc[2]][loc[3]] = t
+        else:
+            structured[loc[0]][loc[1]] = t
+    return True
+
 
 SPECIALISTS = ["General Physician", "Paediatrician", "Gynaecologist", "Cardiologist", "Endocrinologist",
                "Pulmonologist", "Gastroenterologist", "Nephrologist", "Neurologist", "Dermatologist",
@@ -115,7 +169,7 @@ def _strip_doses(structured: dict, kind: str, lang: str) -> list[str]:
 _REFUSAL = re.compile(
     r"(?i)(can(not|'t)|unable to|not able to|won't|am not allowed to) (provide|give|offer|recommend)[^.]{0,40}"
     r"(medical advice|advice|diagnos|treatment|medic)|i('m| am) not a (doctor|medical)|not a substitute for "
-    r"(professional )?medical|cannot diagnose|i can(not|'t) (help|tell) you|मैं डॉक्टर नहीं|चिकित्सा सलाह नहीं दे")
+    r"(professional )?medical|cannot diagnose|i can(not|'t) (help|tell) you|मैं डॉक्टर नहीं|चिकित्सा सलाह नहीं दे|सलाह नहीं दे सकत|निदान नहीं कर सकत")
 _REFERRAL_ONLY = re.compile(r"(?i)^(please )?(consult|see|visit|talk to|speak (to|with)|ask) (a |your )?"
                             r"(doctor|physician|healthcare|health care|medical|pharmacist)")
 NOT_MEDICINES = {"iron", "zinc", "calcium", "water", "oxygen", "sodium", "potassium", "magnesium", "vitamin",
@@ -253,6 +307,21 @@ CAREFUL_KINDS = {"symptoms", "medicine", "report_question", "attachment"}
 INSTANT_KINDS = {"greeting", "thanks_bye", "about_app", "off_topic"}
 
 
+def english_pivot(force_english: bool, model_pref: str, lang: str, english: str, text: str) -> bool:
+    """True when the answer should be written in English and translated back.
+
+    Spoken questions always do this, so the chosen answer model reads English. Typed Gemini and Online
+    questions stay in the person's language. Local models already do it for Bengali and the other pivot languages.
+    """
+    translated = bool((english or "").strip()) and (english or "").strip() != (text or "").strip()
+    if not translated or lang == "en":
+        return False
+    if force_english:
+        return True
+    outside = model_pref in ("gemini", "gemini_fast", "cloud")
+    return (not outside) and lang in PIVOT_LANGS
+
+
 def effective_model_pref(pref: str, kind: str, has_images: bool) -> str:
     """The answer-speed choice (auto | balanced = Careful | fast = Faster | instant | cloud), except that symptoms and
     photos always get the careful medical model in every speed mode:
@@ -271,6 +340,19 @@ def effective_model_pref(pref: str, kind: str, has_images: bool) -> str:
     if pref in ("fast", "instant") and (kind == "symptoms" or has_images):
         return "balanced"
     return pref
+
+
+def answered_speed(provider: str, model: str, requested: str) -> str:
+    """The speed label for the model that actually wrote the answer, not the one that was asked for."""
+    from app.config import get_settings
+    s = get_settings()
+    if provider == "gemini":
+        return "gemini_fast" if model == s.gemini_fast_model else "gemini"
+    if provider == "groq":
+        return "cloud"
+    if model == s.llm_model:
+        return "balanced"
+    return requested
 
 
 def _medicine_guard(structured: dict, question: str, lang: str) -> list[str]:
@@ -348,6 +430,8 @@ class TurnResult:
     warnings: list[str] = field(default_factory=list)
     timings: dict = field(default_factory=dict)  # seconds per stage (profile, guard, translate, search, model, ...)
     speed: str | None = None  # the answer-speed setting that actually answered (symptoms/photos: always balanced)
+    english: str = ""  # the question in English (for memory extraction); "" when not translated
+    kind: str | None = None  # what kind of question it was (symptoms, medicine, general_health …)
 
 
 def _age(dob: str | None) -> float | None:
@@ -385,6 +469,17 @@ async def profile_summary(db: AsyncSession, cu: CurrentUser) -> tuple[str, float
             parts.append(f"diet {p.diet}")
         if p.state_code:
             parts.append(f"lives in {p.state_code}, India")
+        if getattr(p, "occupation_enc", None):
+            if occ := cu.cipher.dec(p.occupation_enc):
+                parts.append(f"occupation {occ}")
+        if getattr(p, "sleep_enc", None):
+            if slp := cu.cipher.dec(p.sleep_enc):
+                parts.append(f"sleep {slp}")
+        if getattr(p, "hydration_enc", None):
+            if hyd := cu.cipher.dec(p.hydration_enc):
+                parts.append(f"hydration {hyd}")
+        if getattr(p, "healthcare_access", None):
+            parts.append(f"healthcare access: {p.healthcare_access}")
     conds = [cu.cipher.dec(c.display_enc) for c in await db.scalars(
         select(Condition).where(Condition.user_id == cu.id, Condition.status == "active"))]
     if conds:
@@ -407,7 +502,63 @@ async def profile_summary(db: AsyncSession, cu: CurrentUser) -> tuple[str, float
     if "weight" in latest and p and p.height_cm:
         b = latest["weight"].value / (p.height_cm / 100) ** 2
         parts.append(f"BMI {b:.1f} ({bmi_category(b)}, Asian cut-offs)")
-    return ("; ".join(parts) or "no profile provided"), age
+    summary = "; ".join(parts) or "no profile provided"
+    if cu.is_member:  # a guardian asking for a family member: say "your mother", not "you"
+        from app.models import HouseholdMember
+        link = (await db.scalars(select(HouseholdMember).where(HouseholdMember.user_id == cu.account_id,
+                                                               HouseholdMember.member_id == cu.id))).first()
+        rel = (link.relation if link and getattr(link, "relation", None) else "family member")
+        summary += (f". THE PERSON WRITING is the patient's guardian asking on behalf of their {rel}: speak to the "
+                    f"guardian and refer to the patient as \"your {rel}\"")
+    summary += await _explain_style(db, cu)
+    return summary, age
+
+
+# ---------------------------------------------------------------- how this person likes things explained
+EXPLAIN_LEVELS = {
+    1: ". EXPLAIN VERY SIMPLY for this person: very short sentences, everyday words, one familiar comparison; avoid "
+       "medical terms (if one is needed, explain it plainly first, then 'doctors call this …')",
+    2: "",
+    3: ". This person likes more detail: you may explain the reasons briefly and use the medical term with a plain meaning",
+}
+_SIMPLER_ASK = re.compile(r"(?i)explain (that |it )?(more )?simply|in simple words|i (don'?t|do not|didn'?t) understand|"
+                          r"samajh nahi aa?ya|aasan bhasha|समझ नहीं आया|आसान (भाषा|शब्दों)")
+_MORE_ASK = re.compile(r"(?i)tell me more|more detail|in detail|explain more|go deeper|aur batao|विस्तार से")
+
+
+async def _explain_style(db: AsyncSession, cu: CurrentUser) -> str:
+    from app.models import HealthFact
+    p = await db.get(PatientProfile, cu.id)
+    f = await db.scalar(select(HealthFact).where(HealthFact.user_id == cu.id, HealthFact.kind == "preference",
+                                                 HealthFact.name == "explain_depth").order_by(HealthFact.observed_at.desc()).limit(1))
+    if f is not None:
+        import json as _json
+        level = int((_json.loads(cu.cipher.dec(f.value_enc)) or {}).get("level", 2))
+        return EXPLAIN_LEVELS.get(level, "")
+    if p is not None and getattr(p, "literacy_level", None) in ("limited", "non_reader"):
+        return EXPLAIN_LEVELS[1]
+    return ""
+
+
+async def adapt_explain_depth(db: AsyncSession, cu: CurrentUser, text_en: str) -> None:
+    """Adaptive explanation depth: "explain simply" / "I don't understand" lowers it, "tell me more" raises it;
+    remembered per profile and used in every later answer (no setting to find)."""
+    import json as _json
+
+    from app.models import HealthFact
+    step = -1 if _SIMPLER_ASK.search(text_en) else 1 if _MORE_ASK.search(text_en) else 0
+    if not step:
+        return
+    f = await db.scalar(select(HealthFact).where(HealthFact.user_id == cu.id, HealthFact.kind == "preference",
+                                                 HealthFact.name == "explain_depth").limit(1))
+    level = int((_json.loads(cu.cipher.dec(f.value_enc)) or {}).get("level", 2)) if f else 2
+    new = max(1, min(3, level + step))
+    if f is None:
+        db.add(HealthFact(user_id=cu.id, kind="preference", name="explain_depth", value_enc=cu.cipher.enc(_json.dumps({"level": new})),
+                          source="chat", confidence=1.0, confirmed=True))
+    else:
+        f.value_enc = cu.cipher.enc(_json.dumps({"level": new}))
+    await db.commit()
 
 
 _HINGLISH = re.compile(r"(?i)\b(hai|hain|ho|raha|rahi|rahe|kya|karu|karun|karein|kare|karo|mein|mujhe|mera|meri|mere|"
@@ -421,10 +572,18 @@ def is_hinglish(text: str) -> bool:
     return len(words) >= 3 and len(_HINGLISH.findall(text)) >= max(2, len(words) // 4)
 
 
+def is_banglish(text: str) -> bool:
+    """Romanised Bengali / Bengali-influenced English ("amar matha ghurche"): needs translation for retrieval."""
+    from app.speech.normalize import _BANGLISH_CUES
+
+    words = re.findall(r"[A-Za-z]+", text)
+    return len(words) >= 2 and len(_BANGLISH_CUES.findall(text)) >= 1
+
+
 async def to_english(text: str, lang: str) -> str:
     """Translate an Indic query to English for retrieval over English sources.
-    Native-script text -> IndicTrans2 (local, CPU, purpose-built); romanised Hinglish/code-mixed -> local LLM."""
-    if lang == "en" and text.isascii() and not is_hinglish(text):
+    Native-script text -> IndicTrans2 (local, CPU, purpose-built); romanised Hinglish/Banglish/code-mixed -> local LLM."""
+    if lang == "en" and text.isascii() and not is_hinglish(text) and not is_banglish(text):
         return text
     from app.speech import models as speech
 
@@ -589,6 +748,15 @@ Rules:
 - `name_en` is the condition's standard English name; `name` is in the user's language.
 - `specialist` must be one of the allowed values; use "General Physician" when unsure.
 - Personalise to the patient context (age, sex, pregnancy, allergies, conditions, current medicines). Flag allergy or interaction concerns.
+- Plain words first: when a medical idea is needed, explain it with everyday words or a comparison familiar in
+  India FIRST, and only then, optionally, "doctors call this …".
+- "What if …?" questions ("what if I had taken the other medicine?", "what usually happens when I ignore this
+  headache?"): answer only from THEIR HEALTH MEMORY plus clearly labelled general knowledge ("In general, …"); never
+  invent their history. If they ask what may happen next, describe it as "if it goes like last time …" from the
+  memory, always end with the warning signs, and never do this when urgency is see_doctor_24h or emergency.
+- THEIR HEALTH MEMORY is the person's own history. Link what they say now to the ONGOING thread ("the temperature"
+  means the ongoing fever). If they ask whether this happened before, what usually works for them, or to compare
+  with an earlier time, answer from the memory only, with dates; if the memory has nothing, say so.
 - Nutrition advice should fit Indian diets (dal, roti, rice, millets, curd, seasonal fruit) and the user's diet preference.
 - Help the person now. `reply`: 3-5 short sentences in two short paragraphs separated by a blank line, in your own
   plain words (never copy passages from SOURCES, and name at most the two most likely conditions there — the full
@@ -598,8 +766,10 @@ Rules:
   a warm compress for cramps or muscle pain, a cold one for a fresh injury or swelling, what to avoid) — no medicines. `watch_for`: 2-5 warning signs that mean seeing a doctor
   urgently. Say when and which doctor to see.
 - If key information is missing, ask up to 3 short follow-up questions in `follow_up_questions`.
-- Write `reply` and every user-facing string in {LANG_NAMES.get(lang, 'English')}, in simple words a non-medical
-  person understands. Keep medical terms in English in brackets when helpful.
+- Do not guess unidentified medicines from vague descriptions ("white pill"); if the person cannot read the strip, ask them to share a photo or ask a pharmacist/health worker.
+- Clearly distinguish patient-reported information vs confirmed diagnoses; never fabricate past consultations or missing dates.
+- Do not repeat generic self-introductions or boilerplate disclaimers during an ongoing conversation; address the patient's exact question, correction, or causal hypothesis using CLINICAL REASONING STATE and THEIR HEALTH MEMORY directly.
+- Write `reply` and every user-facing string in {LANG_NAMES.get(lang, 'English')}, in simple everyday words a rural or non-medical person understands. Keep medical terms in English in brackets when helpful.
 - Respond ONLY with JSON matching the schema."""
 
 
@@ -642,6 +812,11 @@ Rules:
   a symptom or problem; if they do, say briefly what it can be linked to ("this can be linked to ...") — never as certain.
 - Put 2-5 concrete steps in `tips` (no medicines) and, when relevant, warning signs that need a doctor in `watch_for`.
 - Personalise to the patient context (age, sex, pregnancy, allergies, conditions, current medicines).
+- Plain words first: explain any medical idea with everyday words or a familiar comparison FIRST, then
+  optionally "doctors call this …". "What if …?" questions: answer from THEIR HEALTH MEMORY plus clearly labelled
+  general knowledge only.
+- THEIR HEALTH MEMORY is the person's own history: answer questions about their past ("has this happened before?",
+  "what usually works for me?", "compare with last month") from it only, with dates; if it has nothing, say so.
 - Ask up to 2 short follow-up questions only if they would really help.
 - Use the numbered SOURCES when relevant and cite them by number in `citations_used`. Do not invent sources.
 - Write `reply` and every user-facing string in {LANG_NAMES.get(lang, 'English')}, in simple words a non-medical
@@ -668,6 +843,31 @@ async def _medicine_links(db: AsyncSession, text: str, limit: int = 3) -> list[d
             if len(out) >= limit:
                 break
     return out
+
+
+CHAT_DIFFERENTIAL = os.environ.get("CHAT_DIFFERENTIAL", "on").lower() not in ("off", "0", "false")
+
+
+def _has_symptom_answer(history: list[dict] | None) -> bool:
+    """This chat already had a symptom answer (the questions run once, for the first description)."""
+    return any(h.get("role") == "assistant" and (h.get("structured") or {}).get("possible_conditions")
+               for h in (history or []))
+
+
+async def _clarify_turn(step, lang: str, rf) -> TurnResult:
+    """A question from the chat's differential (yes / no / not sure), in the person's language."""
+    st = dict(step.structured)
+    if lang in PIVOT_LANGS:
+        from app.speech import models as speech
+        opts = st["clarify"]["options"]
+        try:
+            out = await asyncio.to_thread(speech.translate_many, [st["reply"]] + [o["label"] for o in opts], "en", lang)
+            st["reply"] = out[0]
+            st["clarify"] = {**st["clarify"], "question": out[0],
+                             "options": [{**o, "label": lbl} for o, lbl in zip(opts, out[1:])]}
+        except Exception:  # noqa: BLE001 — English is still shown
+            pass
+    return TurnResult(reply=st["reply"], structured=st, red_flag=rf.as_dict(), disclaimer=disclaimer(lang), kind="clarify")
 
 
 def _fixed_turn(kind: str, lang: str, rf) -> TurnResult:
@@ -704,10 +904,12 @@ def _sanitize(structured: dict, n_sources: int) -> list[str]:
     return warnings
 
 
-async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "en",
+async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "en", session_id: str | None = None,
                  history: list[dict] | None = None, images: list[str] | None = None,
                  allow_cloud: bool = False, context: str = "", hint_kind: str | None = None,
-                 on_delta: Callable[[str], None] | None = None, model_pref: str = "balanced") -> TurnResult:
+                 on_delta: Callable[[str], None] | None = None, model_pref: str = "balanced",
+                 spoken_prefix: str | None = None, force_english: bool = False,
+                 use_record: bool = True) -> TurnResult:
     """context: records attached with 'Ask about this'; hint_kind: the kind of question that record implies.
     on_delta: receives the reply text written so far while the model is writing (a draft: the final TurnResult
     is authoritative, after every guard has run)."""
@@ -732,24 +934,81 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
             joined = red_flags.check(" ".join([*prev, text]), lang=lang, age_years=age)
             if joined.triggered and not any(red_flags.check(p, lang=lang, age_years=age).triggered for p in prev):
                 rf = joined
+    if not rf.triggered:
+        from app.clinical.extract import extract_deterministic
+        from app.safety.clinical_safety import evaluate_safety
+
+        det = extract_deterministic(
+            text,
+            patient_id=cu.id if cu else "anonymous",
+            encounter_id=session_id,
+            language=lang,
+            raw_transcript=text,
+        )
+        cs = evaluate_safety(text, lang=lang, age_years=age, extraction=det)
+        if cs.escalate_now:
+            rf = red_flags.RedFlagResult(
+                True,
+                rules=cs.rule_ids,
+                kind="emergency" if cs.severity == "emergency" else "mental_health",
+                messages=cs.messages,
+                call_numbers=cs.call_numbers,
+            )
     if rf.triggered and rf.kind in ("emergency", "mental_health"):
         return TurnResult(reply="\n\n".join(rf.messages), structured=None, red_flag=rf.as_dict(),
                           disclaimer=disclaimer(lang))
+    # In the middle of the chat's questions: "yes" / "no" / "not sure" answer the pending question
+    diff = None
+    if session_id and not images and CHAT_DIFFERENTIAL:
+        from app.triage import chat_flow
+        eng0 = await to_english(text, lang) if lang in PIVOT_LANGS and not text.isascii() else ""
+        step = await chat_flow.handle_reply(db, cu, session_id, text, eng0, "hi" if lang == "hi" else "en")
+        if step.kind == "ask":
+            return await _clarify_turn(step, lang, rf)
+        if step.kind == "finish":
+            diff = step
+            text = step.complaint or text  # the answer is about what they first described
     # Purely conversational messages ("hi", "thanks", "who are you") get a fixed reply: no model, no diagnosis.
-    if not images and (conv := intent_mod._phrase_intent(text)):
+    if not diff and not images and (conv := intent_mod._phrase_intent(text)):
         return _fixed_turn(conv, lang, rf)
-    g = await guard.check_user_message(text, lang)
+    # The guard model reads the pivot languages poorly (an Urdu question about a cough was blocked as unsafe), so
+    # for them it checks the English translation; the keyword rules still check the person's own words first.
+    english = await to_english(text, lang) if (force_english or lang in PIVOT_LANGS) else None
+    lap("translate")
+    guard_on_english = bool(english and english.strip() and english.strip() != text.strip())
+    g = guard.rule_check(text, lang) if guard_on_english else None
+    if g is None:
+        g = await guard.check_user_message(english if guard_on_english else text, "en" if guard_on_english else lang)
     lap("guard")
     if g.unsafe:
+        msg = g.message
+        if guard_on_english and msg:
+            from app.speech import models as speech
+            try:
+                msg = (await asyncio.to_thread(speech.translate_many, [msg], "en", lang))[0]
+            except Exception:  # noqa: BLE001 — the English message is still shown
+                pass
         red = {"triggered": True, "kind": "mental_health" if "S11" in g.categories else "blocked",
-               "rules": [f"llama_guard:{c}" for c in g.categories], "messages": [g.message],
+               "rules": [f"llama_guard:{c}" for c in g.categories], "messages": [msg],
                "call_numbers": g.call_numbers or []}
-        return TurnResult(reply=g.message, structured=None, red_flag=red, disclaimer=disclaimer(lang),
+        return TurnResult(reply=msg, structured=None, red_flag=red, disclaimer=disclaimer(lang),
                           warnings=[f"guard:{c}" for c in g.categories])
 
-    english = await to_english(text, lang)
-    lap("translate")
-    kind = await intent_mod.classify(db, f"{text} {english}" if english != text else text, has_image=bool(images))
+    if english is None:
+        english = await to_english(text, lang)
+        lap("translate")
+    try:
+        await adapt_explain_depth(db, cu, english or text)
+    except Exception:  # noqa: BLE001
+        pass
+    out_lang = lang
+    # Outside models answer in the person's language and can stream that draft. The small local models still
+    # answer in English for the pivot languages, then translate_answer() brings it back.
+    pivot = english_pivot(force_english, model_pref, out_lang, english or "", text)
+    if pivot:
+        lang, on_delta = "en", None  # no live draft: it would be English
+    kind = await intent_mod.classify(db, english if pivot else (f"{text} {english}" if english != text else text),
+                                     has_image=bool(images))
     lap("intent")
     if hint_kind and kind in ("general_health", "off_topic", "greeting", "thanks_bye", "about_app"):
         kind = hint_kind  # "explain this" about an attached lab result is a report question
@@ -757,7 +1016,38 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
         kind = "symptoms"  # "how long will it last?" in a symptom chat keeps its urgency and possible causes
     if kind in intent_mod.FIXED_REPLY and not context:  # exact greeting / thanks / "who are you" phrases only
         return _fixed_turn(kind, lang, rf)
+    if diff:
+        kind = "symptoms"
     symptomatic = kind == "symptoms"
+    if (symptomatic and diff is None and session_id and CHAT_DIFFERENTIAL and not images and not context
+            and not rf.triggered and not _has_symptom_answer(history)):
+        from app.triage import chat_flow
+        if await chat_flow.active(db, cu, session_id) is None:  # once per chat
+            mem0 = ""
+            if use_record:
+                try:
+                    from app.memory.store import memory_block
+                    mem0 = await memory_block(db, cu, english or "")
+                except Exception:  # noqa: BLE001
+                    mem0 = ""
+            complaint_en = english if (english or "").strip() and (english or "").strip() != text.strip() else text
+            step = await chat_flow.start(db, cu, session_id, complaint_en, summary, age,
+                                         "hi" if out_lang == "hi" else "en", mem0, allow_cloud=False,
+                                         model_pref="balanced")
+            lap("plan")
+            if step.kind == "ask":
+                return await _clarify_turn(step, out_lang, rf)
+            if step.kind == "finish":
+                diff = step
+    if diff is not None:
+        context = (context + "\n\n" if context else "") + diff.context
+        # The question round (the description, then question / yes / no …) is summed up in diff.context; left in
+        # the history, the small model copies the last question back instead of answering (seen in Hindi).
+        cut = next((i for i in range(len(history or []) - 1, -1, -1)
+                    if history[i].get("role") == "user" and (history[i].get("content") or "").strip() == (diff.complaint or "").strip()), None)
+        history = (history or [])[:cut] if cut is not None else []
+        if diff.low_confidence and allow_cloud and model_pref in ("auto", "balanced"):
+            model_pref = "cloud"  # hybrid escalation: a selected cloud model reasons over the refined picture
     speed = effective_model_pref(model_pref, kind, bool(images))
     # Instant: skip the cross-encoder reranker (CPU) when the quick model answers; everything else keeps it
     hits = await search(db, f"{retrieval_query(english, history)} {context}".strip(),
@@ -767,9 +1057,38 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
     messages = [{"role": "system", "content": _system_prompt(lang) if symptomatic else _general_prompt(lang, kind)}]
     messages += conversation_messages(history)
     record = f"RECORD THE USER IS ASKING ABOUT (from their own health record):\n{context}\n\n" if context else ""
-    messages.append({"role": "user", "content": f"PATIENT CONTEXT: {summary}\n\n{record}{_sources_block(hits)}\n\n"
-                                                f"USER MESSAGE ({LANG_NAMES.get(lang, lang)}): {text}"
-                                                + (f"\n(English: {english})" if english != text else "")})
+    try:  # the person's own health memory + active clinical reasoning state
+        from app.clinical.extract import extract_deterministic
+        from app.clinical.reasoning import ClinicalReasoningEngine
+        from app.memory.context import PatientContextBuilder
+        from app.memory.store import memory_block
+        from app.safety.clinical_safety import evaluate_safety
+
+        ep_mem = await memory_block(db, cu, english or "") if use_record else ""
+        mem_ctx = await PatientContextBuilder().build(db, cu, query_text=english or text) if use_record else None
+        det_now = extract_deterministic(english or text, patient_id=cu.id if cu else "anonymous", encounter_id=session_id, language=lang, raw_transcript=text)
+        saf_now = evaluate_safety(english or text, lang=lang, age_years=age, extraction=det_now)
+        reasoning_block = ""
+        if use_record and session_id and cu and mem_ctx is not None:
+            from app.models import Encounter
+            enc_row = await db.scalar(select(Encounter).where(Encounter.user_id == cu.id, Encounter.chat_session_id == session_id).limit(1))
+            if enc_row:
+                r_out = await ClinicalReasoningEngine().evaluate_and_persist(
+                    db, cu, encounter_id=enc_row.id, user_text=english or text, extraction=det_now, mem=mem_ctx, safety=saf_now
+                )
+                reasoning_block = r_out.get("prompt_block", "")
+        parts_mem = [p for p in (reasoning_block, mem_ctx.prompt_block if mem_ctx else "", ep_mem) if p]
+        mem = "\n\n".join(parts_mem)
+    except Exception:  # noqa: BLE001 — memory is context, never a reason to fail
+        mem = ""
+    record += f"THEIR HEALTH MEMORY (their own history, from earlier chats and readings):\n{mem}\n\n" if mem else ""
+    heard = (f"ALREADY SAID ALOUD (the person interrupted after this): {spoken_prefix[:1000]}\n\n"
+             if spoken_prefix else "")
+    messages.append({"role": "user", "content": heard + f"PATIENT CONTEXT: {summary}\n\n{record}{_sources_block(hits)}\n\n"
+                                                + (f"USER MESSAGE (translated from {LANG_NAMES.get(out_lang, out_lang)}): "
+                                                   f"{english}" if pivot else
+                                                   f"USER MESSAGE ({LANG_NAMES.get(lang, lang)}): {text}"
+                                                   + (f"\n(English: {english})" if english != text else ""))})
     last = [""]
 
     def _draft(acc: str) -> None:
@@ -818,6 +1137,43 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
         structured["reply"], trimmed = tidy_reply(structured["reply"])
         if trimmed:
             refusal_warnings.append("reply_tidied")
+    if diff is not None and diff.ranked:
+        model_top = next(iter(structured.get("possible_conditions") or []), None)
+        structured["possible_conditions"] = [
+            {"name": r["name"], "name_en": r["name"], "likelihood": r["likelihood"], "urgency": r["urgency"],
+             "supporting": r.get("supporting", []), "against": r.get("against", []), "citations": []}
+            for r in diff.ranked]
+        # The question plan can miss what the description itself points to (white patches on the tonsils →
+        # tonsillitis): the answer model's own first pick is kept when it is not in the ranking.
+        if model_top and model_top.get("name_en"):
+            from rapidfuzz import fuzz
+            mt = model_top["name_en"].lower()
+            hit = next((i for i, r in enumerate(diff.ranked) if fuzz.partial_ratio(mt, r["name"].lower()) >= 80), None)
+            if hit is None:
+                structured["possible_conditions"] = structured["possible_conditions"][:2] + [
+                    {**model_top, "likelihood": "moderate", "citations": model_top.get("citations", [])}]
+            elif hit > 0 and not diff.ranked[0].get("supporting"):
+                # The plan's starting odds can be off (influenza first for loose motions) and "no" answers do not
+                # separate the candidates: a top pick that no answer supports does not outrank the model's own
+                # reading of the whole description.
+                pc = structured["possible_conditions"]
+                pc.insert(0, pc.pop(hit))
+        if lang not in ("en",) and not pivot:  # Hindi (answered natively): names in Hindi, English kept alongside
+            from app.speech import models as speech
+            pc = [c for c in structured["possible_conditions"] if (c.get("name") or "") == (c.get("name_en") or "")]
+            try:
+                names = await asyncio.to_thread(speech.translate_many, [c["name_en"] for c in pc], "en", lang)
+                for c, n in zip(pc, names):
+                    if n and n.strip() and n.strip().lower() != c["name_en"].lower():
+                        c["name"] = n.strip()
+            except Exception:  # noqa: BLE001 — English names are still correct
+                pass
+        if diff.urgency:
+            top = structured["possible_conditions"][0]
+            top["urgency"] = _raise(top.get("urgency", "self_care"), diff.urgency)
+        if diff.specialist and not structured.get("specialist"):
+            structured["specialist"] = diff.specialist
+        structured["differential"] = {"asked": True, "urgency": diff.urgency}
     if not symptomatic:  # never show a diagnosis, tests or a specialist for a non-symptom question
         for k in ("possible_conditions", "suggested_tests", "specialist"):
             structured.pop(k, None)
@@ -866,7 +1222,7 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
         structured["reply"] = (structured.get("reply", "") +
                                "\n\n⚠️ Please follow the dose and duration your doctor prescribed; do not change "
                                "medicines without consulting them.")
-    if rf.triggered:  # 'urgent' rules: keep answer but surface banner
+    if rf.triggered and not pivot:  # 'urgent' rules: keep answer but surface banner
         structured["reply"] = "\n\n".join(rf.messages) + "\n\n" + structured.get("reply", "")
     cited = sorted({c for pc in structured.get("possible_conditions", []) for c in pc.get("citations", [])}
                    | set(structured.get("citations_used", [])))
@@ -901,9 +1257,37 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
     lap("checks_grounding")
     structured["medicine_links"] = await _medicine_links(db, f"{text} {structured.get('reply', '')}")
     lap("medicine_links")
+    if kind == "medicine" and not images:  # a medicine named in the question: its salt, a cheaper same-salt option,
+        try:                               # and how it went for them before, told as one short story
+            from app.medicine.pack import names_in
+            from app.medicine.resolve import resolve
+            from app.medicine.storyline import storyline
+            named = names_in(f"{text} {english}") + [l["name"] for l in structured["medicine_links"]]
+            seen: set[str] = set()
+            stories = []
+            for n in named:
+                if n.lower() in seen or len(stories) >= 2:
+                    continue
+                seen.add(n.lower())
+                stories.append(await storyline(db, cu, await resolve(db, n), given_by_doctor=False))
+            if stories:
+                structured["storylines"] = stories
+        except Exception:  # noqa: BLE001 — the answer stands without it
+            log.exception("medicine storyline failed")
+        lap("storyline")
+    if pivot:
+        if await translate_answer(structured, out_lang):
+            structured["translated_from"] = "en"
+        else:
+            warnings.append("answer_translation_failed")
+        if rf.triggered:
+            structured["reply"] = "\n\n".join(rf.messages) + "\n\n" + structured.get("reply", "")
+        lang = out_lang
+        lap("translate_answer")
     log.info("turn timings %s model=%s", T, res.model)
     log.info("retrieval hits=%s", [(round(h.score, 3), h.title[:40]) for h in hits])  # no user text in logs
     return TurnResult(reply=structured.get("reply", ""), structured=structured, red_flag=rf.as_dict(),
                       citations=citations, disclaimer=disclaimer(lang), provider=res.provider, model=res.model,
                       tier=res.tier, latency_ms=res.latency_ms, warnings=warnings, timings=T,
-                      speed="balanced" if res.model == get_settings().llm_model else speed)
+                      speed=answered_speed(res.provider, res.model, speed),
+                      english=english if english != text else "", kind=kind)

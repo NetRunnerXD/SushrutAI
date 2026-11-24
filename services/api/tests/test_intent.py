@@ -32,6 +32,7 @@ def test_conversational_words_with_a_real_question_are_not_small_talk(text):
     ("I have fever since 2 days", "symptoms"),
     ("fever for 2 days, took crocin", "symptoms"),           # a medicine mentioned while describing symptoms
     ("I can't eat, stomach pain and vomiting", "symptoms"),  # 'eat' as a symptom, not a food question
+    ("I am having difficulty swallowing food since yesterday due to soreness in my throat what could be the reason?", "symptoms"),
     ("I can't walk, knee pain", "symptoms"),
     ("pet me dard hai", "symptoms"), ("mujhe bukhar hai", "symptoms"), ("सिर दर्द और उल्टी", "symptoms"),
     ("can I take dolo 650 for fever", "medicine"), ("What is Dolo 650", "medicine"),

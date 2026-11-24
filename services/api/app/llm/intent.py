@@ -95,7 +95,7 @@ def _phrase_intent(text: str) -> Intent | None:
 
 # ---------------------------------------------------------------- keyword cues
 SYMPTOM = re.compile(
-    r"(?i)fever|temperature (is|of|high)|high temp|\bpain(ful|s)?\b|\baches?\b|\baching\b|\bhurts?\b|\bhurting\b|\bsore\b|"
+    r"(?i)fever|temperature (is|of|high)|high temp|\bpain(ful|s)?\b|\baches?\b|\baching\b|\bhurts?\b|\bhurting\b|\bsore(ness)?\b|"
     r"\bcough|(?<!cold )\b(a|the|have|got|caught|with) cold\b|cold and cough|runny nose|blocked nose|sneez|\bvomit|"
     r"nausea|throwing up|diarrh|loose motion|constipat|headache|migraine|dizz|\bfaint|giddy|breathless|"
     r"short(ness)? of breath|can'?t breathe|breathing (problem|difficult|trouble)|wheez|chest (pain|tight)|\brash|"
@@ -106,13 +106,16 @@ SYMPTOM = re.compile(
     r"infection|allerg|jaundice|yellow (eyes|skin)|\bulcer|toothache|ear ?ache|red eye|blurred vision|unwell|"
     r"\bsick\b|\bill\b|not feeling (well|good)|feeling low|body ache|joint pain|can'?t eat|cannot eat|"
     r"not able to eat|no appetite|loss of appetite|"
+    r"swallow|\bdysphagia\b|sore throat|"
     r"bukhar|bukhaar|\bdard\b|khansi|khaansi|jukam|zukam|\bulti\b|\bdast\b|chakkar|saans (phool|lene)|\bsujan\b|"
     r"soojan|khujli|\bjalan\b|kamzori|kamjori|thakan|thakaan|pet (dard|me|mein|kharab)|sir ?dard|sar ?dard|"
     r"tabiyat|tabiyet|bhook nahi|kharash|gal(a|e) (me|mein|dukh|kharab|baith|kharash)|badan dard|kamar dard|"
     r"jodo?n? (me|mein) dard|ghutno?n? (me|mein) dard|khasi|zukham|naak beh|aankh (lal|me jalan)|"
     r"बुखार|ज्वर|दर्द|खांसी|खाँसी|जुकाम|ज़ुकाम|सर्दी लग|उल्टी|दस्त|चक्कर|सांस|साँस|सूजन|खुजली|जलन|कमजोरी|"
     r"कमज़ोरी|थकान|पेट दर्द|पेट में|सिर दर्द|सिरदर्द|तबीयत|भूख नहीं|"
-    r"জ্বর|ব্যথা|কাশি|বমি|காய்ச்சல்|வலி|இருமல்|வாந்தி|జ్వరం|నొప్పి|దగ్గు|వాంతి|दुखणे|खोकला|"
+    r"জ্বর|ব্যথা|কাশি|বমি|মাথা\s*ঘোর|মাথা\s*ভারী|দুর্বল|শরীর\s*খারাপ|শরীর\s*ভালো\s*না|শ্বাসকষ্ট|"
+    r"matha\s*ghur|buke\s*betha|shorir\s*kharap|durbol|jwor|"
+    r"காய்ச்சல்|வலி|இருமல்|வாந்தி|జ్వరం|నొప్పి|దగ్గు|వాంతి|दुखणे|खोकला|"
     r"તાવ|દુખાવો|ઉધરસ|ઉલટી|ಜ್ವರ|ನೋವು|ಕೆಮ್ಮು|ವಾಂತಿ|പനി|വേദന|ചുമ|ഛർദ്ദി|ଜ୍ୱର|ଯନ୍ତ୍ରଣା|କାଶ|ବାନ୍ତି")
 # looks like a symptom word but is not
 SYMPTOM_FALSE = re.compile(r"(?i)cold (drink|water|coffee|storage)|burn (fat|calories)|pain ?killers?")
