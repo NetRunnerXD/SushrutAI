@@ -37,8 +37,11 @@ async def providers(db: AsyncSession = Depends(get_db)):
             "embeddings": {"model": s.embed_model, "available": has(s.embed_model)},
             "stt_faster_whisper": whisper, "ocr_surya": surya_ok,
         },
-        "free_apis": {"groq": bool(s.groq_api_key), "sarvam": bool(s.sarvam_api_key),
-                      "bhashini": bool(s.bhashini_api_key), "openfda_key": bool(s.openfda_api_key),
+        "free_apis": {"groq": bool(s.groq_api_key), "gemini": bool(s.gemini_api_key),
+                      "gemini_live": bool(s.gemini_api_key),
+                      "sarvam": bool(s.sarvam_api_key), "elevenlabs": bool(s.elevenlabs_api_key),
+                      "bhashini": bool(s.bhashini_user_id and s.bhashini_api_key),
+                      "openfda_key": bool(s.openfda_api_key),
                       "smtp": bool(s.smtp_host), "firebase_phone": bool(s.firebase_project_id)},
         "data": {
             "products": await db.scalar(select(func.count()).select_from(Product)),
@@ -48,3 +51,14 @@ async def providers(db: AsyncSession = Depends(get_db)):
             "kb_chunks": await db.scalar(select(func.count()).select_from(KbChunk)),
         },
     }
+
+
+@router.get("/device")
+async def device():
+    """This computer and what is loaded now (Settings → "This computer")."""
+    from app.runtime.device import profile, ram_free_fraction
+    from app.speech import models as speech
+
+    loaded = await ollama().running() if hasattr(ollama(), "running") else []
+    return {**profile(), "ram_free_pct": round(100 * ram_free_fraction()), "speech_models_loaded": speech.loaded(),
+            "ollama_loaded": loaded}

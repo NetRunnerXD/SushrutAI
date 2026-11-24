@@ -35,3 +35,18 @@ async def test_month_calendar(client, guest):
     assert body["month"] == today[:7]
     assert any(e["type"] == "follow_up" for e in body["days"].get(today, {}).get("events", []))
     assert (await client.get("/me/calendar?month=2026-13", headers=guest)).status_code == 422
+
+
+async def test_calendar_my_own_events(client, guest):
+    from datetime import date
+    today = date.today().isoformat()
+    r = await client.post("/me/calendar/events", json={"day": today, "title": "Dr Rao, 4 pm", "kind": "appointment", "time": "16:00"}, headers=guest)
+    assert r.status_code == 201
+    eid = r.json()["id"]
+    await client.post("/me/calendar/events", json={"day": today, "title": "Morning walk", "kind": "reminder", "time": "07:30"}, headers=guest)
+    evs = (await client.get("/me/calendar", headers=guest)).json()["days"][today]["events"]
+    mine = [e for e in evs if e["type"] == "mine"]
+    assert [e["title"] for e in mine] == ["Morning walk", "Dr Rao, 4 pm"]  # timed, in time order
+    assert (await client.post("/me/calendar/events", json={"day": today, "title": "x", "time": "25:00"}, headers=guest)).status_code == 422
+    assert (await client.delete(f"/me/calendar/events/{eid}", headers=guest)).status_code == 204
+    assert (await client.delete(f"/me/calendar/events/{eid}", headers=guest)).status_code == 404

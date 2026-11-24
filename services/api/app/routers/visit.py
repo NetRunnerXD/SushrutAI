@@ -133,8 +133,9 @@ async def visit_summary(days: int = 90, cu: CurrentUser = Depends(current_user),
                 "unwell": sum(m.mood == "unwell" for m in moods),
                 "unwell_days": [m.day for m in moods if m.mood == "unwell"][-10:]}
 
-    return {
-        "generated_at": utcnow(), "period_days": days, "checkins": checkins,
+    story = await _health_story(db, cu, since)
+    out = {
+        "generated_at": utcnow(), "period_days": days, "checkins": checkins, **story,
         "patient": {"name": name, "age": _age(dob), "sex": p.sex if p else None,
                     "blood_group": p.blood_group if p else None, "height_cm": p.height_cm if p else None,
                     "weight_kg": weight, "bmi": round(b, 1) if b else None,
@@ -156,3 +157,51 @@ async def visit_summary(days: int = 90, cu: CurrentUser = Depends(current_user),
         "note": "Prepared by the patient using SushrutAI from their own records. Not a medical document; "
                 "please verify with the patient.",
     }
+    out["spoken"] = spoken_summary(out)
+    return out
+
+
+async def _health_story(db: AsyncSession, cu: CurrentUser, since) -> dict:
+    """From the health memory: episodes with their symptom timeline and key values, medicines tried and how they
+    went (the person's own words), and the documents of the period."""
+    from app.memory.store import episode_lines
+    from app.models import Document, Episode, HealthFact
+
+    eps = []
+    for e in await db.scalars(select(Episode).where(Episode.user_id == cu.id, Episode.last_activity_at >= since)
+                              .order_by(Episode.started_at.desc()).limit(6)):
+        eps.append({"title": cu.cipher.dec(e.title_enc), "started_at": e.started_at, "ended_at": e.ended_at,
+                    "status": e.status, "timeline": await episode_lines(db, cu, e, limit=15)})
+    tried = []
+    for f in await db.scalars(select(HealthFact).where(HealthFact.user_id == cu.id, HealthFact.kind == "medicine_response",
+                                                       HealthFact.observed_at >= since).order_by(HealthFact.observed_at)):
+        v = json.loads(cu.cipher.dec(f.value_enc))
+        tried.append({"medicine": f.name, "effect": v.get("effect"), "note": v.get("note") or "", "at": f.observed_at})
+    docs = [{"id": d.id, "kind": d.kind, "title": d.title, "date": d.report_date or d.uploaded_at.date()}
+            for d in await db.scalars(select(Document).where(Document.user_id == cu.id, Document.uploaded_at >= since)
+                                      .order_by(Document.uploaded_at.desc()).limit(12))]
+    return {"episodes": eps, "medicines_tried": tried, "documents": docs}
+
+
+def spoken_summary(s: dict) -> str:
+    """A short summary to play to the doctor (about 30–45 seconds), from the summary data only."""
+    p = s.get("patient") or {}
+    who = ", ".join(x for x in [f"{p['age']} years" if p.get("age") else "", p.get("sex") or ""] if x)
+    parts = [f"Health summary{(' for ' + p['name']) if p.get('name') else ''}{(', ' + who) if who else ''}."]
+    for e in (s.get("episodes") or [])[:2]:
+        since = e["started_at"].strftime("%d %B") if hasattr(e["started_at"], "strftime") else str(e["started_at"])[:10]
+        tl = "; ".join(l.split(": ", 1)[-1] for l in e["timeline"][:6])
+        parts.append(f"Since {since}: {e['title']}." + (f" Noted: {tl}." if tl else ""))
+    if s.get("medicines"):
+        parts.append("Current medicines: " + ", ".join(m.get("name", "") for m in s["medicines"][:6]) + ".")
+    for t in (s.get("medicines_tried") or [])[-3:]:
+        parts.append(f"{t['medicine']}: {str(t['effect']).replace('_', ' ')}{(', ' + t['note']) if t['note'] else ''}.")
+    if s.get("allergies"):
+        parts.append("Allergies: " + ", ".join(str(a) for a in s["allergies"][:5]) + ".")
+    if s.get("conditions"):
+        parts.append("Known conditions: " + ", ".join(str(c) for c in s["conditions"][:5]) + ".")
+    ab = s.get("abnormal_labs") or []
+    if ab:
+        parts.append("Abnormal tests: " + "; ".join(f"{l.get('test')} {l.get('value')} {l.get('unit') or ''}".strip()
+                                                    for l in ab[:4]) + ".")
+    return " ".join(parts)

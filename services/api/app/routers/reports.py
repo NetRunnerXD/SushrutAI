@@ -1,6 +1,10 @@
-"""Lab-report parsing and medical-image description (local vision models only — images never leave the device)."""
+"""Lab-report parsing and medical-image description.
+
+Images stay on this device unless the person chose Gemini and gave the cloud_llm_full consent.
+"""
 from __future__ import annotations
 
+import logging
 import re
 from typing import Literal
 
@@ -23,8 +27,10 @@ from app.vision.screen import for_person, prompt_block, screen
 from app.safety.disclaimer import disclaimer
 from app.security.auth import CurrentUser, current_user
 from app.security.consent import active_purposes
+from app.langs import LangCode
 
 router = APIRouter(tags=["reports"])
+log = logging.getLogger("sushrut.reports")
 
 LAB_PROMPT = """This is a medical laboratory report from India. Transcribe every test result line exactly as written,
 one test per line, in the form:
@@ -52,7 +58,12 @@ async def parse_report(body: ReportIn, cu: CurrentUser = Depends(current_user), 
     from app.llm.providers import doc_model_for
     from app.security.settings import get_settings_row
 
-    model = doc_model_for((await get_settings_row(db, cu.account_id)).model_pref or "balanced", "lab_report")
+    pref = (await get_settings_row(db, cu.account_id)).model_pref or "balanced"
+    model = doc_model_for(pref, "lab_report")
+    from app.llm.providers import full_cloud_allowed, gemini, gemini_model_for
+    from app.security.settings import cloud_allowed
+
+    full_cloud_allowed.set(await cloud_allowed(db, cu.account_id, "cloud_llm_full"))
 
     transcript = [""]
 
@@ -63,7 +74,19 @@ async def parse_report(body: ReportIn, cu: CurrentUser = Depends(current_user), 
         return r
     try:
         try:
-            results = parse_lab_report((await read(model)).text)
+            results = []
+            if g_model := gemini_model_for(pref):
+                try:
+                    grew = await gemini().chat(g_model, [{"role": "user", "content": LAB_PROMPT}], images=[b64],
+                                               temperature=0.0, num_predict=1500)
+                    transcript[0] = grew.text
+                    results = parse_lab_report(grew.text)
+                    if results:
+                        model = g_model
+                except ProviderUnavailable as e:
+                    log.warning("Gemini lab read failed (%s); using the local reader", e)
+            if not results:
+                results = parse_lab_report((await read(model)).text)
         except ProviderUnavailable:
             results = []
             if model == s.rx_vlm_model:
@@ -106,7 +129,7 @@ async def list_labs(loinc: str | None = None, cu: CurrentUser = Depends(current_
 class ImageIn(BaseModel):
     document_id: str
     question: str = Field("", max_length=500)
-    lang: Literal["en", "hi", "bn", "ta", "te", "mr", "gu", "kn", "ml", "or"] = "en"
+    lang: LangCode = "en"
 
 
 @router.post("/images/analyze")

@@ -31,7 +31,7 @@ class SettingsIn(BaseModel):
     reminder_times: dict[str, str] | None = Field(None, description='{"morning":"08:00","afternoon":"14:00","night":"21:00"}')
     large_text: bool | None = None
     voice_autoplay: bool | None = None
-    model_pref: Literal["auto", "balanced", "fast", "instant", "cloud"] | None = None
+    model_pref: Literal["auto", "balanced", "fast", "instant", "cloud", "gemini", "gemini_fast"] | None = None
 
 
 def _settings_out(s) -> dict:
@@ -226,6 +226,15 @@ async def timeline(cu: CurrentUser = Depends(current_user), db: AsyncSession = D
     for lr in await db.scalars(select(LabResult).where(LabResult.user_id == cu.id)):
         ev.append({"at": lr.observed_at, "type": "lab", "summary": f"{lr.test_name} {lr.value_text or lr.value} "
                                                                   f"{lr.unit or ''} {lr.flag or ''}".strip()})
+    # the health memory: episodes ("fever, body ache") and what was said about them (readings are listed above)
+    from app.memory.store import timeline_items
+    for it in await timeline_items(db, cu):
+        if it["type"] == "episode":
+            ev.append({"at": it["at"], "type": "episode", "id": it["id"], "status": it["status"],
+                       "summary": it["title"] + (f" — {', '.join(it['tags'])}" if it["tags"] else "")})
+        elif it["kind"] not in ("vital", "preference", "feedback"):
+            ev.append({"at": it["at"], "type": "health", "id": it["id"], "kind": it["kind"],
+                       "summary": it["line"].split(": ", 1)[-1]})
     return sorted(ev, key=lambda e: e["at"], reverse=True)
 
 
@@ -239,16 +248,53 @@ UCUM = {"mmHg": "mm[Hg]", "bpm": "/min", "%": "%", "°C": "Cel", "/min": "/min",
         "mg/dL": "mg/dL"}
 
 
+def validate_fhir_bundle(bundle: dict) -> list[str]:
+    """Validate structural conformance of an HL7 FHIR R4 collection Bundle."""
+    errors: list[str] = []
+    if bundle.get("resourceType") != "Bundle":
+        errors.append("Root resourceType must be Bundle")
+    if bundle.get("type") not in ("collection", "document", "transaction"):
+        errors.append("Bundle.type must be valid FHIR bundle type")
+    for idx, entry in enumerate(bundle.get("entry") or []):
+        res = entry.get("resource") or {}
+        rt = res.get("resourceType")
+        if not rt:
+            errors.append(f"entry[{idx}] missing resourceType")
+            continue
+        if rt == "Patient" and not res.get("id"):
+            errors.append(f"entry[{idx}] Patient missing id")
+        elif rt == "Condition" and (not res.get("code") or not res.get("subject")):
+            errors.append(f"entry[{idx}] Condition missing code or subject")
+        elif rt == "Observation" and (not res.get("code") or not res.get("status") or not res.get("subject")):
+            errors.append(f"entry[{idx}] Observation missing code/status/subject")
+        elif rt == "MedicationStatement" and (not res.get("medicationCodeableConcept") or not res.get("subject")):
+            errors.append(f"entry[{idx}] MedicationStatement missing medication/subject")
+        elif rt == "MedicationRequest" and (not res.get("medicationCodeableConcept") or not res.get("subject") or not res.get("intent")):
+            errors.append(f"entry[{idx}] MedicationRequest missing fields")
+        elif rt == "AllergyIntolerance" and (not res.get("code") or not res.get("patient")):
+            errors.append(f"entry[{idx}] AllergyIntolerance missing code/patient")
+        elif rt == "Encounter" and (not res.get("status") or not res.get("subject")):
+            errors.append(f"entry[{idx}] Encounter missing status/subject")
+        elif rt == "QuestionnaireResponse" and (not res.get("status") or not res.get("subject")):
+            errors.append(f"entry[{idx}] QuestionnaireResponse missing status/subject")
+        elif rt == "Provenance" and (not res.get("target") or not res.get("recorded")):
+            errors.append(f"entry[{idx}] Provenance missing target/recorded")
+    return errors
+
+
 @router.get("/export/fhir")
 async def export_fhir(cu: CurrentUser = Depends(current_user), db: AsyncSession = Depends(get_db)):
-    """FHIR R4 collection Bundle (Patient, AllergyIntolerance, Condition, MedicationStatement, Observation) —
-    the format ABDM health records use (NRCeS FHIR profiles build on R4)."""
+    """FHIR R4 collection Bundle (Patient, Encounter, Condition, MedicationStatement, MedicationRequest,
+    AllergyIntolerance, Observation, QuestionnaireResponse, Provenance) — NRCeS / ABDM R4 aligned."""
+    from app.models import ClinicalSymptom, Encounter, FollowUpQuestion
+
     pid = cu.id
     entries: list[dict] = []
 
-    def add(resource: dict) -> None:
+    def add(resource: dict) -> str:
         rid = resource.setdefault("id", str(uuid.uuid4()))
         entries.append({"fullUrl": f"urn:uuid:{rid}", "resource": resource})
+        return rid
 
     p = await db.get(PatientProfile, pid)
     patient = {"resourceType": "Patient", "id": pid}
@@ -261,6 +307,32 @@ async def export_fhir(cu: CurrentUser = Depends(current_user), db: AsyncSession 
             patient["gender"] = "other"
     add(patient)
     subject = {"reference": f"urn:uuid:{pid}"}
+
+    def add_provenance(target_id: str, source: str, verification: str, recorded_at: datetime) -> None:
+        add({
+            "resourceType": "Provenance",
+            "target": [{"reference": f"urn:uuid:{target_id}"}],
+            "recorded": recorded_at.isoformat() + "Z",
+            "activity": {"text": f"source={source}; verification={verification}"},
+            "agent": [{"who": {"display": source}}],
+        })
+
+    for enc in await db.scalars(select(Encounter).where(Encounter.user_id == pid)):
+        enc_res = {
+            "resourceType": "Encounter",
+            "id": enc.id,
+            "status": "finished" if enc.status in ("completed", "closed") else "in-progress",
+            "class": {"system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+                      "code": "VR" if enc.channel == "voice" else "AMB"},
+            "subject": subject,
+            "period": {"start": enc.started_at.isoformat() + "Z",
+                       **({"end": enc.ended_at.isoformat() + "Z"} if enc.ended_at else {})},
+        }
+        if cc := cu.cipher.dec(enc.chief_complaint_enc):
+            enc_res["reasonCode"] = [{"text": cc}]
+        eid = add(enc_res)
+        add_provenance(eid, f"encounter:{enc.channel}", "patient_reported", enc.started_at)
+
     for a in await db.scalars(select(Allergy).where(Allergy.user_id == pid)):
         res = {"resourceType": "AllergyIntolerance", "patient": subject,
                "code": {"text": cu.cipher.dec(a.substance_enc)},
@@ -269,6 +341,7 @@ async def export_fhir(cu: CurrentUser = Depends(current_user), db: AsyncSession 
             res["reaction"] = [{"severity": a.severity,
                                 "manifestation": [{"text": cu.cipher.dec(a.reaction_enc) or "reaction"}]}]
         add(res)
+
     for c in await db.scalars(select(Condition).where(Condition.user_id == pid)):
         coding = []
         if c.snomed_code:
@@ -278,27 +351,66 @@ async def export_fhir(cu: CurrentUser = Depends(current_user), db: AsyncSession 
         add({"resourceType": "Condition", "subject": subject,
              "clinicalStatus": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
                                             "code": "resolved" if c.status == "resolved" else "active"}]},
+             "verificationStatus": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+                                                "code": "confirmed" if getattr(c, "verification_status", "") == "clinician_confirmed" else "unconfirmed"}]},
              "code": {"text": cu.cipher.dec(c.display_enc), **({"coding": coding} if coding else {})}})
+
+    for sx in await db.scalars(select(ClinicalSymptom).where(ClinicalSymptom.user_id == pid)):
+        ver_code = "confirmed" if sx.verification_status == "clinician_confirmed" else "unconfirmed"
+        clin_code = "resolved" if sx.status == "resolved" else "active"
+        cond_res = {
+            "resourceType": "Condition",
+            "id": sx.id,
+            "subject": subject,
+            "clinicalStatus": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/condition-clinical", "code": clin_code}]},
+            "verificationStatus": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/condition-ver-status", "code": ver_code}]},
+            "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/condition-category", "code": "problem-list-item"}]}],
+            "code": {"text": sx.normalized_concept or sx.name},
+        }
+        if sx.estimated_onset:
+            cond_res["onsetDateTime"] = sx.estimated_onset.isoformat() + "Z"
+        if sx.encounter_id:
+            cond_res["encounter"] = {"reference": f"urn:uuid:{sx.encounter_id}"}
+        sid = add(cond_res)
+        add_provenance(sid, sx.source, sx.verification_status, sx.first_reported_at)
+
     for m in await db.scalars(select(Medication).where(Medication.user_id == pid)):
+        mname = cu.cipher.dec(m.name_enc)
         res = {"resourceType": "MedicationStatement", "subject": subject,
                "status": {"active": "active", "stopped": "stopped", "completed": "completed"}.get(m.status, "unknown"),
-               "medicationCodeableConcept": {"text": cu.cipher.dec(m.name_enc)}}
+               "medicationCodeableConcept": {"text": mname}}
         if m.start_date or m.end_date:
             res["effectivePeriod"] = {k: v.isoformat() for k, v in
                                       (("start", m.start_date), ("end", m.end_date)) if v}
         if m.frequency and m.frequency.get("label"):
             res["dosage"] = [{"text": m.frequency["label"] + (f", {m.timing.replace('_', ' ')}" if m.timing else "")}]
         add(res)
+        if getattr(m, "prescribed_or_self", "unknown") == "prescribed":
+            add({
+                "resourceType": "MedicationRequest",
+                "status": "active" if m.status == "active" else "completed",
+                "intent": "order",
+                "subject": subject,
+                "medicationCodeableConcept": {"text": mname},
+            })
+
     for v in await db.scalars(select(Vital).where(Vital.user_id == pid)):
         code, display = VITAL_LOINC.get(v.type, (None, v.type))
-        add({"resourceType": "Observation", "status": "final", "subject": subject,
-             "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category",
-                                       "code": "laboratory" if v.type.startswith("glucose") else "vital-signs"}]}],
-             "code": {"coding": [{"system": "http://loinc.org", "code": code, "display": display}]} if code
-             else {"text": display},
-             "effectiveDateTime": v.measured_at.isoformat() + "Z",
-             "valueQuantity": {"value": v.value, "unit": v.unit, "system": "http://unitsofmeasure.org",
-                               "code": UCUM.get(v.unit, v.unit)}})
+        obs = {"resourceType": "Observation", "status": "preliminary" if getattr(v, "is_estimate", False) else "final",
+               "subject": subject,
+               "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                                         "code": "laboratory" if v.type.startswith("glucose") else "vital-signs"}]}],
+               "code": {"coding": [{"system": "http://loinc.org", "code": code, "display": display}]} if code
+               else {"text": display},
+               "effectiveDateTime": v.measured_at.isoformat() + "Z",
+               "valueQuantity": {"value": v.value, "unit": v.unit, "system": "http://unitsofmeasure.org",
+                                 "code": UCUM.get(v.unit, v.unit)}}
+        if getattr(v, "is_estimate", False):
+            obs["note"] = [{"text": "Patient-estimated value (not device-measured)"}]
+        oid = add(obs)
+        if getattr(v, "is_estimate", False) or v.source in ("patient_estimate", "patient_report"):
+            add_provenance(oid, v.source, "unverified" if getattr(v, "is_estimate", False) else "patient_reported", v.measured_at)
+
     for lr in await db.scalars(select(LabResult).where(LabResult.user_id == pid)):
         obs = {"resourceType": "Observation", "status": "final", "subject": subject,
                "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category",
@@ -317,8 +429,36 @@ async def export_fhir(cu: CurrentUser = Depends(current_user), db: AsyncSession 
             obs["interpretation"] = [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
                                                   "code": lr.flag}]}]
         add(obs)
+
+    # Answered follow-up questions mapped to QuestionnaireResponse
+    answered_fqs = list(await db.scalars(select(FollowUpQuestion).where(
+        FollowUpQuestion.user_id == pid, FollowUpQuestion.status == "answered")))
+    if answered_fqs:
+        by_enc: dict[str, list[FollowUpQuestion]] = {}
+        for fq in answered_fqs:
+            by_enc.setdefault(fq.encounter_id, []).append(fq)
+        for enc_id, fqs in by_enc.items():
+            add({
+                "resourceType": "QuestionnaireResponse",
+                "status": "completed",
+                "subject": subject,
+                "encounter": {"reference": f"urn:uuid:{enc_id}"},
+                "authored": (fqs[-1].answered_at or utcnow()).isoformat() + "Z",
+                "item": [
+                    {
+                        "linkId": fq.question_key,
+                        "text": cu.cipher.dec(fq.question_text_enc) or fq.question_key,
+                        "answer": [{"valueString": cu.cipher.dec(fq.answer_text_enc) or ""}],
+                    }
+                    for fq in fqs
+                ],
+            })
+
     bundle = {"resourceType": "Bundle", "type": "collection", "timestamp": utcnow().isoformat() + "Z",
               "entry": entries}
+    errs = validate_fhir_bundle(bundle)
+    if errs:
+        raise ValueError(f"FHIR bundle validation failed: {errs}")
     return Response(json.dumps(bundle, ensure_ascii=False, default=str), media_type="application/fhir+json",
                     headers={"Content-Disposition": 'attachment; filename="sushrutai-fhir-bundle.json"'})
 
@@ -361,4 +501,44 @@ async def calendar(month: str | None = None, cu: CurrentUser = Depends(current_u
         if first <= d < nxt and (d.isoformat(), lr.document_id or "") not in seen:
             seen.add((d.isoformat(), lr.document_id or ""))
             day(d)["events"].append({"type": "report", "title": lr.test_name, "status": "done", "href": "/records?tab=library"})
+    from app.models import CalendarEvent
+
+    for ce in await db.scalars(select(CalendarEvent).where(CalendarEvent.user_id == cu.id, CalendarEvent.day >= first,
+                                                           CalendarEvent.day < nxt)):
+        day(ce.day)["events"].append({"type": "mine", "id": ce.id, "kind": ce.kind, "time": ce.time,
+                                      "title": cu.cipher.dec(ce.title_enc), "status": "planned", "href": ""})
+    for d in days.values():  # timed ones first, then the rest in the order they were added
+        d["events"].sort(key=lambda e: (e.get("time") or "99:99") if e["type"] == "mine" else "99:99")
     return {"month": first.strftime("%Y-%m"), "today": today, "days": days}
+
+
+class CalendarEventIn(BaseModel):
+    day: date
+    title: str = Field(min_length=1, max_length=120)
+    kind: Literal["appointment", "reminder", "note"] = "appointment"
+    time: str | None = Field(default=None, pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+
+
+@router.post("/calendar/events", status_code=201)
+async def add_calendar_event(body: CalendarEventIn, cu: CurrentUser = Depends(current_user),
+                             db: AsyncSession = Depends(get_db)):
+    from app.models import CalendarEvent
+
+    ev = CalendarEvent(user_id=cu.id, day=body.day, kind=body.kind, time=body.time,
+                       title_enc=cu.cipher.enc(body.title.strip()))
+    db.add(ev)
+    await db.commit()
+    return {"id": ev.id, "day": ev.day, "kind": ev.kind, "time": ev.time, "title": body.title.strip()}
+
+
+@router.delete("/calendar/events/{eid}", status_code=204)
+async def delete_calendar_event(eid: str, cu: CurrentUser = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    from fastapi import HTTPException
+
+    from app.models import CalendarEvent
+
+    ev = await db.get(CalendarEvent, eid)
+    if ev is None or ev.user_id != cu.id:
+        raise HTTPException(404, "Not found")
+    await db.delete(ev)
+    await db.commit()
