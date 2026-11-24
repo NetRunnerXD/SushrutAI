@@ -159,6 +159,13 @@ def is_template_table(rows: list[list[float]]) -> bool:
     return len(rows) >= 2 and sum(abs(_order_correlation(r)) >= 0.9 for r in rows) / len(rows) >= 0.5
 
 
+def _same_question(q: str, findings: list[dict]) -> bool:
+    from rapidfuzz import fuzz
+
+    norm = lambda s: re.sub(r"[\W_]+", " ", s or "").strip().lower()  # noqa: E731
+    return any(fuzz.ratio(norm(q), norm(x["question"])) >= 90 for x in findings)
+
+
 def init_state(llm: dict, *, sex: str | None, age: float | None, pregnant: bool = False) -> dict:
     conds = llm.get("conditions", [])[:6]
     n = len(conds)
@@ -184,8 +191,10 @@ def init_state(llm: dict, *, sex: str | None, age: float | None, pregnant: bool 
             continue
         if topic == "child" and age is not None and age >= 18:
             continue
-        findings.append({"id": re.sub(r"\W+", "_", f["id"])[:40], "question": f["question"],
-                         "red_flag": bool(f.get("red_flag")), "likelihoods": lk})
+        fid = re.sub(r"\W+", "_", str(f["id"]))[:40]
+        if _same_question(f["question"], findings) or any(x["id"] == fid for x in findings):
+            continue  # small models repeat a question in the plan: it would be asked twice
+        findings.append({"id": fid, "question": f["question"], "red_flag": bool(f.get("red_flag")), "likelihoods": lk})
     if len(findings) < 2:
         raise ValueError("Too few usable questions")
     return {

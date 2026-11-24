@@ -19,6 +19,7 @@ from app.security.consent import active_purposes
 from app.triage import engine
 from app.triage.urgency import recommend, recommended_specialist
 from app.triage.store import is_encrypted, load_state, save_state
+from app.langs import LangCode
 
 router = APIRouter(prefix="/triage", tags=["triage"])
 
@@ -35,7 +36,7 @@ def _season_hint(today: date) -> str:
 
 class StartIn(BaseModel):
     complaint: str = Field(min_length=3, max_length=1000)
-    lang: Literal["en", "hi", "bn", "ta", "te", "mr", "gu", "kn", "ml", "or"] = "en"
+    lang: LangCode = "en"
 
 
 class AnswerIn(BaseModel):
