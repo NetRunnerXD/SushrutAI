@@ -53,6 +53,17 @@ class InterviewGap:
     hi: str
     context_lead_en: str = ""
     context_lead_bn: str = ""
+    context_lead_hi: str = ""
+
+
+def _infer_answer_type(q_text: str, dimension: str) -> str:
+    if dimension == "duration" and re.search(r"(?i)how long|how many days|since when|कब से|कितने दिन|কত দিন", q_text):
+        return "duration"
+    if dimension == "severity" and re.search(r"(?i)mild|moderate|severe|how bad|कितना|कैसा|কতটা", q_text):
+        return "severity"
+    if re.search(r"(?i)^(?:are|is|do|does|did|have|has|was|were|will|would|could|can|with\b|when it starts|since |क्या|আপনার কি|এর সাথে কি)", q_text.strip()):
+        return "yes_no"
+    return "free_text"
 
 
 class AdaptiveClinicalInterviewEngine:
@@ -80,9 +91,11 @@ class AdaptiveClinicalInterviewEngine:
         safety: SafetyAssessment,
         lang: str = "en",
         use_llm_phrasing: bool = False,
+        is_symptom_turn: bool = False,
+        allow_emergency_interrupt: bool = True,
     ) -> dict:
         enc = await db.get(Encounter, encounter_id)
-        if safety.escalate_now or safety.interrupt_questioning:
+        if allow_emergency_interrupt and (safety.escalate_now or safety.interrupt_questioning):
             if enc:
                 enc.interview_outcome = "URGENT_ESCALATION"
                 await db.commit()
@@ -234,11 +247,116 @@ class AdaptiveClinicalInterviewEngine:
                     hi="क्या आपने थर्मामीटर से बुखार नापा है, और तापमान कितना था?",
                 ))
 
+        # Respiratory / Cough / Shortness of breath
+        is_resp = any(s in pos_set for s in ("cough", "shortness of breath", "sore throat")) or any(
+            w in full_signal for w in ("cough", "phlegm", "wheez", "sputum", "kashi", "khansi", "কাশি", "खांसी")
+        )
+        if is_resp:
+            if not re.search(r"blood|sputum|phlegm|dry|wet|mucus|কফ|রক্ত|बलगम", answered_text):
+                candidates.append(InterviewGap(
+                    key="resp_sputum_blood",
+                    dimension="character",
+                    priority=1,
+                    reason="Differentiate dry vs productive cough and screen for blood-streaked sputum",
+                    en="Is the cough dry or bringing up phlegm, and have you seen any blood in your sputum?",
+                    bn="কাশি কি শুকনো নাকি কফ উঠছে, এবং কফের সাথে কি কখনো রক্ত দেখা গেছে?",
+                    hi="क्या खांसी सूखी है या बलगम आ रहा है, और क्या बलगम में कभी खून दिखा है?",
+                ))
+            if not re.search(r"wheez|whistl|night|dust|allergy|শ্বাস|হাঁপানি|सीटी", answered_text):
+                candidates.append(InterviewGap(
+                    key="resp_wheeze_triggers",
+                    dimension="aggravating",
+                    priority=2,
+                    reason="Screen for asthma/bronchitis patterns (wheezing, night waking, dust trigger)",
+                    en="Do you hear any whistling or wheezing when breathing, or does it worsen at night or with dust?",
+                    bn="শ্বাস নেওয়ার সময় কি শোঁ শোঁ শব্দ হয়, বা রাতে বা ধুলোয় কাশি বাড়ে?",
+                    hi="क्या सांस लेते समय सीटी जैसी आवाज़ आती है, या रात में या धूल से खांसी बढ़ती है?",
+                ))
+
+        # Headache / Migraine
+        is_headache = any(s in pos_set for s in ("headache", "head heaviness")) or any(
+            w in full_signal for w in ("headache", "migraine", "sir dard", "matha betha", "মাথাব্যথা", "সর্দি", "सिरदर्द")
+        )
+        if is_headache:
+            if not re.search(r"stiff neck|fever|blur|double vision|light|vomit|ঘাড়|আলো|চোখ|रोशनी", answered_text):
+                candidates.append(InterviewGap(
+                    key="rf_headache_neuro",
+                    dimension="associated",
+                    priority=1,
+                    reason="Screen for red flags in headache (sudden severe onset, neck stiffness, vision changes, fever)",
+                    en="Did this headache come on suddenly like a thunderclap, or with fever, neck stiffness, or blurred vision?",
+                    bn="এই মাথাব্যথা কি হঠাৎ খুব তীব্রভাবে শুরু হয়েছে, বা সাথে জ্বর, ঘাড় শক্ত লাগা বা চোখে ঝাপসা দেখা আছে?",
+                    hi="क्या यह सिरदर्द अचानक बहुत तेज़ शुरू हुआ, या इसके साथ बुखार, गर्दन में अकड़न या धुंधला दिखना है?",
+                ))
+            if not re.search(r"one side|temple|throb|band|forehead|একপাশ|एक तरफ", answered_text):
+                candidates.append(InterviewGap(
+                    key="headache_location_character",
+                    dimension="location",
+                    priority=2,
+                    reason="Differentiate unilateral throbbing migraine vs bilateral tension/sinus headache",
+                    en="Is the pain on one side of the head and throbbing, or like pressure across your forehead or both sides?",
+                    bn="ব্যথা কি মাথার একপাশে দপদপ করছে, নাকি কপাল জুড়ে বা দুই পাশে চাপ ধরার মতো লাগছে?",
+                    hi="क्या दर्द सिर के एक तरफ़ धड़कता हुआ है, या पूरे माथे और दोनों तरफ़ दबाव जैसा लगता है?",
+                ))
+
+        # GI / Abdominal pain / Acidity / Diarrhea / Nausea / Vomiting
+        is_gi = any(s in pos_set for s in ("abdominal pain", "nausea", "vomiting", "diarrhea", "acidity", "constipation")) or any(
+            w in full_signal for w in ("stomach", "belly", "abdom", "acidity", "heartburn", "bloat", "stool", "pet", "পেট", "অম্বল", "पेट")
+        )
+        if is_gi:
+            if not re.search(r"blood|black stool|keep water|unable to drink|রক্ত|কালো পায়খানা|खून", answered_text):
+                candidates.append(InterviewGap(
+                    key="rf_gi_dehydration_bleed",
+                    dimension="associated",
+                    priority=1,
+                    reason="Screen for GI bleeding or severe dehydration (unable to keep fluids down)",
+                    en="Have you seen any blood in vomit or black stools, or are you unable to keep water down?",
+                    bn="বমি বা পায়খানার সাথে কি রক্ত বা কালো পায়খানা হয়েছে, বা জল খেলেও কি উঠে যাচ্ছে?",
+                    hi="क्या उल्टी में खून या काला मल आया है, या पानी पीने पर भी उल्टी हो रही है?",
+                ))
+            if not re.search(r"upper|lower|right|left|after eat|empty stomach|meal|খাওয়ার পর|খালি পেটে|खाने के", answered_text):
+                candidates.append(InterviewGap(
+                    key="gi_location_meals",
+                    dimension="aggravating",
+                    priority=2,
+                    reason="Narrow GI etiology by abdominal location and relationship to meals",
+                    en="Where exactly is the discomfort (upper or lower belly), and does eating make it better or worse?",
+                    bn="পেটের ঠিক কোন অংশে ব্যথা বা অস্বস্তি হচ্ছে, এবং খাওয়ার পর কি এটি বাড়ে না কমে?",
+                    hi="पेट के किस हिस्से में दर्द है (ऊपर या नीचे), और खाना खाने से यह बढ़ता है या कम होता है?",
+                ))
+
+        # Skin / Rash
+        if "rash" in pos_set or any(w in full_signal for w in ("rash", "itch", "hives", "চুলকানি", "ফুসকুড়ি", "खुजली")):
+            if not re.search(r"new medicine|soap|food|spread|fever|বিস্তার|নতুন ওষুধ|दवा", answered_text):
+                candidates.append(InterviewGap(
+                    key="skin_trigger_spread",
+                    dimension="aggravating",
+                    priority=2,
+                    reason="Clarify rash triggers (new medicine/product/food) and spread or fever",
+                    en="Did the rash start after any new medicine, food, or soap, and is it spreading quickly or with fever?",
+                    bn="এই র‍্যাশ বা চুলকানি কি কোনো নতুন ওষুধ, খাবার বা সাবানের পর শুরু হয়েছে, এবং সাথে জ্বর আছে কি?",
+                    hi="क्या ये चकत्ते किसी नई दवा, खाने या साबुन के बाद शुरू हुए, और क्या साथ में बुखार भी है?",
+                ))
+
+        # Musculoskeletal / Back / Joint pain
+        if "body ache" in pos_set or any(w in full_signal for w in ("back pain", "neck pain", "knee pain", "joint pain", "কোমর", "হাঁটু", "कमर")):
+            if not re.search(r"fall|injury|lift|numb|tingl|leg|swell|পড়ে|ঝিঁঝিঁ|ফোলা|सुन्न", answered_text):
+                candidates.append(InterviewGap(
+                    key="msk_trauma_radiation",
+                    dimension="aggravating",
+                    priority=2,
+                    reason="Check injury/trauma history, swelling, or nerve radiation (numbness/tingling)",
+                    en="Did this start after a fall or heavy lifting, and do you feel any swelling, numbness, or tingling going down an arm or leg?",
+                    bn="এটি কি পড়ে গিয়ে বা ভারী কিছু তোলার পর শুরু হয়েছে, এবং ফোলা বা হাত-পায়ে ঝিঁঝিঁ বা অবশ ভাব আছে কি?",
+                    hi="क्या यह चोट लगने या भारी सामान उठाने के बाद शुरू हुआ, और क्या सूजन या हाथ-पैर में झुनझुनी या सुन्नपन है?",
+                ))
+
         # Generic clinical completeness dimensions (ONLY when genuinely missing and clinically relevant)
+        has_signal = bool(pos_set or mem.discrepancies or is_symptom_turn)
         has_dur = any(s.duration or (s.temporal and not s.temporal.is_temporal_uncertain) for s in extraction.symptoms) or any(
             s.get("duration") or s.get("onset") for s in all_syms
         )
-        if (pos_set or mem.discrepancies) and not has_dur:
+        if has_signal and not has_dur:
             candidates.append(InterviewGap(
                 key="onset_duration",
                 dimension="duration",
@@ -252,7 +370,7 @@ class AdaptiveClinicalInterviewEngine:
         has_sev = any(s.severity != "unknown" or s.functional_impact for s in extraction.symptoms) or any(
             s.get("severity") not in (None, "unknown") or s.get("functional_impact") for s in all_syms
         )
-        if pos_set and not has_sev:
+        if has_signal and not has_sev:
             candidates.append(InterviewGap(
                 key="severity_impact",
                 dimension="severity",
@@ -285,7 +403,7 @@ class AdaptiveClinicalInterviewEngine:
                 hi="पहले आपने इसके शुरू होने का थोड़ा अलग समय बताया था — यह तकलीफ़ असल में कब से है?",
             ))
 
-        if pos_set and not mem.long_term.get("conditions") and not re.search(r"diabetes|sugar|bp|hypertension|asthma|thyroid|no chronic|ডায়াবেটিস|প্রেসার", answered_text):
+        if has_signal and not mem.long_term.get("conditions") and not re.search(r"diabetes|sugar|bp|hypertension|asthma|thyroid|no chronic|ডায়াবেটিস|প্রেসার", answered_text):
             candidates.append(InterviewGap(
                 key="pmh_chronic_conditions",
                 dimension="pmh",
@@ -296,7 +414,7 @@ class AdaptiveClinicalInterviewEngine:
                 hi="क्या आपको पहले से ब्लड प्रेशर, शुगर या थायरॉइड जैसी कोई बीमारी है?",
             ))
 
-        if pos_set and not re.search(r"worked? before|happened before|past episode|আগে কখনো|আগে হয়েছিল", answered_text):
+        if has_signal and not re.search(r"worked? before|happened before|past episode|আগে কখনো|আগে হয়েছিল", answered_text):
             candidates.append(InterviewGap(
                 key="previous_episodes",
                 dimension="prev_episodes",
@@ -307,13 +425,135 @@ class AdaptiveClinicalInterviewEngine:
                 hi="क्या आपको पहले भी कभी ऐसी दिक्कत हुई है, या यह पहली बार है?",
             ))
 
+        # Profile & Third-Party Subject gap-filling (prioritized early in the consultation)
+        from app.clinical.subject_context import detect_subject_relation
+        subj = detect_subject_relation(user_text or "")
+        if not subj.get("is_third_party"):
+            subj = detect_subject_relation(answered_text)
+        demo = mem.long_term.get("demographics", {})
+        if subj.get("is_third_party"):
+            rel = str(subj.get("relation") or "family member")
+            if subj.get("age") is None and "subject_gap_age" not in already_keys:
+                candidates.insert(0, InterviewGap(
+                    key="subject_gap_age",
+                    dimension="subject_gap",
+                    priority=1,
+                    reason=f"Age of {rel} is essential for safe triage, dosing, and risk assessment",
+                    en=f"To give accurate guidance for your {rel}, how old are they?",
+                    bn=f"আপনার {rel}-এর জন্য সঠিক পরামর্শ দিতে, ওনার বয়স কত জানতে পারি?",
+                    hi=f"आपके {rel} के लिए सही सलाह देने के लिए, उनकी उम्र कितनी है?",
+                ))
+            if subj.get("gender") is None and "subject_gap_gender" not in already_keys:
+                candidates.insert(1 if candidates and candidates[0].key == "subject_gap_age" else 0, InterviewGap(
+                    key="subject_gap_gender",
+                    dimension="subject_gap",
+                    priority=2,
+                    reason=f"Gender of {rel} helps narrow relevant conditions",
+                    en=f"Could you share your {rel}'s gender?",
+                    bn=f"আপনার {rel}-এর লিঙ্গ (পুরুষ/মহিলা) জানাবেন?",
+                    hi=f"क्या आप अपने {rel} का जेंडर (पुरुष/महिला) बता सकते हैं?",
+                ))
+            if "subject_gap_context" not in already_keys and not re.search(
+                r"\b(?:diabetes|bp|hypertension|asthma|thyroid|heart|kidney|medicine|medication|allergy|no condition|none|nothing)\b",
+                answered_text,
+            ):
+                candidates.append(InterviewGap(
+                    key="subject_gap_context",
+                    dimension="subject_gap",
+                    priority=2,
+                    reason=f"Existing conditions or regular medicines of {rel} shape safe recommendations",
+                    en=f"Does your {rel} have any existing health conditions (like diabetes, BP, asthma) or take regular medicines?",
+                    bn=f"আপনার {rel}-এর কি আগে থেকে কোনো অসুখ (যেমন ডায়াবেটিস, প্রেসার, হাঁপানি) আছে বা নিয়মিত কোনো ওষুধ খান?",
+                    hi=f"क्या आपके {rel} को पहले से कोई बीमारी (जैसे शुगर, बीपी, अस्थमा) है या कोई नियमित दवा चलती है?",
+                ))
+        else:
+            if not demo.get("dob") and "profile_gap_age" not in already_keys:
+                candidates.append(InterviewGap(
+                    key="profile_gap_age",
+                    dimension="profile_gap",
+                    priority=2,
+                    reason="Age helps tailor risk assessment, specialist routing, and safe guidance",
+                    en="To tailor this better for you, may I ask your age?",
+                    bn="আপনার জন্য আরও সঠিক পরামর্শ দিতে, আপনার বয়স কত জানতে পারি?",
+                    hi="आपके लिए सही सलाह देने के लिए, क्या मैं आपकी उम्र जान सकता हूँ?",
+                ))
+            if not demo.get("sex") and "profile_gap_gender" not in already_keys:
+                candidates.append(InterviewGap(
+                    key="profile_gap_gender",
+                    dimension="profile_gap",
+                    priority=2,
+                    reason="Gender helps personalize clinical risk and screening guidance",
+                    en="To personalize your health profile, what is your gender?",
+                    bn="আপনার প্রোফাইল অনুযায়ী সঠিক পরামর্শ দিতে, আপনার লিঙ্গ (পুরুষ/মহিলা) জানাবেন?",
+                    hi="आपकी प्रोफ़ाइल के अनुसार सही सलाह देने के लिए, आपका जेंडर (पुरुष/महिला) क्या है?",
+                ))
+            if is_resp and not demo.get("smoking") and "profile_gap_smoking" not in already_keys:
+                candidates.append(InterviewGap(
+                    key="profile_gap_smoking",
+                    dimension="profile_gap",
+                    priority=3,
+                    reason="Smoking or tobacco history helps evaluate cough and breathing symptoms",
+                    en="Do you currently smoke or use tobacco, or have you in the past?",
+                    bn="আপনি কি বর্তমানে ধূমপান বা তামাক ব্যবহার করেন, বা আগে করতেন?",
+                    hi="क्या आप अभी धूम्रपान या तंबाकू का सेवन करते हैं, या पहले करते थे?",
+                ))
+
         # Filter already-asked questions on this encounter (UNCAPPED — works for 1 question or 8+ questions)
         remaining = [g for g in candidates if g.key not in already_keys]
         if not remaining:
             if enc:
                 enc.interview_outcome = "SUFFICIENT_INFORMATION"
                 await db.commit()
-            return {"outcome": "SUFFICIENT_INFORMATION", "question": None, "candidates_remaining": 0}
+            # Keep the patient-doctor loop alive with a non-repeating, practical care-loop check-in
+            care_loop_pool = [
+                (
+                    "care_loop_meds",
+                    "Are you currently taking any regular medicines or home remedies for this, so I can check if anything might interact?",
+                    "আপনি কি এখন এর জন্য কোনো নিয়মিত ওষুধ বা ঘরোয়া টোটকা নিচ্ছেন, যাতে আমি দেখে নিতে পারি কোনো সমস্যা হবে কিনা?",
+                    "क्या आप अभी इसके लिए कोई नियमित दवा या घरेलू उपाय ले रहे हैं, ताकि मैं देख सकूँ कि कोई परेशानी तो नहीं होगी?",
+                ),
+                (
+                    "care_loop_diet",
+                    "Would you like practical suggestions on what foods or drinks can help you recover comfortably right now?",
+                    "এখন তাড়াতাড়ি সুস্থ হতে কী ধরনের খাবার বা পানীয় খাওয়া ভালো এবং কী এড়িয়ে চলা উচিত, তা কি বলব?",
+                    "अभी जल्दी आराम के लिए क्या खाना-पीना बेहतर रहेगा और किन चीज़ों से परहेज़ करना चाहिए, क्या मैं बताऊँ?",
+                ),
+                (
+                    "care_loop_redflags",
+                    "Would you like me to walk through the key warning signs to watch for over the next day or two?",
+                    "আগামী এক-দুই দিনে কোন কোন লক্ষণ দেখলে দ্রুত ডাক্তারের কাছে যাওয়া উচিত, তা কি সংক্ষেপে বলে দেব?",
+                    "अगले एक-दो दिनों में किन चेतावनी संकेतों पर तुरंत डॉक्टर को दिखाना चाहिए, क्या मैं संक्षेप में बताऊँ?",
+                ),
+                (
+                    "care_loop_anything_else",
+                    "Is there any other symptom, medicine, or concern on your mind that we haven't covered yet?",
+                    "আপনার মনে কি আরও কোনো লক্ষণ, ওষুধ বা প্রশ্ন আছে যা আমরা এখনো আলোচনা করিনি?",
+                    "क्या आपके मन में कोई और लक्षण, दवा या सवाल है जिस पर हमने अभी तक बात नहीं की?",
+                ),
+            ]
+            cont_q: str | None = None
+            for ck, en_q, bn_q, hi_q in care_loop_pool:
+                if ck not in already_keys:
+                    cont_q = bn_q if lang == "bn" else hi_q if lang == "hi" else en_q
+                    db.add(FollowUpQuestion(
+                        user_id=cu.id,
+                        encounter_id=encounter_id,
+                        symptom_id=None,
+                        question_key=ck,
+                        category="care_loop",
+                        priority=5,
+                        question_text_enc=cu.cipher.enc(cont_q),
+                        status="pending",
+                        reason="Keep the doctor-patient consultation loop active with practical next steps",
+                    ))
+                    await db.commit()
+                    break
+            return {
+                "outcome": "SUFFICIENT_INFORMATION",
+                "question": None,
+                "continuation_question": cont_q,
+                "candidates_remaining": 0,
+            }
 
         remaining.sort(key=lambda g: g.priority)
         pick = remaining[0]
@@ -321,7 +561,7 @@ class AdaptiveClinicalInterviewEngine:
         if lang == "bn":
             q_text = f"{pick.context_lead_bn}{pick.bn}".strip()
         elif lang == "hi":
-            q_text = pick.hi
+            q_text = f"{pick.context_lead_hi}{pick.hi}".strip()
         else:
             q_text = f"{pick.context_lead_en}{pick.en}".strip()
 
@@ -363,6 +603,8 @@ class AdaptiveClinicalInterviewEngine:
                 "priority": pick.priority,
                 "question": q_text,
                 "reason": pick.reason,
+                "why_asking": pick.reason,
+                "answer_type": _infer_answer_type(q_text, pick.dimension),
                 "remaining_candidates": len(remaining) - 1,
             },
         }

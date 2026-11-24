@@ -265,6 +265,54 @@ async def record_followup_answer(
     latest.status = "answered"
     latest.answered_at = now
     completed_keys.append(latest.question_key)
+
+    # Auto-persist profile_gap answers to PatientProfile
+    if latest.question_key.startswith("profile_gap_"):
+        from app.clinical.subject_context import parse_age, parse_gender
+        from app.models import PatientProfile
+        prof = await db.get(PatientProfile, cu.id)
+        if prof is None:
+            prof = PatientProfile(user_id=cu.id)
+            db.add(prof)
+        if latest.question_key == "profile_gap_age":
+            if (age_val := parse_age(answer_text)) is not None:
+                approx_year = now.year - age_val
+                prof.dob_enc = cu.cipher.enc(f"{approx_year}-01-01")
+        elif latest.question_key == "profile_gap_gender":
+            if (g := parse_gender(answer_text)) is not None:
+                prof.sex_enc = cu.cipher.enc(g)
+        elif latest.question_key == "profile_gap_smoking":
+            low = answer_text.lower()
+            if any(w in low for w in ("no", "never", "nahi", "নहीं", "না")):
+                prof.smoking_status = "never"
+            elif any(w in low for w in ("past", "quit", "stopped", "আগে", "पहले")):
+                prof.smoking_status = "former"
+            elif any(w in low for w in ("yes", "smoke", "হ্যাঁ", "हाँ")):
+                prof.smoking_status = "current"
+
+    # Auto-persist third-party subject_gap answers to relation graph ClinicalFact
+    if latest.question_key.startswith("subject_gap_"):
+        from app.clinical.subject_context import (
+            detect_subject_relation, load_subject_relations, parse_age, parse_gender, upsert_subject_relation_fact,
+        )
+        q_txt = cu.cipher.dec(latest.question_text_enc) if getattr(latest, "question_text_enc", None) else ""
+        q_subj = detect_subject_relation(q_txt)
+        if q_subj.get("is_third_party") and q_subj.get("relation"):
+            target_rel = str(q_subj["relation"])
+            is_fam = bool(q_subj.get("is_family", True))
+        else:
+            rels = await load_subject_relations(db, cu)
+            target_rel = rels[0]["relation"] if rels else "family"
+            is_fam = bool(rels[0].get("is_family", True)) if rels else True
+        age_val = parse_age(answer_text) if latest.question_key == "subject_gap_age" else None
+        g_val = parse_gender(answer_text) if latest.question_key == "subject_gap_gender" else None
+        note_val = answer_text.strip() if latest.question_key == "subject_gap_context" else None
+        await upsert_subject_relation_fact(
+            db, cu, encounter_id=encounter_id, relation=target_rel, is_family=is_fam,
+            age=age_val, gender=g_val,
+            symptoms=[s.name for s in extraction.symptoms],
+            context_note=note_val,
+        )
     await emit_event(
         db,
         cu,
