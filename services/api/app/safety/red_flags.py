@@ -32,16 +32,18 @@ def _p(*xs: str) -> tuple[str, ...]:
 RULES: tuple[Rule, ...] = (
     Rule(
         "cardiac_chest_pain", "emergency",
-        _p(r"chest (pain|tightness|pressure|heaviness)", r"pain in (my |the )?chest", r"heart attack",
+        _p(r"chest (pain|tightness|pressure|heaviness)", r"(pain|tightness) in (my |the )?chest", r"heart attack",
+           r"chest discomfort.{0,45}(breath|sweat|arm|jaw|severe|sudden|rest|faint|dizzy)",
+           r"(breath|sweat|arm|jaw|severe|sudden|rest|faint|dizzy).{0,45}chest discomfort",
            r"(सीने|छाती) (में|मे).{0,20}(दर्द|जकड़न|भारीपन)", r"दिल का दौरा",
            r"(seene|sine|chhati|chati) (me|mein|main) (dard|jakdan|bharipan)", r"dil ka daura",
-           r"বুকে (ব্যথা|চাপ|ভারী|জ্বালা)", r"হার্ট অ্যাটাক", r"buke (byatha|betha|chap)",
+           r"বুকে .{0,15}(ব্যথা|চাপ|ভারী|জ্বালা)", r"বুকে অস্বস্তি.{0,40}(শ্বাস|ঘাম|হাত|অজ্ঞান)", r"হার্ট অ্যাটাক", r"buke .{0,15}(byatha|betha|chap)",
            r"छातीत (दुखत|वेदना)", r"છાતીમાં દુખાવો", r"நெஞ்சு வலி", r"ఛాతీ నొప్పి",
            r"ಎದೆ ನೋವು", r"നെഞ്ചുവേദന", r"ଛାତି ଯନ୍ତ୍ରଣା",
            r"ਛਾਤੀ (ਵਿੱਚ|ਵਿਚ|'ਚ) ?ਦਰਦ", r"ਦਿਲ ਦਾ ਦੌਰਾ", r"বুকু(ৰ|ত) বিষ", r"سینے (میں|مے) (درد|جکڑن|بھاری)", r"دل کا دورہ"),
-        "Chest pain can be a heart attack. Call 108 / 112 now, stop any activity and sit down. "
+        "Chest pain or discomfort with concerning symptoms can be a heart attack. Call 108 / 112 now, stop any activity and sit down. "
         "Do not drive yourself.",
-        "सीने में दर्द दिल का दौरा हो सकता है। तुरंत 108 / 112 पर कॉल करें। खुद गाड़ी न चलाएँ।",
+        "सीने में दर्द या बेचैनी दिल का दौरा हो सकता है। तुरंत 108 / 112 पर कॉल करें। खुद गाड़ी न चलाएँ।",
     ),
     Rule(
         "stroke_fast", "emergency",
@@ -60,11 +62,12 @@ RULES: tuple[Rule, ...] = (
     ),
     Rule(
         "breathing", "emergency",
-        _p(r"(can'?t|cannot|unable to|difficulty|trouble|hard to) breath", r"short(ness)? of breath.{0,20}(severe|sudden|rest)",
+        _p(r"(can'?t|cannot|unable to|difficulty(?: in)?|trouble|hard to) breath", r"breath(?:ing)? (difficulty|trouble|problem|distress)",
+           r"short(ness)? of breath.{0,20}(severe|sudden|rest|chest)?",
            r"gasping", r"choking", r"lips? (turning )?(blue|bluish)",
-           r"सांस (नहीं|लेने में (बहुत )?(दिक्कत|तकलीफ))", r"साँस (नहीं|लेने में (बहुत )?(दिक्कत|तकलीफ))", r"दम घुट",
+           r"सांस (नहीं|लेने में (बहुत )?(दिक्कत|तकलीफ|परेशानी))", r"साँस (नहीं|लेने में (बहुत )?(दिक्कत|तकलीफ|परेशानी))", r"दम घुट",
            r"saans (nahi|lene me (bahut )?(dikkat|takleef))", r"sans nahi aa", r"dam ghut",
-           r"শ্বাস (নিতে কষ্ট|কষ্ট)", r"শ্বাসকষ্ট", r"দম বন্ধ", r"shwash ?koshto|shas nite koshto|dam bondho",
+           r"শ্বাস (নিতে কষ্ট|নিতে অসুবিধা|কষ্ট)", r"শ্বাসকষ্ট", r"দম বন্ধ", r"sh[wa]*sh ?koshto|sh[wa]*sh nite (koshto|osubidha)|d[oa]m bondho",
            r"श्वास घेण्यास त्रास", r"શ્વાસ લેવામાં તકલીફ", r"மூச்சு விட (முடியவில்லை|சிரமம்)",
            r"ఊపిరి (ఆడటం లేదు|తీసుకోవడం కష్టం)", r"ಉಸಿರಾಟದ ತೊಂದರೆ", r"ശ്വാസം മുട്ട", r"ନିଶ୍ୱାସ ନେବାରେ କଷ୍ଟ",
            r"ਸਾਹ (ਨਹੀਂ|ਲੈਣ (ਵਿੱਚ|ਵਿਚ|'ਚ) (ਤਕਲੀਫ਼|ਤਕਲੀਫ|ਮੁਸ਼ਕਲ|ਔਖ))", r"উশাহ (লোৱাত|ল'বলৈ) (কষ্ট|অসুবিধা)|উশাহ বন্ধ",
@@ -159,12 +162,33 @@ RULES: tuple[Rule, ...] = (
         "बुखार के साथ खून आना, लाल चकत्ते, पेट में तेज़ दर्द या बार-बार उल्टी गंभीर डेंगू हो सकता है। आज ही अस्पताल जाएँ।",
     ),
     Rule(
+        "severe_dehydration", "emergency",
+        _p(r"severe dehydration", r"sunken eyes", r"(no|not passing) urine.{0,25}(8|10|12|hours|day)",
+           r"can'?t keep (any )?(fluids|water) down", r"unable to drink.{0,25}(vomiting|diarrh)",
+           r"প্রস্রাব বন্ধ", r"চোখ বসে গেছে", r"একদমই পানি খেতে পারছি না", r"পানি ধরে রাখতে পারছি না",
+           r"पेशाब बंद|आंखें धंस|पानी नहीं रुक रहा"),
+        "Signs of severe dehydration (inability to keep fluids down, sunken eyes, or minimal/no urine) need urgent "
+        "medical care and IV fluids. Call 108 / 112 or go to the nearest emergency department now.",
+        "गंभीर डिहाइड्रेशन (पानी न रुकना, आँखें धंसना या पेशाब बंद होना) में तुरंत आपातकालीन देखभाल ज़रूरी है। 108 / 112 पर कॉल करें।",
+    ),
+    Rule(
+        "serious_injury", "emergency",
+        _p(r"(head injury|hit (my|his|her) head).{0,35}(vomit|unconscious|confused|bleeding|drowsy)",
+           r"bone (sticking out|protruding|visible)", r"open fracture", r"(deep|severe|major) burn", r"electrocut",
+           r"মাথায় গুরুতর আঘাত", r"হাড় ভেঙে বেরিয়ে", r"গভীরভাবে পুড়ে গেছে",
+           r"सिर में गंभीर चोट|हड्डी बाहर|गहरा जल"),
+        "A serious injury (head trauma with vomiting/confusion, open fracture, deep burn, or electrocution) needs "
+        "immediate emergency care. Call 108 / 112 now.",
+        "गंभीर चोट (सिर की चोट के साथ उल्टी/बेहोशी, खुली हड्डी टूटना या गहरा जलना) में तुरंत 108 / 112 पर कॉल करें।",
+    ),
+    Rule(
         "self_harm", "mental_health",
         _p(r"(kill|hurt|harm) (myself|me)", r"suicid", r"end (my|this) life", r"want to die", r"no reason to live",
            r"आत्महत्या", r"(खुद को|अपने आप को) (मार|खत्म|नुकसान)", r"मर जाना चाहता", r"मर जाना चाहती",
            r"jeena nahi chahta|jeena nahi chahti", r"khudkushi|खुदकुशी", r"marna chahta|marna chahti",
            r"আত্মহত্যা", r"आत्महत्या", r"આત્મહત્યા", r"தற்கொலை", r"ఆత్మహత్య", r"ಆತ್ಮಹತ್ಯೆ", r"ആത്മഹത്യ", r"ଆତ୍ମହତ୍ୟା",
-           r"ਖ਼?ੁਦਕੁਸ਼ੀ|ਆਤਮ ?ਹੱਤਿਆ", r"ਮਰਨਾ ਚਾਹੁੰਦ", r"আত্মহত্যা|আত্মঘাতী", r"মৰিব বিচাৰ",
+           r"ਖ਼?ੁਦਕੁਸ਼ੀ|ਆਤਮ ?ਹੱਤਿਆ", r"ਮਰਨਾ ਚਾਹੁੰਦ", r"আত্মহত্যা|আত্মঘাতী|মরতে ইচ্ছে|বাঁচতে ইচ্ছে করছে না|নিজেকে শেষ",
+           r"মৰিব বিচাৰ", r"nijeke shesh|bachte icche korche na|morte icche",
            r"خودکشی|خود کشی", r"مرنا چاہت", r"(خود|اپنے آپ) کو (مار|ختم|نقصان)"),
         "You don't have to go through this alone. Please call Tele-MANAS at 14416 (free, 24×7, many Indian "
         "languages) or 112 if you are in immediate danger. If you can, reach out to someone you trust right now.",
@@ -254,12 +278,33 @@ def _has_positive_match(text: str, pats: list[re.Pattern[str]]) -> bool:
     return False
 
 
+_INTERMITTENT_OR_MILD = re.compile(
+    r"(?i)(?:sometimes|occasionally|intermittent(?:ly)?|on and off|mild|minor|last week|last month|months? ago|"
+    r"dust|allerg(?:y|ic)|ধুলোয়|ধুলো|অ্যালার্জি|"
+    r"মাঝে\s*মাঝে|কখনো\s*কখনো|হালকা|আগেও\s*হয়েছে|অল্প|कभी[- ]कभी|हल्का|बीच[- ]बीच)"
+)
+_ACUTE_AMPLIFIER = re.compile(
+    r"(?i)(?:severe|intense|crushing|squeezing|tearing|sudden(?:ly)?|spreading|radiating|left arm|jaw|sweat(?:ing)?|"
+    r"faint(?:ed|ing)?|passed out|blacked out|can'?t breathe|cannot breathe|gasping|choking|blue|right now|"
+    r"তীব্র|অসহ্য|হঠাৎ|ঘাম|অজ্ঞান|দম\s*বন্ধ|বাঁ\s*হাতে|পসীনা|पसीना|तेज़|असहनीय|prochondo|dom\s*bondho)"
+)
+
+
 def check(text: str, lang: str = "en", age_years: float | None = None) -> RedFlagResult:
     text = _nfc(text or "")
     hits: list[Rule] = []
     for rule, pats in _COMPILED:
         if _has_positive_match(text, pats):
-            hits.append(rule)
+            if rule.id in ("cardiac_chest_pain", "breathing") and _INTERMITTENT_OR_MILD.search(text) and not _ACUTE_AMPLIFIER.search(text):
+                hits.append(Rule(
+                    rule.id, "urgent", rule.patterns,
+                    "Recurring or mild chest/breathing discomfort needs prompt clinical evaluation by a doctor. "
+                    "If it becomes severe, sudden, or comes with sweating or faintness, call 108 / 112 immediately.",
+                    "बार-बार होने वाले या हल्के सीने/सांस के लक्षणों की जल्द डॉक्टर से जांच कराएँ। "
+                    "यदि दर्द तेज़ हो, पसीना आए या बेहोशी लगे तो तुरंत 108 / 112 पर कॉल करें।",
+                ))
+            else:
+                hits.append(rule)
 
     # Profile-aware rule: fever in an infant under 3 months is always an emergency.
     if age_years is not None and age_years < 0.25 and re.search(r"fever|बुखार|bukhar|temperature|ज्वर|জ্বর|জ্বৰ|காய்ச்சல்|జ్వరం|ਬੁਖ਼ਾਰ|ਬੁਖਾਰ|بخار", text, re.I):

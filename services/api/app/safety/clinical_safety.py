@@ -85,14 +85,15 @@ def evaluate_safety(
                 }[sx.name]
                 if tag not in rules:
                     rules.append(tag)
-                    sev = "emergency"
-                    if not numbers:
-                        numbers = ["108", "112"]
-                    if not messages:
-                        fallback_msg = red_flags.LEAD.get(lang, {}).get("emergency") or (
-                            "Possible emergency warning sign detected. Please call 108 / 112 or seek emergency care immediately."
-                        )
-                        messages.append(fallback_msg)
+                    if rf.kind != "urgent" or sx.name == "fainting":
+                        sev = "emergency"
+                        if not numbers:
+                            numbers = ["108", "112"]
+                        if not messages:
+                            fallback_msg = red_flags.LEAD.get(lang, {}).get("emergency") or (
+                                "Possible emergency warning sign detected. Please call 108 / 112 or seek emergency care immediately."
+                            )
+                            messages.append(fallback_msg)
             if sx.severity == "unknown":
                 unknowns.append(f"{sx.name} severity")
             if sx.temporal.is_temporal_uncertain:
