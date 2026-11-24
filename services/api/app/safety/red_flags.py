@@ -35,7 +35,7 @@ RULES: tuple[Rule, ...] = (
         _p(r"chest (pain|tightness|pressure|heaviness)", r"pain in (my |the )?chest", r"heart attack",
            r"(सीने|छाती) (में|मे).{0,20}(दर्द|जकड़न|भारीपन)", r"दिल का दौरा",
            r"(seene|sine|chhati|chati) (me|mein|main) (dard|jakdan|bharipan)", r"dil ka daura",
-           r"বুকে (ব্যথা|চাপ|ভারী|জ্বালা)", r"হার্ট অ্যাটাক", r"buke (byatha|betha|chap)",
+           r"বুকে? (ব্যথা|চাপ|ভারী|জ্বালা)", r"হার্ট অ্যাটাক", r"buke? (byatha|betha|chap)",
            r"छातीत (दुखत|वेदना)", r"છાતીમાં દુખાવો", r"நெஞ்சு வலி", r"ఛాతీ నొప్పి",
            r"ಎದೆ ನೋವು", r"നെഞ്ചുവേദന", r"ଛାତି ଯନ୍ତ୍ରଣା",
            r"ਛਾਤੀ (ਵਿੱਚ|ਵਿਚ|'ਚ) ?ਦਰਦ", r"ਦਿਲ ਦਾ ਦੌਰਾ", r"বুকু(ৰ|ত) বিষ", r"سینے (میں|مے) (درد|جکڑن|بھاری)", r"دل کا دورہ"),

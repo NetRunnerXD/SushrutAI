@@ -24,16 +24,16 @@ ANSWER_LIKELIHOOD_FLOOR = 0.02  # avoid zeroing a condition on one answer
 TRIAGE_SCHEMA = {
     "type": "object",
     "properties": {
-        "conditions": {"type": "array", "minItems": 3, "maxItems": 6, "items": {"type": "object", "properties": {
+        "conditions": {"type": "array", "minItems": 3, "maxItems": 7, "items": {"type": "object", "properties": {
             "name": {"type": "string"}, "prior": {"type": "number"},
             "specialist": {"type": "string", "enum": SPECIALISTS}},
             "required": ["name", "prior", "specialist"]}},
-        "findings": {"type": "array", "minItems": 4, "maxItems": 10, "items": {"type": "object", "properties": {
+        "findings": {"type": "array", "minItems": 4, "maxItems": 12, "items": {"type": "object", "properties": {
             "id": {"type": "string"}, "question": {"type": "string"},
             "red_flag": {"type": "boolean"},
             "topic": {"type": "string", "enum": ["general", "pregnancy", "menstrual", "sexual", "child", "elderly"]},
-            "common_in": {"type": "array", "maxItems": 6, "items": {"type": "string"}},
-            "rare_in": {"type": "array", "maxItems": 6, "items": {"type": "string"}}},
+            "common_in": {"type": "array", "maxItems": 7, "items": {"type": "string"}},
+            "rare_in": {"type": "array", "maxItems": 7, "items": {"type": "string"}}},
             "required": ["id", "question", "common_in", "rare_in", "red_flag", "topic"]}},
     },
     "required": ["conditions", "findings"],
@@ -69,20 +69,20 @@ def build_prompt(complaint: str, profile: str, lang_name: str, season_hint: str,
     return f"""A person in India describes: "{complaint}"
 Patient context: {profile}. {season_hint}
 
-Task (for a symptom-checker that asks yes/no questions):
-1. List 3–6 candidate conditions that could explain this, including common Indian causes where relevant,
+Task (for a kind family doctor narrowing down a patient's symptoms one question at a time):
+1. List 4-7 candidate conditions that could explain this, including common Indian causes where relevant,
    with a prior probability for each (priors should sum to about 1) given the context.
    Always include at least one serious condition that must not be missed if plausible.{_required_line(required)}
+   `specialist` must be one of: {", ".join(SPECIALISTS[:10])}, or "General Physician".
 2. Do NOT ask about anything the person already said (it is known to be present).
-   List 6–10 yes/no findings (symptoms/signs a layperson can answer) that best DISTINGUISH these conditions.
-   Include the danger signs a doctor would check for this complaint, with `red_flag` true.
+   List 7-12 simple yes/no findings (one everyday symptom/sign per question) that best DISTINGUISH these conditions.
+   Include the danger signs a doctor would check first, with `red_flag` true.
    For each finding, `common_in` = the conditions (exact names from your list) in which this finding is usually
-   present, and `rare_in` = the conditions in which it is usually absent. A finding should be common in some
-   conditions and rare in others — that is what makes it useful.
-   Write each `question` in {lang_name}, short and simple, answerable with yes / no / not sure.
-   Set `topic` (e.g. "pregnancy" for pregnancy questions).
-Use short ids (f1, f2, …) and compact JSON without extra whitespace.
-Respond with JSON only."""
+   present, and `rare_in` = the conditions in which it is usually absent.
+   Write each `question` in warm, gentle, everyday spoken {lang_name} that an elderly or rural person with no medical training immediately understands (short, calm, easy to hear aloud, no jargon).
+   Set `topic` to one of: "general", "pregnancy", "menstrual", "sexual", "child", "elderly".
+Use short ids (f1, f2, ...) and return ONLY valid JSON with this exact shape:
+{{"conditions": [{{"name": "Condition A", "prior": 0.4, "specialist": "General Physician"}}], "findings": [{{"id": "f1", "question": "Question?", "red_flag": false, "topic": "general", "common_in": ["Condition A"], "rare_in": ["Condition B"]}}]}}"""
 
 
 def _required_line(required: list[str] | None) -> str:
@@ -167,17 +167,19 @@ def _same_question(q: str, findings: list[dict]) -> bool:
 
 
 def init_state(llm: dict, *, sex: str | None, age: float | None, pregnant: bool = False) -> dict:
-    conds = llm.get("conditions", [])[:6]
+    conds = llm.get("conditions", [])[:7]
     n = len(conds)
     if n < 2:
         raise ValueError("Triage needs at least two candidate conditions")
     names = [c["name"] for c in conds]
     high_risk = pregnant or (age is not None and (age < 5 or age >= 65))
-    numeric = [likelihood_row(f, names) for f in llm.get("findings", [])[:10]
+    numeric = [likelihood_row(f, names) for f in llm.get("findings", [])[:12]
                if not ("common_in" in f or "rare_in" in f)]
     template = is_template_table([r for r in numeric if r])
     findings = []
     for f in llm.get("findings", [])[:10]:
+        if not isinstance(f, dict) or not f.get("question"):
+            continue
         lk = likelihood_row(f, names)
         if lk is None:
             continue
@@ -185,17 +187,17 @@ def init_state(llm: dict, *, sex: str | None, age: float | None, pregnant: bool 
             if not f.get("red_flag"):
                 continue  # meaningless numbers: the answer would move beliefs at random
             lk = [0.5] * n  # still ask danger signs (a 'yes' forces "see a doctor today"), but don't reweight
-        topic = f.get("topic", "general")
+        topic = str(f.get("topic") or "general").lower()
         # Personalisation filters
         if topic in ("pregnancy", "menstrual") and (sex == "male" or (age is not None and (age < 10 or age > 55))):
             continue
         if topic == "child" and age is not None and age >= 18:
             continue
-        fid = re.sub(r"\W+", "_", str(f["id"]))[:40]
+        fid = re.sub(r"\W+", "_", str(f.get("id") or f"f{len(findings) + 1}"))[:40]
         if _same_question(f["question"], findings) or any(x["id"] == fid for x in findings):
             continue  # small models repeat a question in the plan: it would be asked twice
-        findings.append({"id": fid, "question": f["question"], "red_flag": bool(f.get("red_flag")), "likelihoods": lk})
-    if len(findings) < 2:
+        findings.append({"id": fid, "question": str(f["question"]).strip(), "red_flag": bool(f.get("red_flag")), "likelihoods": lk})
+    if len(findings) < 1:
         raise ValueError("Too few usable questions")
     return {
         "conditions": [{"name": c["name"], "urgency": condition_urgency(c["name"], high_risk=high_risk),
