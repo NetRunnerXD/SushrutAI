@@ -256,3 +256,135 @@ def parse_lab_report(text: str, *, sex: str | None = None, age_years: float | No
             seen.add(r.test_name.lower())
             out.append(r)
     return out
+
+
+LAB_EDUCATION: dict[str, dict[str, str]] = {
+    "718-7": {
+        "name": "Haemoglobin (Hb)",
+        "measures": "Oxygen-carrying protein in red blood cells.",
+        "low": "May indicate anaemia (iron, B12, or folate deficiency, or blood loss), causing tiredness or breathlessness.",
+        "high": "Can occur with dehydration, smoking, or high-altitude adaptation.",
+    },
+    "6690-2": {
+        "name": "WBC (Total Leukocyte Count)",
+        "measures": "White blood cells that fight infection and inflammation.",
+        "low": "Can be seen in some viral infections, bone marrow suppression, or medication effects.",
+        "high": "Often reflects infection, inflammation, or physiological stress.",
+    },
+    "777-3": {
+        "name": "Platelets",
+        "measures": "Blood cells that help clotting and prevent bleeding.",
+        "low": "Needs attention in fever (e.g. dengue/viral) or bleeding risk; very low counts need urgent review.",
+        "high": "Often reactive to inflammation or iron deficiency.",
+    },
+    "1558-6": {
+        "name": "Fasting Blood Glucose",
+        "measures": "Blood sugar after 8+ hours of fasting.",
+        "low": "Hypoglycaemia (<70 mg/dL) can cause shakiness, sweating, or dizziness.",
+        "high": "100–125 mg/dL suggests prediabetes; >=126 mg/dL on repeat testing suggests diabetes.",
+    },
+    "4548-4": {
+        "name": "HbA1c",
+        "measures": "Average blood glucose over the past 2–3 months.",
+        "low": "Rarely low unless anaemia or red-cell turnover affects the reading.",
+        "high": "5.7–6.4% indicates prediabetes; >=6.5% indicates diabetes range.",
+    },
+    "3016-3": {
+        "name": "TSH (Thyroid Stimulating Hormone)",
+        "measures": "Pituitary signal regulating thyroid hormone production.",
+        "low": "Often points toward an overactive thyroid (hyperthyroidism) or excess thyroid dose.",
+        "high": "Often points toward an underactive thyroid (hypothyroidism).",
+    },
+    "2160-0": {
+        "name": "Serum Creatinine",
+        "measures": "Kidney filtration marker.",
+        "low": "Usually reflects lower muscle mass and is rarely a concern.",
+        "high": "May reflect dehydration, kidney strain, or reduced kidney filtration.",
+    },
+    "1742-6": {
+        "name": "ALT / SGPT",
+        "measures": "Liver enzyme sensitive to liver cell irritation.",
+        "low": "Not clinically concerning.",
+        "high": "Can rise with fatty liver, viral hepatitis, alcohol, or certain medicines.",
+    },
+    "2093-3": {
+        "name": "Total Cholesterol",
+        "measures": "Combined blood cholesterol (LDL + HDL + VLDL).",
+        "low": "Usually not harmful unless severely low.",
+        "high": "Elevated levels (>200 mg/dL) increase long-term cardiovascular risk.",
+    },
+    "13457-7": {
+        "name": "LDL Cholesterol",
+        "measures": "Low-density lipoprotein ('bad' cholesterol).",
+        "low": "Generally protective.",
+        "high": "Higher values (>100 mg/dL, or lower targets in diabetes/heart disease) raise plaque risk.",
+    },
+    "2571-8": {
+        "name": "Triglycerides",
+        "measures": "Blood fats influenced by diet, sugars, and metabolic health.",
+        "low": "Usually not concerning.",
+        "high": "Above 150 mg/dL increases metabolic and heart risk; very high levels (>500) risk pancreatitis.",
+    },
+    "1989-3": {
+        "name": "Vitamin D (25-OH)",
+        "measures": "Vitamin D stores supporting bone, muscle, and immune health.",
+        "low": "Deficiency (<20 ng/mL) or insufficiency (20–29 ng/mL) is very common and can cause bone/muscle ache.",
+        "high": "Excess (>100 ng/mL) usually comes from high-dose supplementation.",
+    },
+    "2132-9": {
+        "name": "Vitamin B12",
+        "measures": "Vitamin needed for nerve function and red blood cell production.",
+        "low": "Can cause fatigue, tingling/numbness, memory fog, or anaemia (common in vegetarian diets or metformin use).",
+        "high": "Usually due to supplements, occasionally liver/blood conditions.",
+    },
+}
+
+
+def educate_lab_mentions(text: str, *, sex: str | None = None, age_years: float | None = None) -> str:
+    """Build educational reference-range context for any lab tests or values mentioned in user text."""
+    t = (text or "").strip()
+    if not t:
+        return ""
+    notes: list[str] = []
+    seen: set[str] = set()
+
+    for row in parse_lab_report(t, sex=sex, age_years=age_years):
+        loinc = row.loinc_code
+        if not loinc or loinc in seen:
+            continue
+        seen.add(loinc)
+        edu = LAB_EDUCATION.get(loinc)
+        rng = (row.ref_low, row.ref_high) if (row.ref_low is not None or row.ref_high is not None) else default_range(loinc, sex=sex, age_years=age_years)
+        unit = row.unit or (REFERENCE_RANGES.get(loinc, ("", {}))[0])
+        val = row.value
+        status = "Normal"
+        if row.flag == "L" or (rng and val is not None and rng[0] is not None and val < rng[0]):
+            status = "Low (below normal range)"
+        elif row.flag == "H" or (rng and val is not None and rng[1] is not None and val > rng[1]):
+            status = "High (above normal range)"
+        rng_str = f"{rng[0] if rng and rng[0] is not None else '—'} to {rng[1] if rng and rng[1] is not None else '—'} {unit}".strip() if rng else unit
+        line = f"- {row.test_name}: reported {val} {unit} [{status}; typical normal range: {rng_str}]."
+        if edu:
+            line += f" {edu['measures']} Low: {edu['low']} High: {edu['high']}"
+        notes.append(line)
+
+    low_t = t.lower()
+    for loinc, edu in LAB_EDUCATION.items():
+        if loinc in seen:
+            continue
+        key_words = [w.strip("()") for w in edu["name"].lower().split() if len(w.strip("()")) >= 3]
+        if any(re.search(rf"\b{re.escape(kw)}\b", low_t) for kw in key_words):
+            rng = default_range(loinc, sex=sex, age_years=age_years)
+            unit = REFERENCE_RANGES.get(loinc, ("", {}))[0]
+            rng_str = f"{rng[0] if rng and rng[0] is not None else '—'} to {rng[1] if rng and rng[1] is not None else '—'} {unit}".strip() if rng else unit
+            notes.append(
+                f"- {edu['name']} (typical normal range: {rng_str}): {edu['measures']} "
+                f"If low: {edu['low']} If high: {edu['high']}"
+            )
+            seen.add(loinc)
+            if len(notes) >= 4:
+                break
+
+    if not notes:
+        return ""
+    return "LAB REFERENCE RANGES & PATIENT EDUCATION:\n" + "\n".join(notes[:5])

@@ -75,9 +75,14 @@ _SYMPTOM_LEXICON: tuple[tuple[str, re.Pattern[str], str | None], ...] = (
     ("diarrhea", re.compile(r"(?i)\b(?:diarrh(?:ea|oea)|loose\s+motions?|watery\s+stool)\b|পাতলা\s*পায়খানা|পেট\s*খারাপ|dast|दस्त", re.U), "abdomen"),
     ("abdominal pain", re.compile(r"(?i)(?:stomach|belly|abdominal)\s+(?:pain|ache|cramps?)|পেটে\s*ব্যথা|পেট\s*ব্যথা|pet\s*betha|pet\s*dard|पेट\s*दर्द", re.U), "abdomen"),
     ("vision darkening", re.compile(r"(?i)(?:vision|eyes?)\s+(?:becomes?|gets?|goes?|turning)\s+(?:dark|black|blurry)|blurred\s+vision|চোখ\s*(?:অন্ধকার|ঝাপসা)|chokh\s*ondhokar|आंखों\s*के\s*सामने\s*अंधेरा", re.U), "eyes"),
-    ("fainting", re.compile(r"(?i)\b(?:faint(?:ed|ing)?|passed\s+out|blacked\s+out|loss\s+of\s+consciousness|unconscious)\b|অজ্ঞান|মাথা\s*ঘুরে\s*পড়ে|oggan|behosh|बेहोश", re.U), "neurological"),
+    ("fainting", re.compile(r"(?i)\b(?:faint(?:ed|ing)?|passed\s+out|blacked\s+out|blackout|loss\s+of\s+consciousness|unconscious)\b|অজ্ঞান|মাথা\s*ঘুরে\s*পড়ে|oggan|behosh|बेहोश", re.U), "neurological"),
     ("rash", re.compile(r"(?i)\b(?:rash|hives|itching|itchy\s+skin)\b|র‍্যাশ|চুলকানি|ফুসকুড়ি|khujli|खुजली|चकत्ते", re.U), "skin"),
-    ("body ache", re.compile(r"(?i)\b(?:body\s+ache|body\s+pain|muscle\s+pain|joint\s+pain)\b|গায়ে\s*ব্যথা|গা\s*হাত\s*পা\s*ব্যথা|badan\s*dard|बदन\s*दर्द", re.U), "musculoskeletal"),
+    ("body ache", re.compile(r"(?i)\b(?:body\s+ache|body\s+pain|muscle\s+pain|joint\s+pain|back\s+pain|neck\s+pain|knee\s+pain)\b|গায়ে\s*ব্যথা|কোমর\s*ব্যথা|ঘাড়\s*ব্যথা|গা\s*হাত\s*পা\s*ব্যথা|badan\s*dard|बदन\s*दर्द", re.U), "musculoskeletal"),
+    ("chills", re.compile(r"(?i)\b(?:chills|rigors?|shivering)\b|শীত\s*লাগ|কাঁপুনি|thand\s*lag|कंपकंपी", re.U), "generalized"),
+    ("acidity", re.compile(r"(?i)\b(?:acidity|acid\s+reflux|heartburn|bloating|indigestion)\b|অম্বল|গ্যাস|বুক\s*জ্বালা", re.U), "stomach"),
+    ("constipation", re.compile(r"(?i)\b(?:constipat(?:ed|ion))\b|কোষ্ঠকাঠিন্য|kabz|कब्ज", re.U), "abdomen"),
+    ("palpitations", re.compile(r"(?i)\b(?:palpitations?|fast\s+heartbeat|heart\s+racing)\b|বুক\s*ধড়ফড়|ghabrahat|घबराहट", re.U), "chest"),
+    ("sore throat", re.compile(r"(?i)\b(?:sore\s+throat|throat\s+pain)\b|গলা\s*ব্যথা|গলা\s*খুশখুশ|gale\s*me\s*dard", re.U), "throat"),
     ("burning urination", re.compile(r"(?i)burning\s+(?:while\s+|when\s+)?urinat|painful\s+urination|প্রস্রাবে\s*জ্বালা|peshab\s*me\s*jalan|पेशाब\s*में\s*जलन", re.U), "urinary"),
 )
 
@@ -178,10 +183,26 @@ def _sentence_for(text: str, start: int, end: int) -> str:
     return text[lo:hi].strip()[:500]
 
 
+_CLAUSE_STOP = re.compile(r"[.!?।;]|\b(?:but|however|except|though|although|yet|while|whereas|kintu|কিন্তু|lekin|लेकिन)\b", re.I)
+_NEG_CUE = re.compile(
+    r"(?i)\b(?:no|not|never|without|neither|haven'?t\s+had|don'?t\s+have|do\s+not\s+have|denies|denied)\b|"
+    r"(?:কোনো|কোনও|নাই|নেই|nahi|नहीं)"
+)
+_POS_VERB = re.compile(r"(?i)\b(?:have|has|had|feel|feeling|feels|got|having|experiencing)\b")
+_LIST_SEP = re.compile(r"(?i)(?:\b(?:or|nor|and|বা|ও|या)\b|[,/])")
+
+
 def _is_negated(text: str, start: int, end: int) -> bool:
-    before = text[max(0, start - 35):start]
+    before = text[max(0, start - 55):start]
     after = text[end:min(len(text), end + 28)]
-    return bool(_NEG_PREFIX.search(before) or _NEG_SUFFIX.search(after))
+    if _NEG_PREFIX.search(before[-35:]) or _NEG_SUFFIX.search(after):
+        return True
+    clause = _CLAUSE_STOP.split(before)[-1]
+    neg_matches = list(_NEG_CUE.finditer(clause))
+    if not neg_matches:
+        return False
+    tail = clause[neg_matches[-1].end():]
+    return bool(_LIST_SEP.search(tail)) and not _POS_VERB.search(tail)
 
 
 def _make_id(prefix: str) -> str:
@@ -556,6 +577,12 @@ def _grounded_in_text(quote: str, text: str) -> bool:
     return hits >= max(1, len(q_words) // 2)
 
 
+_MED_NOUN_CUE = re.compile(
+    r"(?i)\b(?:pill|tablet|tab|capsule|cap|medicine|medication|syrup|drug|drop|drops|ointment|inhaler|injection|goli|dawa|dawai|davai)\b|"
+    r"বড়ি|ওষুধ|দওয়া|दवा|दवाई|गोली|सिरप"
+)
+
+
 async def extract_clinical_turn(
     text_for_nlp: str,
     *,
@@ -566,9 +593,11 @@ async def extract_clinical_turn(
     source: str = "patient_report",
     reference_dt: datetime | None = None,
     use_llm: bool = True,
+    model_pref: str = "balanced",
+    allow_cloud: bool = False,
 ) -> ClinicalExtractionPayload:
     """Full clinical extraction pipeline: deterministic baseline + optional constrained LLM pass
-    with strict Pydantic validation, one constrained retry on error, and hallucination grounding."""
+    (via Gemini/cloud when chosen and consented, or local Ollama) with strict Pydantic validation."""
     base = extract_deterministic(
         text_for_nlp,
         patient_id=patient_id,
@@ -582,10 +611,13 @@ async def extract_clinical_turn(
         return base
 
     from app.config import get_settings
-    from app.llm.providers import ProviderUnavailable, ollama
+    from app.llm.providers import ProviderUnavailable, clinical_chat, gemini_model_for, ollama
 
     s = get_settings()
     model = s.instant_llm_model or s.fast_llm_model or s.llm_model
+    use_remote = (model_pref in ("gemini", "gemini_fast") and bool(gemini_model_for(model_pref))) or (
+        model_pref == "cloud" and allow_cloud
+    )
     safe_text = sanitize_for_prompt(text_for_nlp)
     msgs = [
         {"role": "system", "content": _EXTRACT_SYSTEM_PROMPT},
@@ -596,14 +628,23 @@ async def extract_clinical_turn(
     src_literal = source if source in ("patient_report", "voice_transcript", "chat_text", "manual") else "patient_report"
     for attempt in range(2):
         try:
-            res = await ollama().chat(
-                model,
-                msgs,
-                schema=_EXTRACT_LLM_SCHEMA,
-                temperature=0.0,
-                num_ctx=2048,
-                num_predict=500,
-            )
+            if use_remote:
+                res = await clinical_chat(
+                    msgs,
+                    schema=_EXTRACT_LLM_SCHEMA,
+                    allow_cloud=allow_cloud,
+                    num_predict=500,
+                    model_pref=model_pref,
+                )
+            else:
+                res = await ollama().chat(
+                    model,
+                    msgs,
+                    schema=_EXTRACT_LLM_SCHEMA,
+                    temperature=0.0,
+                    num_ctx=2048,
+                    num_predict=500,
+                )
             parsed = res.json()
             if not isinstance(parsed, dict):
                 raise ValueError("LLM extraction did not return a JSON object")
@@ -659,6 +700,13 @@ async def extract_clinical_turn(
             continue
         existing_names.add(cname)
         t_info = extract_temporal(quote, reference_dt=reference_dt)
+        present_val = raw_sx.get("present")
+        if present_val is not False:
+            pos = quote.lower().find(cname)
+            if pos < 0 and cname.split():
+                pos = quote.lower().find(cname.split()[0])
+            if pos >= 0 and _is_negated(quote, pos, pos + len(cname)):
+                present_val = False
         sx_obj = SymptomExtracted(
             symptom_id=_make_id("sx"),
             name=cname,
@@ -674,7 +722,7 @@ async def extract_clinical_turn(
             functional_impact=raw_sx.get("functional_impact"),
             progression=raw_sx.get("progression") or t_info.progression,
             status="resolved" if raw_sx.get("progression") == "resolved" else "active",
-            present=raw_sx.get("present"),
+            present=present_val,
             temporal=t_info,
             confidence=0.78,
             verification_status="patient_reported",
@@ -692,6 +740,8 @@ async def extract_clinical_turn(
         if not rep or rep.lower() in known_meds or not _grounded_in_text(quote, safe_text):
             continue
         is_unid = bool(raw_md.get("unidentified"))
+        if is_unid and not _MED_NOUN_CUE.search(quote) and not _MED_NOUN_CUE.search(rep):
+            continue  # guard against LLM mistaking symptom/phrase like "matha ghurche" for unknown medication
         base.medications.append(
             MedicationExtracted(
                 medication_name_reported=rep,
