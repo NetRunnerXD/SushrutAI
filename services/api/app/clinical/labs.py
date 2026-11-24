@@ -95,6 +95,9 @@ class LabLine:
     ref_high: float | None
     flag: str | None
     range_source: str | None = None  # "report" (printed on it) | "default" (REFERENCE_RANGES) | None
+    confidence: float = 1.0
+    needs_user_confirmation: bool = False
+    uncertainty_reasons: tuple[str, ...] = ()
 
     def as_dict(self) -> dict:
         return self.__dict__.copy()
@@ -253,6 +256,48 @@ def parse_lab_report(text: str, *, sex: str | None = None, age_years: float | No
                 r.flag = ("L" if rng[0] is not None and r.value < rng[0]
                           else "H" if rng[1] is not None and r.value > rng[1] else "N")
         if r and (r.loinc_code or r.ref_low is not None or r.ref_high is not None) and r.test_name.lower() not in seen:
+            reasons: list[str] = []
+            if not r.loinc_code:
+                reasons.append("unmapped_loinc")
+            if r.value is None:
+                reasons.append("non_numeric_value")
+            if not r.unit:
+                reasons.append("missing_unit")
+            if r.ref_low is None and r.ref_high is None:
+                reasons.append("missing_reference_range")
+            r.uncertainty_reasons = tuple(reasons)
+            r.confidence = round(max(0.35, 1.0 - 0.18 * len(reasons)), 2)
+            r.needs_user_confirmation = bool(reasons)
             seen.add(r.test_name.lower())
             out.append(r)
     return out
+
+
+_REPORT_DATE_RE = re.compile(
+    r"(?i)(?:report\s*date|collected\s*on|sample\s*date|date)\s*[:\-]?\s*"
+    r"(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}|\d{4}[/\-]\d{1,2}[/\-]\d{1,2}|\d{1,2}\s+[A-Za-z]{3,9}\s+\d{2,4})"
+)
+
+
+def extract_report_date(text: str) -> str | None:
+    """Extract report/collection date string from lab report OCR text."""
+    m = _REPORT_DATE_RE.search(text or "")
+    return m.group(1).strip() if m else None
+
+
+def parse_lab_report_structured(
+    text: str,
+    *,
+    sex: str | None = None,
+    age_years: float | None = None,
+    pregnant: bool = False,
+) -> dict:
+    """Return structured lab report extraction with report_date and user-confirmation flags."""
+    lines = parse_lab_report(text, sex=sex, age_years=age_years, pregnant=pregnant)
+    return {
+        "report_date": extract_report_date(text),
+        "lines": [line.as_dict() for line in lines],
+        "requires_user_confirmation": any(line.needs_user_confirmation for line in lines),
+        "total_tests": len(lines),
+        "flagged_abnormal": sum(1 for line in lines if line.flag in ("H", "L")),
+    }

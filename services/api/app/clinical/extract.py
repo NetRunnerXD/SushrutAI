@@ -61,24 +61,70 @@ _HI_DIGITS = str.maketrans("०१२३४৫৬৭৮৯", "0123456789")
 
 # Canonical symptom -> multilingual match patterns + anatomical location hint
 _SYMPTOM_LEXICON: tuple[tuple[str, re.Pattern[str], str | None], ...] = (
-    ("dizziness", re.compile(r"(?i)\b(?:dizz(?:y|iness)|vertigo|spin(?:s|ning)?|lightheaded|giddy|chakkar|chakar)\b|everything\s+(?:starts\s+)?spinning|মাথা\s*(?:ঘুরছে|ঘোরে|ঘোরা)|matha\s*ghur|चक्कर", re.U), "head"),
+    ("dizziness", re.compile(r"(?i)\b(?:dizz(?:y|iness)|vertigo|spin(?:s|ning)?|lightheaded|giddy|chakkar|chakar)\b|everything\s+(?:starts\s+)?spinning|মাথা\s*(?:ঘুরছে|ঘোরে|ঘোরা)|matha\s*ghur\w*|चक्कर", re.U), "head"),
     ("head heaviness", re.compile(r"(?i)head\s+feels?\s+heavy|heavy\s+head|heaviness\s+in\s+(?:my\s+)?head|মাথা\s*ভারী|matha\s*bhari|सर\s*भारी", re.U), "head"),
     ("headache", re.compile(r"(?i)\bheadache\b|head\s+(?:hurts|pain|ache)|মাথাব্যথা|মাথা\s*ব্যথা|matha\s*betha|sir\s*dard|sar\s*dard|सिर\s*दर्द|सिरदर्द", re.U), "head"),
     ("weakness", re.compile(r"(?i)\b(?:weak(?:ness)?|fatigue|tired(?:ness)?|exhausted|kamzori|kamjori|thakan)\b|দুর্বল(?:তা)?|ক্লান্তি|durbol|কমজোরি|कमजोरी|थकान", re.U), "generalized"),
     ("malaise", re.compile(r"(?i)not\s+(?:been\s+)?feeling\s+well|feeling\s+unwell|unwell|শরীর\s*ভালো\s*(?:লাগছে\s*না|নেই)|শরীর\s*খারাপ|shorir\s*kharap|tabiyat\s*kharab|तबीयत\s*खराब", re.U), "generalized"),
-    ("fever", re.compile(r"(?i)\b(?:fever|febrile|high\s+temp(?:erature)?|bukhar|bukhaar|jwor)\b|জ্বর|গা\s*গরম|jor\s+asche|बुखार|ज्वर", re.U), "generalized"),
+    ("fever", re.compile(r"(?i)\b(?:fever|febrile|high\s+temp(?:erature)?|bukhar|bukhaar|jwor|jor)\b|জ্বর|গা\s*গরম|গায়ে\s*জ্বর|gaye\s*jor(?:\s*jor)?|jor\s+asche|बुखार|ज्वर", re.U), "generalized"),
     ("cough", re.compile(r"(?i)\bcough(?:ing)?\b|khansi|khaansi|কাশি|কাঁশি|kashi|खांसी|खाँसी", re.U), "chest/throat"),
-    ("chest pain", re.compile(r"(?i)chest\s+(?:pain|tightness|pressure|heaviness)|pain\s+in\s+(?:my\s+)?chest|বুকে\s*(?:ব্যথা|চাপ)|buke\s*(?:byatha|betha|chap)|सीने\s*में\s*दर्द|seene\s*me\s*dard", re.U), "chest"),
-    ("shortness of breath", re.compile(r"(?i)short(?:ness)?\s+of\s+breath|breathless(?:ness)?|(?:difficulty|trouble|hard\s+to)\s+breath|শ্বাসকষ্ট|শ্বাস\s*নিতে\s*কষ্ট|দম\s*বন্ধ|shwash\s*koshto|saans\s*(?:lene|phool)", re.U), "chest"),
+    ("chest pain", re.compile(r"(?i)chest\s+(?:pain|tightness|pressure|heaviness)|pain\s+in\s+(?:my\s+)?chest|বুকে\s*(?:ব্যথা|চাপ)|buk\s*e?\s*(?:byatha|betha|chap)|buke\s*(?:byatha|betha|chap)|सीने\s*में\s*दर्द|seene\s*me\s*dard", re.U), "chest"),
+    ("shortness of breath", re.compile(r"(?i)short(?:ness)?\s+of\s+breath|breathless(?:ness)?|(?:difficulty|trouble|hard\s+to)\s+breath|শ্বাসকষ্ট|শ্বাস\s*নিতে\s*কষ্ট|দম\s*বন্ধ|shwash\s*koshto|shash\s*nite\s*koshto|saans\s*(?:lene|phool)", re.U), "chest"),
     ("nausea", re.compile(r"(?i)\bnausea\b|feel\s+like\s+vomiting|বমি\s*বমি\s*ভাব|গা\s*গোলানো|bomi\s*bomi|जी\s*मिचलाना", re.U), "stomach"),
     ("vomiting", re.compile(r"(?i)\bvomit(?:ing)?\b|throwing\s+up|বমি|bomi|ulti|उल्टी", re.U), "stomach"),
     ("diarrhea", re.compile(r"(?i)\b(?:diarrh(?:ea|oea)|loose\s+motions?|watery\s+stool)\b|পাতলা\s*পায়খানা|পেট\s*খারাপ|dast|दस्त", re.U), "abdomen"),
-    ("abdominal pain", re.compile(r"(?i)(?:stomach|belly|abdominal)\s+(?:pain|ache|cramps?)|পেটে\s*ব্যথা|পেট\s*ব্যথা|pet\s*betha|pet\s*dard|पेट\s*दर्द", re.U), "abdomen"),
+    ("abdominal pain", re.compile(r"(?i)(?:stomach|belly|abdominal)\s+(?:pain|ache|cramps?)|পেটে\s*ব্যথা|পেট\s*ব্যথা|pet[\s\-]*e?\s*(?:byatha|betha)|pet\s*dard|पेट\s*दर्द", re.U), "abdomen"),
     ("vision darkening", re.compile(r"(?i)(?:vision|eyes?)\s+(?:becomes?|gets?|goes?|turning)\s+(?:dark|black|blurry)|blurred\s+vision|চোখ\s*(?:অন্ধকার|ঝাপসা)|chokh\s*ondhokar|आंखों\s*के\s*सामने\s*अंधेरा", re.U), "eyes"),
     ("fainting", re.compile(r"(?i)\b(?:faint(?:ed|ing)?|passed\s+out|blacked\s+out|loss\s+of\s+consciousness|unconscious)\b|অজ্ঞান|মাথা\s*ঘুরে\s*পড়ে|oggan|behosh|बेहोश", re.U), "neurological"),
-    ("rash", re.compile(r"(?i)\b(?:rash|hives|itching|itchy\s+skin)\b|র‍্যাশ|চুলকানি|ফুসকুড়ি|khujli|खुजली|चकत्ते", re.U), "skin"),
+    ("rash", re.compile(r"(?i)\b(?:rash|hives|itching|itchy\s+skin|skin\s+allergy|eczema)\b|র‍্যাশ|চুলকানি|ফুসকুড়ি|ত্বকে\s*অ্যালার্জি|khujli|खुजली|चकत्ते", re.U), "skin"),
     ("body ache", re.compile(r"(?i)\b(?:body\s+ache|body\s+pain|muscle\s+pain|joint\s+pain)\b|গায়ে\s*ব্যথা|গা\s*হাত\s*পা\s*ব্যথা|badan\s*dard|बदन\s*दर्द", re.U), "musculoskeletal"),
-    ("burning urination", re.compile(r"(?i)burning\s+(?:while\s+|when\s+)?urinat|painful\s+urination|প্রস্রাবে\s*জ্বালা|peshab\s*me\s*jalan|पेशाब\s*में\s*जलन", re.U), "urinary"),
+    ("knee pain", re.compile(r"(?i)\bknee\s*(?:pain|ache|swelling|hurts?)\b|হাঁটুতে\s*(?:ব্যথা|যন্ত্রণা|ফোলা)|হাঁটু\s*ব্যথা|hatute\s*betha|ghutne\s*(?:me|mein)\s*dard|घुटने\s*में\s*दर्द", re.U), "knee"),
+    ("back pain", re.compile(r"(?i)\b(?:low(?:er)?\s+)?back\s*(?:pain|ache|hurts?)\b|কোমরে\s*(?:ব্যথা|যন্ত্রণা)|পিঠে\s*ব্যথা|komore\s*betha|kamar\s*dard|कमर\s*दर्द", re.U), "back"),
+    ("burning urination", re.compile(r"(?i)burning\s+(?:while\s+|when\s+)?urinat|painful\s+urination|frequent\s+urination|প্রস্রাবে\s*(?:জ্বালা|ব্যথা|সমস্যা)|বারবার\s*প্রস্রাব|peshab\s*me\s*jalan|पेशाब\s*में\s*जलन", re.U), "urinary"),
+    ("numbness or tingling", re.compile(r"(?i)\b(?:numbness|tingling|pins\s+and\s+needles|one[- ]sided\s+weakness)\b|ঝিনঝিন|ঝিমঝিম|অবশ\s*ভাব|শূন্য\s*লাগা|jhim\s*jhim|sunn|झुनझुनी", re.U), "neurological"),
+    ("high blood sugar", re.compile(r"(?i)\b(?:high\s+blood\s+sugar|sugar\s+bere\s+geche|uncontrolled\s+sugar)\b|সুগার\s*বেড়ে\s*গেছে|চিনি\s*বেড়ে", re.U), "endocrine"),
+    ("anxiety or low mood", re.compile(r"(?i)\b(?:anxiety|anxious|panic|depress(?:ed|ion)|sadness|hopeless|insomnia|can'?t\s+sleep)\b|দুশ্চিন্তা|মন\s*খারাপ|ঘুম\s*হচ্ছে\s*না|উদ্বেগ|ghabrahat|चिंता|उदासी", re.U), "mental_health"),
+    ("palpitations", re.compile(r"(?i)\b(?:palpitation(?:s)?|heart\s+(?:racing|pounding)|fast\s+heartbeat)\b|বুক\s*(?:ধড়ফড়|ধড়ফড়)|buk(?:e)?\s*(?:dhorfor|dhorphor)|धड़कन\s*तेज", re.U), "chest"),
+    ("sore throat", re.compile(r"(?i)\bsore\s+throat\b|throat\s+pain|গলা\s*ব্যথা|gola\s*betha|गले\s*में\s*(?:दर्द|खराश)", re.U), "throat"),
+)
+
+# Family history & past-resolved symptom guards (never confuse family/past history with current active symptoms)
+_FAMILY_HISTORY_CUE = re.compile(
+    r"(?i)\b(?:my|our)\s+(?:father|mother|dad|mom|brother|sister|husband|wife|son|daughter|uncle|aunt|grand\w+|family\s+member)\s+(?:has|had|suffers?\s+from|got)\b|"
+    r"\bfamily\s+history\s+of\b|"
+    r"(?:amar|আমার)\s+(?:baba|ma|maa|dada|didi|bhai|bon|chele|meye|স্বামী|স্ত্রী|বাবা|মা|ভাই|বোন)(?:r|র|ের)?(?=\s|$|[,.;:!?।])|"
+    r"(?:mere|meri|मेरे|मेरी)\s+(?:papa|mummy|mata|pita|bhai|behen|पिता|माता|भाई|बहन)\s+(?:ko|को)"
+)
+_SELF_ALSO_CUE = re.compile(r"(?i)\b(?:i\s+also|me\s+too|amar\s*o|আমারও|mujhe\s+bhi|मुझे\s+भी)\b")
+_PAST_RESOLVED_CUE = re.compile(
+    r"(?i)\b(?:previously\s+had|used\s+to\s+have|had\s+.{1,30}\s+(?:last\s+month|last\s+year|earlier|before)\b|now\s+(?:resolved|gone|fine|better))\b|"
+    r"(?:আগে\s+.{1,25}\s*(?:ছিল|হয়েছিল)|এখন\s+(?:নেই|ভালো|কমে\s*গেছে))|"
+    r"\b(?:age\s+.{1,20}\s*chhilo|ekhon\s+(?:nei|bhalo))\b|"
+    r"\b(?:pehle\s+.{1,20}\s*tha|ab\s+(?:nahi|theek))\b"
+)
+
+# Fuzzy typo-tolerance map for common misspelled English/Banglish/Hinglish clinical terms
+_FUZZY_SYMPTOM_MAP: tuple[tuple[str, str, str | None], ...] = (
+    ("fever", "fever", "generalized"),
+    ("fiver", "fever", "generalized"),
+    ("bukhar", "fever", "generalized"),
+    ("headache", "headache", "head"),
+    ("headach", "headache", "head"),
+    ("dizziness", "dizziness", "head"),
+    ("diziness", "dizziness", "head"),
+    ("vomiting", "vomiting", "stomach"),
+    ("vomitng", "vomiting", "stomach"),
+    ("diarrhea", "diarrhea", "abdomen"),
+    ("diarrhoea", "diarrhea", "abdomen"),
+    ("diarea", "diarrhea", "abdomen"),
+    ("palpitations", "palpitations", "chest"),
+    ("breathless", "shortness of breath", "chest"),
+    ("breathlessness", "shortness of breath", "chest"),
+    ("weakness", "weakness", "generalized"),
+    ("fatigue", "weakness", "generalized"),
+    ("nausea", "nausea", "stomach"),
+    ("itching", "rash", "skin"),
+    ("urination", "burning urination", "urinary"),
 )
 
 # Negation window check (explicit negative findings)
@@ -151,7 +197,7 @@ _OCCUPATION_CUE = re.compile(r"(?i)\b(?:work\s+in\s+the\s+fields?|farmer|farming
 _HYDRATION_LOW = re.compile(r"(?i)(?:not|barely|less|hardly)\s+(?:eating|drinking)|poor\s+water|জল\s+কম|পানি\s+কম|খেতে\s+পারছি\s+না")
 _HYDRATION_OK = re.compile(r"(?i)eating\s+and\s+drinking\s+(?:normally|well|fine)|drinking\s+plenty|ঠিকমতো\s+খাচ্ছি")
 _ALLERGY_CUE = re.compile(r"(?i)(?:allergic\s+to|allergy\s+to)\s+([a-zA-Z0-9\s\-]{2,40})|([a-zA-Z0-9\s\-]{2,30})\s+এলার্জি")
-_HISTORY_CHRONIC = re.compile(r"(?i)\b(?:i\s+have|diagnosed\s+with|history\s+of|suffering\s+from|আগে\s+থেকে|আমার\s+আছে)\s+(?:type\s*2\s*)?(diabetes|sugar|high\s+bp|hypertension|asthma|thyroid|heart\s+disease|kidney\s+disease|tuberculosis|tb|stroke|ডায়াবেটিস|প্রেসার|হাঁপানি|থাইরয়েড)\b")
+_HISTORY_CHRONIC = re.compile(r"(?i)\b(?:i\s+have|diagnosed\s+with|history\s+of|suffering\s+from|আগে\s+থেকে|আমার\s+আছে)\s+(?:type\s*2\s*)?(diabetes|sugar|high\s+bp|hypertension|asthma|thyroid|heart\s+disease|kidney\s+disease|tuberculosis|tb|stroke|ডায়াবেটিস|প্রেসার|হাঁপানি|থাইরয়েড)\b|\b(diabetes|sugar|high\s+bp|hypertension|asthma|thyroid|ডায়াবেটিস|প্রেসার|হাঁপানি|থাইরয়েড)(?:-?o)?\s+(?:ache|আছে)\b")
 _SURGERY_CUE = re.compile(r"(?i)\b(?:had\s+(?:a\s+)?|underwent\s+)([a-z\s]{2,30}\s+surgery|operation|appendectomy|c-section|caesarean|gallbladder\s+removal|bypass)\b|অপারেশন\s+হয়েছিল")
 
 VITAL_UNITS = {
@@ -161,6 +207,21 @@ VITAL_UNITS = {
 _FEVER_NUM = re.compile(r"(?i)(?:fever|temperature|temp|bukhar|bukhaar|জ্বর|তাপ|बुखार)\D{0,12}(\d{2,3}(?:\.\d)?)\s*(?:°|degree|deg)?\s*([fc])?\b")
 
 _SENT_SPLIT = re.compile(r"(?<=[.!?।])\s+")
+
+
+_CLAUSE_SPLIT = re.compile(r"(?:[,;।!?]|\.\s+|\bbut\b|\bhowever\b|\bতবু\b|\bকিন্তু\b)")
+
+
+def _clause_for(text: str, start: int, end: int) -> str:
+    """Return the local clause around a match span for family/past-history scoping."""
+    pos = 0
+    for part in _CLAUSE_SPLIT.split(text):
+        idx = text.find(part, pos)
+        if idx >= 0 and idx <= start <= idx + len(part):
+            return part.strip()
+        if idx >= 0:
+            pos = idx + len(part)
+    return _sentence_for(text, start, end)
 
 
 def _sentence_for(text: str, start: int, end: int) -> str:
@@ -212,6 +273,7 @@ def extract_deterministic(
 
     symptoms: list[SymptomExtracted] = []
     negated: list[SymptomExtracted] = []
+    history_from_sx: list[MedicalHistoryExtracted] = []
     seen_sym: set[str] = set()
 
     for cname, pat, loc in _SYMPTOM_LEXICON:
@@ -220,6 +282,30 @@ def extract_deterministic(
             continue
         seen_sym.add(cname)
         sent = _sentence_for(norm, m.start(), m.end())
+        clause = _clause_for(norm, m.start(), m.end())
+        # Separate family history and past-resolved history from active patient symptoms
+        if _FAMILY_HISTORY_CUE.search(clause) and not _SELF_ALSO_CUE.search(clause):
+            history_from_sx.append(
+                MedicalHistoryExtracted(
+                    category="family_history",
+                    description=f"Family member: {cname}",
+                    normalized_name=cname,
+                    status="historical",
+                    original_statement=clause or sent,
+                )
+            )
+            continue
+        if _PAST_RESOLVED_CUE.search(clause):
+            history_from_sx.append(
+                MedicalHistoryExtracted(
+                    category="previous_symptom",
+                    description=cname,
+                    normalized_name=cname,
+                    status="resolved",
+                    original_statement=sent,
+                )
+            )
+            continue
         is_neg = _is_negated(norm, m.start(), m.end())
         sent_temp = extract_temporal(sent, reference_dt=ref)
         # Merge sentence temporal with global duration/onset when sentence lacks it
@@ -286,6 +372,43 @@ def extract_deterministic(
             negated.append(sx)
         else:
             symptoms.append(sx)
+
+    # Fuzzy spelling-mistake fallback for Latin tokens (catches typos like "fiver", "headach", "diarea")
+    if norm:
+        try:
+            from rapidfuzz import fuzz as _rfuzz
+            for tok_m in re.finditer(r"\b[A-Za-z]{4,18}\b", norm):
+                tok = tok_m.group(0).lower()
+                sent = _sentence_for(norm, tok_m.start(), tok_m.end())
+                if _FAMILY_HISTORY_CUE.search(sent) and not _SELF_ALSO_CUE.search(sent):
+                    continue
+                if _PAST_RESOLVED_CUE.search(sent):
+                    continue
+                for target_tok, cname, loc in _FUZZY_SYMPTOM_MAP:
+                    if cname in seen_sym:
+                        continue
+                    if target_tok.startswith("breath") and tok.startswith("restless"):
+                        continue
+                    if _rfuzz.ratio(tok, target_tok) >= 84:
+                        seen_sym.add(cname)
+                        is_neg = _is_negated(norm, tok_m.start(), tok_m.end())
+                        sx = SymptomExtracted(
+                            symptom_id=_make_id("sx"),
+                            name=cname,
+                            original_statement=sent,
+                            normalized_description=f"Patient-reported {cname} (fuzzy-normalized from '{tok}')",
+                            anatomical_location=loc,
+                            status="unknown" if is_neg else "active",
+                            present=not is_neg,
+                            temporal=global_temp,
+                            confidence=0.78,
+                            verification_status="patient_reported",
+                            source=source if source in ("patient_report", "voice_transcript", "chat_text", "manual") else "patient_report",
+                        )
+                        (negated if is_neg else symptoms).append(sx)
+                        break
+        except Exception:  # noqa: BLE001
+            pass
 
     # Link associated symptoms among active symptoms
     active_names = [s.name for s in symptoms]
@@ -393,9 +516,9 @@ def extract_deterministic(
             )
 
     # Medical history (when volunteered)
-    history: list[MedicalHistoryExtracted] = []
+    history: list[MedicalHistoryExtracted] = list(history_from_sx)
     for hm in _HISTORY_CHRONIC.finditer(norm):
-        cond = hm.group(1).strip()
+        cond = (hm.group(1) or hm.group(2) or "").strip()
         history.append(
             MedicalHistoryExtracted(
                 category="chronic_condition",
