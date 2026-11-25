@@ -95,71 +95,82 @@ class PatientContextBuilder:
         query_text: str = "",
         current_symptoms: list[str] | None = None,
         encounter_id: str | None = None,
+        encounter_only: bool = False,
     ) -> MemoryContext:
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         q_tokens = _tokens(query_text) | {w for s in (current_symptoms or []) for w in _tokens(s)}
 
-        # --- Long-term memory ---
-        p = await db.get(PatientProfile, cu.id)
+        # --- Long-term memory (skipped in isolated chat mode) ---
         demographics: dict = {"preferred_lang": cu.user.preferred_lang}
-        if p:
-            if dob := _dec(cu, p.dob_enc):
-                demographics["dob"] = dob
-            if p.sex:
-                demographics["sex"] = p.sex
-            if occ := _dec(cu, p.occupation_enc):
-                demographics["occupation"] = occ
-            if p.literacy_level:
-                demographics["literacy_level"] = p.literacy_level
-            if p.healthcare_access:
-                demographics["healthcare_access"] = p.healthcare_access
-            if p.smoking_status and p.smoking_status != "never":
-                demographics["smoking"] = p.smoking_status
-            if p.pregnancy_status and p.pregnancy_status not in ("not_pregnant", "na"):
-                demographics["pregnancy_status"] = p.pregnancy_status
+        conditions: list[dict] = []
+        allergies: list[dict] = []
+        meds_long: list[dict] = []
+        relevant_history: list[dict] = []
+        prior_encounters: list[Encounter] = []
+        returning_patient = False
 
-        conditions = [
-            {"id": c.id, "name": _dec(cu, c.display_enc), "status": c.status, "verification": getattr(c, "verification_status", "patient_reported")}
-            for c in await db.scalars(select(Condition).where(Condition.user_id == cu.id))
-        ]
-        allergies = [
-            {"id": a.id, "substance": _dec(cu, a.substance_enc), "severity": a.severity, "verification": getattr(a, "verification_status", "patient_reported")}
-            for a in await db.scalars(select(Allergy).where(Allergy.user_id == cu.id))
-        ]
-        all_meds = list(await db.scalars(select(Medication).where(Medication.user_id == cu.id)))
-        meds_long = [
-            {
-                "id": m.id, "name": _dec(cu, m.name_enc), "dose": m.dose, "status": m.status,
-                "prescribed_or_self": getattr(m, "prescribed_or_self", "unknown"),
-                "effectiveness": getattr(m, "reported_effectiveness", None),
-                "verification": getattr(m, "verification_status", "patient_reported"),
-            }
-            for m in all_meds
-        ]
-        hist_rows = list(await db.scalars(
-            select(MedicalHistoryEntry).where(MedicalHistoryEntry.user_id == cu.id).order_by(MedicalHistoryEntry.recorded_at.desc()).limit(25)
-        ))
-        relevant_history = [
-            {
-                "id": h.id, "category": h.category, "description": _dec(cu, h.description_enc),
-                "status": h.status, "verification": h.verification_status,
-            }
-            for h in hist_rows
-            if not q_tokens
-            or h.category in ("chronic_condition", "diagnosis")
-            or (_tokens(_dec(cu, h.description_enc) or "") & q_tokens)
-        ][:10]
+        if not encounter_only:
+            p = await db.get(PatientProfile, cu.id)
+            if p:
+                if dob := _dec(cu, p.dob_enc):
+                    demographics["dob"] = dob
+                if p.sex:
+                    demographics["sex"] = p.sex
+                if occ := _dec(cu, p.occupation_enc):
+                    demographics["occupation"] = occ
+                if p.literacy_level:
+                    demographics["literacy_level"] = p.literacy_level
+                if p.healthcare_access:
+                    demographics["healthcare_access"] = p.healthcare_access
+                if p.smoking_status and p.smoking_status != "never":
+                    demographics["smoking"] = p.smoking_status
+                if p.pregnancy_status and p.pregnancy_status not in ("not_pregnant", "na"):
+                    demographics["pregnancy_status"] = p.pregnancy_status
 
-        # --- Short-term memory & returning-patient detection ---
-        encounters = list(await db.scalars(
-            select(Encounter).where(Encounter.user_id == cu.id).order_by(Encounter.started_at.desc()).limit(15)
-        ))
-        prior_encounters = [e for e in encounters if e.id != encounter_id]
-        returning_patient = len(prior_encounters) > 0
+            conditions = [
+                {"id": c.id, "name": _dec(cu, c.display_enc), "status": c.status, "verification": getattr(c, "verification_status", "patient_reported")}
+                for c in await db.scalars(select(Condition).where(Condition.user_id == cu.id))
+            ]
+            allergies = [
+                {"id": a.id, "substance": _dec(cu, a.substance_enc), "severity": a.severity, "verification": getattr(a, "verification_status", "patient_reported")}
+                for a in await db.scalars(select(Allergy).where(Allergy.user_id == cu.id))
+            ]
+            all_meds = list(await db.scalars(select(Medication).where(Medication.user_id == cu.id)))
+            meds_long = [
+                {
+                    "id": m.id, "name": _dec(cu, m.name_enc), "dose": m.dose, "status": m.status,
+                    "prescribed_or_self": getattr(m, "prescribed_or_self", "unknown"),
+                    "effectiveness": getattr(m, "reported_effectiveness", None),
+                    "verification": getattr(m, "verification_status", "patient_reported"),
+                }
+                for m in all_meds
+            ]
+            hist_rows = list(await db.scalars(
+                select(MedicalHistoryEntry).where(MedicalHistoryEntry.user_id == cu.id).order_by(MedicalHistoryEntry.recorded_at.desc()).limit(25)
+            ))
+            relevant_history = [
+                {
+                    "id": h.id, "category": h.category, "description": _dec(cu, h.description_enc),
+                    "status": h.status, "verification": h.verification_status,
+                }
+                for h in hist_rows
+                if not q_tokens
+                or h.category in ("chronic_condition", "diagnosis")
+                or (_tokens(_dec(cu, h.description_enc) or "") & q_tokens)
+            ][:10]
 
-        all_symptoms = list(await db.scalars(
-            select(ClinicalSymptom).where(ClinicalSymptom.user_id == cu.id).order_by(ClinicalSymptom.last_reported_at.desc()).limit(30)
-        ))
+            encounters = list(await db.scalars(
+                select(Encounter).where(Encounter.user_id == cu.id).order_by(Encounter.started_at.desc()).limit(15)
+            ))
+            prior_encounters = [e for e in encounters if e.id != encounter_id]
+            returning_patient = len(prior_encounters) > 0
+
+        sym_q = select(ClinicalSymptom).where(ClinicalSymptom.user_id == cu.id)
+        if encounter_only and encounter_id:
+            sym_q = sym_q.where(ClinicalSymptom.encounter_id == encounter_id)
+        elif encounter_only:
+            sym_q = sym_q.where(ClinicalSymptom.encounter_id == "__none__")
+        all_symptoms = list(await db.scalars(sym_q.order_by(ClinicalSymptom.last_reported_at.desc()).limit(30)))
 
         def _sym_relevance(s: ClinicalSymptom) -> tuple[int, datetime]:
             score = 0
@@ -198,11 +209,13 @@ class PatientContextBuilder:
         ]
 
         # Pending & recently answered follow-up questions
+        fq_q = select(FollowUpQuestion).where(FollowUpQuestion.user_id == cu.id)
+        if encounter_only and encounter_id:
+            fq_q = fq_q.where(FollowUpQuestion.encounter_id == encounter_id)
+        elif encounter_only:
+            fq_q = fq_q.where(FollowUpQuestion.encounter_id == "__none__")
         fq_rows = list(await db.scalars(
-            select(FollowUpQuestion)
-            .where(FollowUpQuestion.user_id == cu.id)
-            .order_by(FollowUpQuestion.priority.asc(), FollowUpQuestion.asked_at.desc())
-            .limit(20)
+            fq_q.order_by(FollowUpQuestion.priority.asc(), FollowUpQuestion.asked_at.desc()).limit(20)
         ))
         pending_qs = [
             {
@@ -334,6 +347,66 @@ class PatientContextBuilder:
 
         if safety_recent:
             lines.append("RECENT SAFETY ALERTS:\n" + "\n".join(f"- {sr['severity']} ({', '.join(sr['rules'])}) on {sr['at']}" for sr in safety_recent))
+
+        if not encounter_only:
+            try:
+                from app.clinical.subject_context import load_subject_relations, retrieve_family_member_context
+                from app.memory.correlator import ClinicalCorrelator
+                from app.memory.neural_correlator import build_clinical_neural_graph
+                from app.models import LabResult
+                from app.security.settings import get_settings_row
+                corr = ClinicalCorrelator()
+                corr_notes = corr.correlate_meds_and_symptoms(
+                    meds_long, [s["name"] for s in short_symptoms] + (current_symptoms or [])
+                )
+                lab_rows = list(await db.scalars(
+                    select(LabResult).where(LabResult.user_id == cu.id).order_by(LabResult.observed_at.desc()).limit(20)
+                ))
+                corr_notes.extend(corr.correlate_labs(lab_rows))
+                corr_notes.extend(await corr.correlate_household(db, cu.account_id, cu.id))
+                corr_notes.extend(await retrieve_family_member_context(db, cu, query_text))
+                subject_rels = await load_subject_relations(db, cu)
+                for sr in subject_rels[:4]:
+                    bits = [sr.get("relation", "relation")]
+                    if sr.get("age") is not None:
+                        bits.append(f"age {sr['age']}")
+                    if sr.get("gender"):
+                        bits.append(str(sr["gender"]))
+                    if sr.get("notes"):
+                        bits.append(f"context: {'; '.join(sr['notes'][:2])}")
+                    corr_notes.append("Subject relation context: " + ", ".join(bits))
+
+                settings_row = await get_settings_row(db, cu.account_id)
+                if getattr(settings_row, "neural_correlation_enabled", True):
+                    lab_dicts = [
+                        {"test_name": lb.test_name, "value": lb.value, "unit": lb.unit, "flag": lb.flag}
+                        for lb in lab_rows
+                    ]
+                    ng = build_clinical_neural_graph(
+                        symptoms=short_symptoms,
+                        medications=meds_long,
+                        conditions=conditions,
+                        vitals=list(latest_vitals.values()),
+                        labs=lab_dicts,
+                        correlation_notes=corr_notes,
+                        subject_relations=subject_rels,
+                        followup_questions=pending_qs,
+                    )
+                    if ng.get("nodes"):
+                        top_nodes = sorted(ng["nodes"], key=lambda n: n.get("score", 0.0), reverse=True)[:3]
+                        top_str = ", ".join(f"{n['label']} ({n['score']})" for n in top_nodes)
+                        corr_notes.append(
+                            f"Neural Correlation ({'GPU' if ng.get('gpu_boosted') else 'CPU'}, "
+                            f"temporal={ng.get('temporal_score')}, motif={ng.get('cnn_motif_score')}): "
+                            f"top signals [{top_str}]"
+                        )
+                        for cust in ng.get("customizations", [])[:2]:
+                            corr_notes.append(f"Response customization: {cust}")
+
+                if corr_notes:
+                    lines.append("CLINICAL CORRELATIONS & HOUSEHOLD SIGNALS:\n" + "\n".join(f"- {n}" for n in corr_notes[:8]))
+            except Exception:  # noqa: BLE001 — correlation never breaks context build
+                pass
 
         return MemoryContext(
             long_term={
