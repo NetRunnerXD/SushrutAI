@@ -25,7 +25,7 @@ from app.security.crypto import Cipher, new_wrapped_dek
 
 router = APIRouter(prefix="/family", tags=["family"])
 
-MAX_MEMBERS = 10
+MAX_MEMBERS = 20
 Relation = Literal["child", "parent", "spouse", "sibling", "grandparent", "other"]
 
 
@@ -121,3 +121,108 @@ async def remove_member(member_id: str, cu: CurrentUser = Depends(current_user),
     await scope_to(db, member_id, aid)
     await erase_user(db, member_id, aid)
     await db.commit()
+
+
+class ResolveIn(BaseModel):
+    text: str = Field(min_length=1, max_length=1000)
+    lang: str = "bn"
+    auto_create: bool = False
+
+
+@router.post("/resolve")
+async def resolve_member_endpoint(
+    body: ResolveIn,
+    cu: CurrentUser = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Resolve a family relationship mention (e.g. 'Amar baba') to an isolated member profile."""
+    from app.clinical.family_memory import (
+        FIRST_OPEN_PROMPT,
+        get_member_current_user,
+        get_member_memory_summary,
+        resolve_family_member,
+    )
+
+    res = await resolve_family_member(
+        db, cu, body.text, lang=body.lang, auto_create_if_missing=body.auto_create
+    )
+    summary = None
+    if res.matched and res.member_id:
+        mcu = await get_member_current_user(db, cu, res.member_id)
+        if mcu:
+            summary = await get_member_memory_summary(
+                db, mcu, name=res.member_name or "", relation=res.relation or ""
+            )
+            await scope_to(db, cu.id, cu.account_id)
+    return {
+        "matched": res.matched,
+        "member_id": res.member_id,
+        "member_name": res.member_name,
+        "relation": res.relation,
+        "canonical_role": res.canonical_role,
+        "ambiguous": res.ambiguous,
+        "candidates": res.candidates,
+        "clarification_question": res.clarification_question,
+        "auto_created": res.auto_created,
+        "first_open_prompt": FIRST_OPEN_PROMPT.get(body.lang, FIRST_OPEN_PROMPT["bn"]),
+        "summary": summary,
+    }
+
+
+@router.get("/{member_id}/summary")
+async def member_summary(
+    member_id: str,
+    cu: CurrentUser = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """View a specific family member's isolated health memory summary and vital history."""
+    from app.clinical.family_memory import get_member_current_user, get_member_memory_summary
+
+    link = await _link(db, cu, member_id)
+    mcu = await get_member_current_user(db, cu, member_id)
+    if mcu is None:
+        raise HTTPException(404, "Not found")
+    name = cu.account_cipher.dec(link.name_enc)
+    out = await get_member_memory_summary(db, mcu, name=name, relation=link.relation)
+    await scope_to(db, cu.id, cu.account_id)
+    return out
+
+
+@router.get("/{member_id}/export")
+async def export_member_record(
+    member_id: str,
+    cu: CurrentUser = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Export a family member's complete encrypted health profile & vital history."""
+    from app.clinical.family_memory import get_member_current_user, get_member_memory_summary
+
+    link = await _link(db, cu, member_id)
+    mcu = await get_member_current_user(db, cu, member_id)
+    if mcu is None:
+        raise HTTPException(404, "Not found")
+    name = cu.account_cipher.dec(link.name_enc)
+    summary = await get_member_memory_summary(db, mcu, name=name, relation=link.relation)
+    await scope_to(db, cu.id, cu.account_id)
+    return {"exported_at": utcnow().isoformat() + "Z", "member": summary}
+
+
+@router.get("/graph")
+async def get_family_health_graph(
+    cu: CurrentUser = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return the structured Family Health Knowledge Graph (nodes, edges, patterns, GNN status)."""
+    from app.clinical.family_graph import build_family_health_graph
+
+    if "core_service" not in await consent.active_purposes(db, cu.account_id):
+        raise HTTPException(403, "Consent 'core_service' is required")
+    return await build_family_health_graph(db, cu)
+
+
+@router.get("/gnn/evaluate")
+async def evaluate_family_gnn(cu: CurrentUser = Depends(current_user)):
+    """Run the extensible RelationalGraphSAGE vs rule-baseline benchmark on synthetic family graphs."""
+    from app.clinical.family_graph import evaluate_gnn_vs_rule_baseline
+
+    return evaluate_gnn_vs_rule_baseline()
