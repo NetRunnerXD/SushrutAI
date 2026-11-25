@@ -96,9 +96,11 @@ ALLOWED_TRANSITIONS: dict[ConversationState, frozenset[ConversationState]] = {
 class SilenceConfig:
     """Tunable pause and turn-finalization timings (milliseconds)."""
     pause_detect_ms: int = 1000         # 800-1200 ms: short hesitation
-    continuation_grace_ms: int = 5000   # 3-8 s: hold open turn for resuming speech
-    gentle_ack_ms: int = 12000          # 10-15 s: calm gentle acknowledgement if desired
+    continuation_grace_ms: int = 5000   # 3-8 s: initial continuation grace
+    gentle_ack_ms: int = 12000          # 10-15 s: calm gentle acknowledgement
     session_pause_ms: int = 50000       # 45-60 s: transition to SESSION_PAUSED
+    extended_pause_ms: int = 15000      # 7-15 s: extended elderly pause
+    long_thinking_ms: int = 25000       # 15-25 s: long thinking window
 
     def as_dict(self) -> dict:
         return {
@@ -129,6 +131,8 @@ class ActiveRuntime:
     cancel_event: asyncio.Event = field(default_factory=asyncio.Event)
     open_fragments: list[str] = field(default_factory=list)
     spoken_prefix: str | None = None
+    locked_language: str | None = None
+    language_lock_reason: str = ""
     transitions: list[StateTransition] = field(default_factory=list)
 
     def bump_generation(self) -> tuple[str, asyncio.Event]:
