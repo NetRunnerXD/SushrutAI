@@ -761,6 +761,53 @@ async def patient_context_full(
         select(ClinicalEvent).where(ClinicalEvent.user_id == cu.id).order_by(desc(ClinicalEvent.occurred_at)).limit(40)
     ))
 
+    # Neural correlation graph (GNN + RNN + 1D-CNN) for Context Navigator
+    from app.clinical.subject_context import load_subject_relations
+    from app.memory.correlator import ClinicalCorrelator
+    from app.memory.neural_correlator import build_clinical_neural_graph, device_info
+    from app.models import LabResult
+    from app.security.settings import get_settings_row
+
+    settings_row = await get_settings_row(db, cu.account_id)
+    neural_on = bool(getattr(settings_row, "neural_correlation_enabled", True))
+    if neural_on:
+        lab_rows = list(await db.scalars(
+            select(LabResult).where(LabResult.user_id == cu.id).order_by(desc(LabResult.observed_at)).limit(20)
+        ))
+        subject_rels = await load_subject_relations(db, cu)
+        corr = ClinicalCorrelator()
+        corr_notes = corr.correlate_meds_and_symptoms(
+            status_data["medications"],
+            [s["name"] for s in status_data["active_symptoms"]],
+        )
+        corr_notes.extend(corr.correlate_labs(lab_rows))
+        corr_notes.extend(await corr.correlate_household(db, cu.account_id, cu.id))
+        neural_graph = {
+            "enabled": True,
+            **build_clinical_neural_graph(
+                symptoms=status_data["active_symptoms"],
+                medications=status_data["medications"],
+                conditions=status_data["medical_history"] + status_data["conditions"],
+                vitals=[{"type": v.type, "value": v.value, "unit": v.unit, "is_estimate": bool(v.is_estimate)} for v in vit_rows],
+                labs=[{"test_name": lb.test_name, "value": lb.value, "unit": lb.unit, "flag": lb.flag} for lb in lab_rows],
+                correlation_notes=corr_notes,
+                differentials=[{"explanation": d.explanation, "likelihood_band": d.likelihood_band} for d in diffs],
+                subject_relations=subject_rels,
+                followup_questions=status_data.get("pending_questions", []),
+            ),
+        }
+    else:
+        neural_graph = {
+            "enabled": False,
+            **device_info(),
+            "latency_ms": 0.0,
+            "nodes": [],
+            "edges": [],
+            "temporal_score": 0.0,
+            "cnn_motif_score": 0.0,
+            "customizations": [],
+        }
+
     return {
         "patient_id": cu.id,
         "disclaimer": disclaimer(lang),
@@ -848,7 +895,121 @@ async def patient_context_full(
         "transcripts": transcripts,
         "facts": facts,
         "safety_alerts": status_data["safety_alerts"],
+        "neural_graph": neural_graph,
     }
+
+
+class ContextDeleteIn(BaseModel):
+    categories: list[Literal[
+        "facts", "symptoms", "medications", "allergies",
+        "vitals", "conditions", "history", "timeline",
+        "followups", "assessments", "relations",
+    ]] = Field(default_factory=list)
+    item_ids: dict[str, list[str]] = Field(default_factory=dict)
+
+
+@router.delete("/context")
+async def clear_all_context(cu: CurrentUser = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    """Clear all clinical context history for the current patient profile."""
+    from sqlalchemy import delete
+
+    from app.models import (
+        ClinicalAssessment, ClinicalFact, ClinicalInvestigation, DifferentialConsideration,
+        PatientMemoryItem, Transcript,
+    )
+
+    models = (
+        ("differentials", DifferentialConsideration),
+        ("investigations", ClinicalInvestigation),
+        ("assessments", ClinicalAssessment),
+        ("facts", ClinicalFact),
+        ("observations", SymptomObservation),
+        ("symptoms", ClinicalSymptom),
+        ("medications", Medication),
+        ("allergies", Allergy),
+        ("vitals", Vital),
+        ("conditions", Condition),
+        ("history", MedicalHistoryEntry),
+        ("followups", FollowUpQuestion),
+        ("timeline", ClinicalEvent),
+        ("recommendations", ClinicalRecommendation),
+        ("safety_alerts", SafetyAlert),
+        ("memory_items", PatientMemoryItem),
+        ("turns", ConversationTurn),
+        ("transcripts", Transcript),
+        ("encounters", Encounter),
+    )
+    deleted: dict[str, int] = {}
+    for name, mdl in models:
+        res = await db.execute(delete(mdl).where(mdl.user_id == cu.id))
+        deleted[name] = int(res.rowcount or 0)
+    await db.commit()
+    return {"cleared": True, "deleted": deleted}
+
+
+@router.post("/context/delete")
+async def delete_custom_context(
+    body: ContextDeleteIn,
+    cu: CurrentUser = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete selected clinical context categories and/or specific item IDs."""
+    from sqlalchemy import delete
+
+    from app.models import (
+        ClinicalAssessment, ClinicalFact, ClinicalInvestigation, DifferentialConsideration,
+    )
+
+    cat_map: dict[str, Any] = {
+        "facts": ClinicalFact,
+        "symptoms": ClinicalSymptom,
+        "medications": Medication,
+        "allergies": Allergy,
+        "vitals": Vital,
+        "conditions": Condition,
+        "history": MedicalHistoryEntry,
+        "timeline": ClinicalEvent,
+        "followups": FollowUpQuestion,
+        "assessments": ClinicalAssessment,
+    }
+    deleted: dict[str, int] = {}
+
+    for cat in body.categories:
+        if cat == "relations":
+            res = await db.execute(
+                delete(ClinicalFact).where(ClinicalFact.user_id == cu.id, ClinicalFact.category == "subject_relation")
+            )
+            deleted["relations"] = int(res.rowcount or 0)
+        elif cat == "assessments":
+            await db.execute(delete(DifferentialConsideration).where(DifferentialConsideration.user_id == cu.id))
+            await db.execute(delete(ClinicalInvestigation).where(ClinicalInvestigation.user_id == cu.id))
+            res = await db.execute(delete(ClinicalAssessment).where(ClinicalAssessment.user_id == cu.id))
+            deleted["assessments"] = int(res.rowcount or 0)
+        elif cat in cat_map:
+            mdl = cat_map[cat]
+            res = await db.execute(delete(mdl).where(mdl.user_id == cu.id))
+            deleted[cat] = int(res.rowcount or 0)
+
+    for cat, ids in (body.item_ids or {}).items():
+        clean_ids = [str(i) for i in ids if str(i).strip()]
+        if not clean_ids:
+            continue
+        if cat == "relations":
+            res = await db.execute(
+                delete(ClinicalFact).where(
+                    ClinicalFact.user_id == cu.id,
+                    ClinicalFact.category == "subject_relation",
+                    ClinicalFact.id.in_(clean_ids),
+                )
+            )
+            deleted["relations"] = deleted.get("relations", 0) + int(res.rowcount or 0)
+        elif cat in cat_map:
+            mdl = cat_map[cat]
+            res = await db.execute(delete(mdl).where(mdl.user_id == cu.id, mdl.id.in_(clean_ids)))
+            deleted[cat] = deleted.get(cat, 0) + int(res.rowcount or 0)
+
+    await db.commit()
+    return {"deleted": deleted}
 
 
 class FactCorrectionIn(BaseModel):
