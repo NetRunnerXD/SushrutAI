@@ -172,10 +172,10 @@
   --color-rail-on-ink: var(--rail-on-ink);
   --font-sans: var(--font-noto), var(--font-noto-deva), var(--font-noto-beng), var(--font-noto-taml),
     var(--font-noto-telu), var(--font-noto-gujr), var(--font-noto-knda), var(--font-noto-mlym), var(--font-noto-orya),
-    system-ui, sans-serif;
+    var(--font-noto-guru), var(--font-noto-urdu), system-ui, sans-serif;
   /* Mukta (Ek Type) carries Latin + Devanagari headings; other scripts fall through to their Noto family */
   --font-display: var(--font-mukta), var(--font-noto-beng), var(--font-noto-taml), var(--font-noto-telu),
-    var(--font-noto-gujr), var(--font-noto-knda), var(--font-noto-mlym), var(--font-noto-orya), var(--font-noto), sans-serif;
+    var(--font-noto-gujr), var(--font-noto-knda), var(--font-noto-mlym), var(--font-noto-orya), var(--font-noto-guru), var(--font-noto-urdu), var(--font-noto), sans-serif;
   /* readings, doses and times: the body face with tabular figures (one numeral scale everywhere) */
   --font-mono: var(--font-noto), var(--font-noto-deva), system-ui, sans-serif;
   --radius-sm: 8px;
@@ -186,6 +186,9 @@
 
 html { font-size: 17px; scroll-padding-bottom: 96px; scroll-padding-top: 72px; }
 html, body { background-color: var(--bg); color: var(--text); }
+/* Urdu Nastaliq sits tall and slants down: more room per line so letters do not touch the next line */
+html:lang(ur) body { line-height: 2.1; }
+html:lang(ur) :is(h1, h2, h3, .display) { line-height: 1.9; }
 body { font-family: var(--font-sans); line-height: 1.6; -webkit-font-smoothing: antialiased; caret-color: var(--brand); }
 :lang(hi), :lang(bn), :lang(ta), :lang(te), :lang(mr), :lang(gu), :lang(kn), :lang(ml), :lang(or) { line-height: 1.7; }
 
@@ -452,3 +455,10 @@ button:active > .voice { scale: 0.96; }
 .dr-now { animation: dr-now 480ms var(--ease-out, cubic-bezier(0.16,1,0.3,1)) 450ms both; }
 @media (prefers-reduced-motion: reduce) { .dr-rail, .dr-stop, .dr-now { animation: none !important; } }
 :root[data-motion="reduce"] .dr-rail, :root[data-motion="reduce"] .dr-stop, :root[data-motion="reduce"] .dr-now { animation: none !important; }
+
+/* Right-to-left (Urdu): the layout mirrors through logical classes (ps-, ms-, start-…); arrows that mean
+   "forward / back / send" mirror too. (Tailwind's rotate/scale use their own properties, so they still apply.) */
+html[dir="rtl"] :is(.lucide-chevron-right, .lucide-chevron-left, .lucide-arrow-right, .lucide-arrow-left,
+  .lucide-send, .lucide-send-horizontal, .lucide-chevrons-right, .lucide-chevrons-left, .lucide-undo-2, .lucide-redo-2) {
+  transform: scaleX(-1);
+}

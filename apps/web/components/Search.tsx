@@ -49,7 +49,7 @@ export function SearchButton({ field = false }: { field?: boolean }) {
     <>
       {field ? (
         <button onClick={() => setOpen(true)} aria-label={`${t.searchLabel} (Ctrl+K)`}
-          className="flex h-11 w-full max-w-[460px] items-center gap-2.5 rounded-full border border-[var(--d-tile-line)] bg-[var(--d-tile)] px-4 text-left text-muted transition-colors duration-[120ms] hover:border-[var(--d-tile-line-hover)] hover:bg-[var(--d-tile-hover)]">
+          className="flex h-11 w-full max-w-[460px] items-center gap-2.5 rounded-full border border-[var(--d-tile-line)] bg-[var(--d-tile)] px-4 text-start text-muted transition-colors duration-[120ms] hover:border-[var(--d-tile-line-hover)] hover:bg-[var(--d-tile-hover)]">
           <SearchIcon aria-hidden className="h-[18px] w-[18px]" /><span className="flex-1 truncate">{t.searchLabel}…</span>
           <kbd className="rounded-[6px] border border-[var(--d-tile-line)] px-1.5 font-mono text-[0.75rem]">Ctrl K</kbd>
         </button>

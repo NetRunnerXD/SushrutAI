@@ -64,12 +64,12 @@ export function RangeBar({ value, lo, hi, unit, flag }: {
     <div className="w-full" role="img"
          aria-label={`${value} ${unit ?? ""}, ${words}. ${t.normalRange} ${lo ?? "—"} – ${hi ?? "—"}`}>
       <div aria-hidden className="relative h-3 w-full overflow-hidden rounded-full bg-warn-soft shadow-[var(--well)]">
-        <div className="absolute inset-y-0 left-1/4 w-1/2 bg-ok-soft" />
+        <div className="absolute inset-y-0 start-1/4 w-1/2 bg-ok-soft" />
         <div className={`absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface
           ${flag === "H" || flag === "L" ? "bg-danger" : "bg-ok"}`} style={{ left: `${pos}%` }} />
       </div>
       <div aria-hidden className="mt-0.5 flex justify-between text-[0.75rem] text-muted">
-        <span className="pl-[22%]">{lo ?? ""}</span><span className="pr-[22%]">{hi ?? ""}</span>
+        <span className="ps-[22%]">{lo ?? ""}</span><span className="pe-[22%]">{hi ?? ""}</span>
       </div>
     </div>
   );
@@ -98,7 +98,7 @@ export function VitalCard({ label, value, unit, status, trend, icon: Icon }: {
   return (
     <div className="well rounded-[16px] p-3">
       <p className="flex items-center gap-1.5 text-[0.875rem] font-semibold text-muted"><Icon aria-hidden className="h-4 w-4" />{label}</p>
-      <p className="mt-1 break-all font-mono text-[1.625rem] font-bold leading-none">{value}<span className="ml-1 text-[0.8125rem] font-normal text-muted">{unit}</span></p>
+      <p className="mt-1 break-all font-mono text-[1.625rem] font-bold leading-none">{value}<span className="ms-1 text-[0.8125rem] font-normal text-muted">{unit}</span></p>
       {(st || trend) && (
         <p className={`mt-1 flex items-center gap-1 text-[0.8125rem] font-bold ${st?.cls ?? "text-muted"}`}>
           {st && <span aria-hidden className={`h-2 w-2 rounded-full ${status === "high" ? "bg-danger" : status === "low" ? "bg-warn" : "bg-ok"}`} />}

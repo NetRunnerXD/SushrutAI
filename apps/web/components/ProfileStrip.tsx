@@ -39,12 +39,12 @@ export function ProfileStrip() {
   return (
     <section aria-label={t.contextPanel} className="mt-3 rounded-[16px] border border-border bg-surface shadow-[var(--rim)]">
       <button type="button" onClick={() => setPrefs({ profileStrip: !open })} aria-expanded={open}
-        className="flex min-h-12 w-full items-center gap-2.5 rounded-[16px] px-3 py-1.5 text-left hover:bg-surface-2">
+        className="flex min-h-12 w-full items-center gap-2.5 rounded-[16px] px-3 py-1.5 text-start hover:bg-surface-2">
         <Avatar name={who?.name} id={who?.id} size={30} />
         <span className="min-w-0 flex-1 truncate text-[0.9375rem]">
           <span className="font-semibold">{name}</span>
           {bits.length > 0 && <span className="text-muted max-sm:hidden"> · {bits.join(" · ")}</span>}
-          {!!c?.allergies?.length && <span className="ml-1.5 font-semibold text-danger sm:hidden">⚠ {c.allergies.length}</span>}
+          {!!c?.allergies?.length && <span className="ms-1.5 font-semibold text-danger sm:hidden">⚠ {c.allergies.length}</span>}
         </span>
         <ChevronDown aria-hidden className={`h-5 w-5 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
@@ -71,7 +71,7 @@ export function ProfileStrip() {
                 })}
               </>
             )}
-            <Link href="/me" className="ml-auto inline-flex min-h-12 items-center text-[0.875rem] font-semibold text-info underline">{t.editLabel}</Link>
+            <Link href="/me" className="ms-auto inline-flex min-h-12 items-center text-[0.875rem] font-semibold text-info underline">{t.editLabel}</Link>
           </div>
         </div>
       )}

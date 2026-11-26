@@ -9,7 +9,7 @@
 const PAGES = "sushrut-pages-v1";
 const DATA = "sushrut-data-v1";
 const DATA_PATHS = [/\/api\/v1\/me\//, /\/api\/v1\/chat\/sessions/, /\/api\/v1\/reports\/labs/, /\/api\/v1\/prescriptions/,
-                    /\/api\/v1\/family/, /\/api\/v1\/consents/, /\/api\/v1\/medicines\//];
+                    /\/api\/v1\/family/, /\/api\/v1\/consents/, /\/api\/v1\/medicines\//, /\/api\/v1\/clinical\//];
 
 self.addEventListener("install", () => self.skipWaiting());
 // On activate, drop caches that aren't ours: other dev projects served on localhost:3000 (e.g. an old app's

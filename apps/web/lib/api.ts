@@ -25,6 +25,7 @@ export function setTokens(t: Tokens | null) {
     sessionStorage.removeItem(KEY);
     localStorage.removeItem(KEY);
     if (t) (t.is_guest ? sessionStorage : localStorage).setItem(KEY, JSON.stringify(t));
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("sushrut:auth-changed"));
   } catch {
     /* storage unavailable: session lives in memory only */
   }
@@ -61,7 +62,7 @@ export function authHeaders(): Record<string, string> {
 
 /** Download an authenticated file (exports, calendar). */
 export async function downloadFile(path: string, name: string) {
-  const r = await fetch(`${API}${path}`, { headers: authHeaders() });
+  const r = await authFetch(`${API}${path}`);
   if (!r.ok) throw new ApiError(r.status, r.statusText);
   const a = document.createElement("a");
   a.href = URL.createObjectURL(await r.blob());
@@ -76,7 +77,14 @@ export class ApiError extends Error {
   }
 }
 
-async function refresh(): Promise<boolean> {
+// One refresh at a time: the refresh token rotates, so two parallel refreshes would spend it twice.
+let refreshing: Promise<boolean> | null = null;
+function refresh(): Promise<boolean> {
+  refreshing ??= doRefresh().catch(() => false).finally(() => { refreshing = null; });
+  return refreshing;
+}
+
+async function doRefresh(): Promise<boolean> {
   const t = getTokens();
   if (!t) return false;
   const r = await fetch(`${API}/auth/refresh`, {
@@ -88,6 +96,13 @@ async function refresh(): Promise<boolean> {
   const j = await r.json();
   setTokens({ ...t, access_token: j.access_token, refresh_token: j.refresh_token });
   return true;
+}
+
+/** fetch() for a raw response (images, files, streams) with the session headers; renews an expired token once. */
+export async function authFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const open = () => fetch(url, { ...init, headers: { ...(init.headers as Record<string, string> | undefined), ...authHeaders() } });
+  const r = await open();
+  return r.status === 401 && (await refresh()) ? open() : r;
 }
 
 export async function api<T = unknown>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
@@ -141,12 +156,8 @@ async function createOrReuseSession(): Promise<Tokens> {
 /** POST and read a server-sent event stream. `signal` aborts it (Stop): the server then stops the model too. */
 export async function postSSE(path: string, body: unknown, onEvent: (event: string, data: any) => void,
                               signal?: AbortSignal) {
-  const r = await fetch(`${API}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify(body),
-    signal,
-  });
+  const r = await authFetch(`${API}${path}`, {  // renews a token that expired mid-chat
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal });
   if (!r.ok || !r.body) {
     let msg = r.statusText;
     try { msg = (await r.json()).detail; } catch {}

@@ -198,15 +198,15 @@ export function TrendChart({ title, unit, series, height = 170 }: { title: strin
       </div>
       <details className="text-[0.875rem]">
         <summary className="inline-flex min-h-12 cursor-pointer items-center font-semibold text-info underline">{t.showReadings}</summary>
-        <div className="mt-1 overflow-x-auto"><table aria-describedby={tableId} className="w-full min-w-[16rem] text-left">
+        <div className="mt-1 overflow-x-auto"><table aria-describedby={tableId} className="w-full min-w-[16rem] text-start">
           <caption id={tableId} className="sr-only">{title}</caption>
-          <thead><tr className="text-muted"><th className="py-1 pr-3 font-semibold">{t.date}</th>
-            {series.map((s) => <th key={s.name} className="py-1 pr-3 font-semibold">{two ? s.name : t.value} ({unit})</th>)}</tr></thead>
+          <thead><tr className="text-muted"><th className="py-1 pe-3 font-semibold">{t.date}</th>
+            {series.map((s) => <th key={s.name} className="py-1 pe-3 font-semibold">{two ? s.name : t.value} ({unit})</th>)}</tr></thead>
           <tbody className="divide-y divide-border">
             {times.slice().reverse().map((ms) => (
-              <tr key={ms}><td className="py-1 pr-3">{new Date(ms).toLocaleDateString()}</td>
+              <tr key={ms}><td className="py-1 pe-3">{new Date(ms).toLocaleDateString()}</td>
                 {series.map((s) => { const p = s.points.find((q) => q.t === ms);
-                  return <td key={s.name} className="py-1 pr-3 font-mono">{p ? fmtNum(p.v) : "—"}</td>; })}</tr>
+                  return <td key={s.name} className="py-1 pe-3 font-mono">{p ? fmtNum(p.v) : "—"}</td>; })}</tr>
             ))}
           </tbody>
         </table></div>

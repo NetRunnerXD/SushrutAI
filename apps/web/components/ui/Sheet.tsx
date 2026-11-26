@@ -1,7 +1,8 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 /** Accessible bottom sheet (mobile) / centred dialog (desktop): focus trap, Esc/back to close, focus restore. */
 export function Sheet({ open, onClose, title, children, tone = "default", closeLabel = "Close", placement = "center" }: {
@@ -10,13 +11,17 @@ export function Sheet({ open, onClose, title, children, tone = "default", closeL
   placement?: "center" | "left";  // left: a floating window at the side on wider screens (e.g. the chats list)
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  // Rendered at the page root: a parent with backdrop-filter / transform (the top bar, the desktop frame) would
+  // otherwise become the containing block of this fixed overlay and clip or misplace it.
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+  useEffect(() => setRoot(document.body), []);
   const titleId = useId();
   // Callers pass a new onClose on every render; keep the latest in a ref so the focus setup below runs only when
   // the sheet opens (re-running it on each keystroke moved focus back to the first button).
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   useEffect(() => {
-    if (!open) return;
+    if (!open || !root) return;
     const onClose = () => closeRef.current();
     const prev = document.activeElement as HTMLElement | null;
     const el = ref.current;
@@ -36,10 +41,10 @@ export function Sheet({ open, onClose, title, children, tone = "default", closeL
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = ""; prev?.focus(); };
-  }, [open]);
-  if (!open) return null;
-  return (
-    <div className={`fixed inset-0 z-50 flex items-end justify-center ${placement === "left" ? "sm:items-start sm:justify-start sm:p-4 sm:pt-20 lg:pl-28" : "sm:items-center"}`} role="presentation">
+  }, [open, root]);
+  if (!open || !root) return null;
+  return createPortal(
+    <div className={`fixed inset-0 z-50 flex items-end justify-center ${placement === "left" ? "sm:items-start sm:justify-start sm:p-4 sm:pt-20 lg:ps-28" : "sm:items-center"}`} role="presentation">
       <div className="sheet-scrim absolute inset-0 bg-[rgb(12_16_20/60%)]" onClick={onClose} aria-hidden />
       <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId}
            className={`sheet-in relative z-10 max-h-[92dvh] w-full overflow-y-auto rounded-t-[22px] bg-surface p-5 pb-safe shadow-[var(--rim),var(--e3)]
@@ -52,6 +57,7 @@ export function Sheet({ open, onClose, title, children, tone = "default", closeL
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    root,
   );
 }

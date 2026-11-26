@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { API, authHeaders } from "@/lib/api";
+import { API, authFetch } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
 /** region: how far the picture can be trusted (services/api/app/vision/screen.py REGION_QUALITY):
@@ -28,7 +28,7 @@ export function ScanViewer({ docId, findings, label }: { docId: string; findings
 
   useEffect(() => {
     let url: string | null = null;
-    fetch(`${API}/documents/${docId}/content`, { headers: authHeaders() })
+    authFetch(`${API}/documents/${docId}/content`)
       .then((r) => (r.ok ? r.blob() : null)).then((b) => { if (b) { url = URL.createObjectURL(b); setOriginal(url); } })
       .catch(() => {});
     return () => { if (url) URL.revokeObjectURL(url); };

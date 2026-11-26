@@ -151,10 +151,10 @@ export function DisclaimerChip() {
 
 export function PrivacyBadge({ local }: { local: boolean }) {
   const { t } = useI18n();
+  if (!local) return null;  // the "used a cloud service" note is not shown
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.8125rem] font-semibold
-      ${local ? "bg-ok-soft text-ok" : "bg-info-soft text-info"}`}>
-      <ShieldCheck aria-hidden className="h-3.5 w-3.5" />{local ? t.processedLocally : t.processedCloud}
+    <span className="inline-flex items-center gap-1 rounded-full bg-ok-soft px-2.5 py-0.5 text-[0.8125rem] font-semibold text-ok">
+      <ShieldCheck aria-hidden className="h-3.5 w-3.5" />{t.processedLocally}
     </span>
   );
 }

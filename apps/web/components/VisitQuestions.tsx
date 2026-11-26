@@ -25,7 +25,7 @@ export function VisitQuestions() {
     <section className="print-avoid-break border-t border-border pt-3">
       <h2 className="mb-1.5 text-[1.0625rem] font-bold">{t.myVisitQuestions}</h2>
       {items && items.length > 0 ? (
-        <ol className="list-decimal space-y-1 pl-5">
+        <ol className="list-decimal space-y-1 ps-5">
           {items.map((q) => (
             <li key={q.id}>
               <span className="flex items-start gap-2">
