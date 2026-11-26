@@ -10,7 +10,8 @@ const SAMPLE: Record<string, string> = {
   hi: "नमस्ते, मैं सुश्रुत एआई हूँ। आज खूब पानी पिएँ और आराम करें।",
 };
 const NAMES: Record<string, string> = { en: "English", hi: "हिन्दी", bn: "বাংলা", ta: "தமிழ்", te: "తెలుగు", mr: "मराठी",
-  gu: "ગુજરાતી", kn: "ಕನ್ನಡ", ml: "മലയാളം", or: "ଓଡ଼ିଆ" };
+  gu: "ગુજરાતી", kn: "ಕನ್ನಡ", ml: "മലയാളം", or: "ଓଡ଼ିଆ",
+  pa: "ਪੰਜਾਬੀ", as: "অসমীয়া", ur: "اردو" };
 
 /** Which on-device voice reads each language aloud (English and the app language), plus pitch.
  *  Languages with no device voice say so: the app then uses its own local voice for them. */

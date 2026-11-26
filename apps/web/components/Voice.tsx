@@ -7,10 +7,12 @@ import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 
 import { bcp47, fill, useI18n } from "@/lib/i18n";
 import { api, switchProfile } from "@/lib/api";
 import {
-  browserRecognitionAvailable, heard, isNoServerSpeech, readPage, setHeardLang, repeatLast, speak, startBrowserRecognition, startServerRecording,
+  browserRecognitionAvailable, heard as heardMeta, isNoServerSpeech, isSpeaking, readPage, setHeardLang, repeatLast, speak, startBrowserRecognition, startServerRecording,
   stopSpeaking, type Recorder,
 } from "@/lib/voice";
 import { matchCommand } from "@/lib/voiceCommands";
+import { bestToCall, findNearby } from "@/lib/nearby";
+import type { VoiceIntent } from "@/lib/voiceIntents";
 import { usePrefs } from "@/lib/prefs";
 import { useSOS } from "./Emergency";
 
@@ -56,10 +58,13 @@ const short = (s: string) => s.toLowerCase().replace(/[.,!?।']/g, "").replace(
 
 /** "My BP is 130 over 85", "did I take my night tablets?", "open my reports", "switch to Asha".
  *  handle(text) returns true when the words were an action (or a yes/no for a pending one). */
-export function useVoiceActions() {
+export function useVoiceActions(onControl?: (intent: VoiceIntent) => void) {
   const { t, lang } = useI18n();
   const router = useRouter();
   const [pending, setPending] = useState<VoicePlan | null>(null);
+  const run = useRef<(() => Promise<void> | void) | null>(null);  // a previewed action waiting for "yes"
+  const controlRef = useRef(onControl);
+  controlRef.current = onControl;
   const [result, setResult] = useState<{ text: string; href?: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const say = useCallback((s?: string) => { if (s) speak(s, lang, bcp47(lang)); }, [lang]);
@@ -68,6 +73,13 @@ export function useVoiceActions() {
     if (!plan) return;
     setBusy(true);
     try {
+      if (plan.action === "preview") {  // Reversible Action Preview: the person said / pressed yes
+        const go = run.current;
+        run.current = null;
+        setPending(null);
+        await go?.();
+        return;
+      }
       if (plan.action === "log_vital") {
         await api("/me/vitals", { method: "POST", body: JSON.stringify(plan.params.readings) });
       } else if (plan.action === "log_dose") {
@@ -86,7 +98,16 @@ export function useVoiceActions() {
     }
   }, [say, t]);
 
-  const cancel = useCallback(() => { setPending(null); setResult(null); stopSpeaking(); }, []);
+  const cancel = useCallback(() => { run.current = null; setPending(null); setResult(null); stopSpeaking(); }, []);
+
+  /** Reversible Action Preview: say exactly what will happen (one short sentence) and wait for a clear yes
+   *  (voice or button) before calling, saving a long-term record, starting reminders or deleting anything. */
+  const propose = useCallback((say: string, action: () => Promise<void> | void, confirmLabel?: string) => {
+    run.current = action;
+    setResult(null);
+    setPending({ action: "preview", say, params: { confirmLabel } });
+    speak(`${say} ${t.sayYesNo}`, lang, bcp47(lang));
+  }, [lang, t]);
 
   const handle = useCallback(async (text: string): Promise<boolean> => {
     if (pending) {
@@ -101,7 +122,21 @@ export function useVoiceActions() {
       return false;
     }
     if (!plan.action) return false;
+    if (plan.action === "control") {
+      const intent = plan.params?.intent as VoiceIntent;
+      if (pending && intent === "yes") { await confirm(pending); return true; }
+      if (pending && intent === "no") { cancel(); return true; }
+      controlRef.current?.(intent);
+      return true;
+    }
     setResult(null);
+    if (plan.action === "prepare_summary" && plan.href) { say(plan.say); router.push(plan.href); return true; }
+    if (plan.action === "call_nearest") {  // find the nearest place with a number, say who will be called, wait for yes
+      let b = { name: "Ambulance", phone: "108" };
+      try { b = bestToCall(await findNearby()); } catch { /* no location / offline: the national ambulance number */ }
+      propose(fill(t.willCall, { name: b.name, phone: b.phone }), () => { window.location.href = `tel:${b.phone}`; }, t.call);
+      return true;
+    }
     if (plan.confirm) { setPending(plan); say(plan.say); return true; }
     if (plan.action === "navigate" && plan.href) { say(plan.say); router.push(plan.href); return true; }
     if (plan.action === "switch_profile") {
@@ -112,9 +147,9 @@ export function useVoiceActions() {
     setResult({ text: plan.say ?? "", href: plan.href });
     say(plan.say);
     return true;
-  }, [pending, confirm, cancel, lang, router, say]);
+  }, [pending, confirm, cancel, lang, router, say, propose, t]);
 
-  return { handle, pending, result, busy, confirm: () => confirm(pending), cancel, dismiss: () => setResult(null) };
+  return { handle, pending, result, busy, propose, confirm: () => confirm(pending), cancel, dismiss: () => setResult(null) };
 }
 
 export type VoiceActions = ReturnType<typeof useVoiceActions>;
@@ -124,11 +159,11 @@ export function ActionCard({ a, className = "" }: { a: VoiceActions; className?:
   const { t } = useI18n();
   if (a.pending) {
     return (
-      <div role="alertdialog" aria-label={a.pending.say} className={`lift space-y-3 rounded-[18px] border-[1.5px] border-brand bg-surface p-4 text-left shadow-[var(--rim),var(--e2)] ${className}`}>
+      <div role="alertdialog" aria-label={a.pending.say} className={`lift space-y-3 rounded-[18px] border-[1.5px] border-brand bg-surface p-4 text-start shadow-[var(--rim),var(--e2)] ${className}`}>
         <p aria-live="assertive" className="display text-[1.1875rem] font-bold leading-snug">{a.pending.say}</p>
         <p className="text-[0.875rem] text-muted">{t.sayYesNo}</p>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={a.confirm} disabled={a.busy} className="btn btn-primary"><Check aria-hidden className="h-5 w-5" />{t.save}</button>
+          <button type="button" onClick={a.confirm} disabled={a.busy} className="btn btn-primary"><Check aria-hidden className="h-5 w-5" />{a.pending.params?.confirmLabel ?? (a.pending.action === "preview" ? t.yesGoAhead : t.save)}</button>
           <button type="button" onClick={a.cancel} className="btn btn-outline"><X aria-hidden className="h-5 w-5" />{t.cancel}</button>
         </div>
       </div>
@@ -136,7 +171,7 @@ export function ActionCard({ a, className = "" }: { a: VoiceActions; className?:
   }
   if (!a.result?.text) return null;
   return (
-    <div role="status" className={`lift flex flex-wrap items-center gap-2 rounded-[18px] border border-ok/40 bg-ok-soft p-3 text-left ${className}`}>
+    <div role="status" className={`lift flex flex-wrap items-center gap-2 rounded-[18px] border border-ok/40 bg-ok-soft p-3 text-start ${className}`}>
       <p className="min-w-0 flex-1 font-semibold text-text">{a.result.text}</p>
       {a.result.href && <Link href={a.result.href} className="font-semibold text-info underline">{t.open}</Link>}
       <button type="button" aria-label={t.close} onClick={a.dismiss} className="grid h-12 w-12 place-items-center rounded-full bg-surface"><X aria-hidden className="h-4 w-4" /></button>
@@ -204,6 +239,7 @@ export function useVoiceCapture(onText: (text: string) => void, { confirm = true
     setLeft(null);
     try {
       setHeardLang(null);
+      heardMeta.onPartial = setInterim;
       if (serverOk.current) rec.current = await startServerRecording(lang);
       else if (browserRecognitionAvailable()) rec.current = startBrowserRecognition(bcp47(lang), setInterim);
       else throw new Error("unsupported");
@@ -282,8 +318,8 @@ const lastLevel = (levels: number[]) => (levels.length ? Math.min(1, (levels[lev
 function HeardLang() {
   const { t, lang } = useI18n();
   const [, force] = useState(0);
-  const cur = heard.lang ?? lang;
-  const options = [...new Set([lang, "en", "hi"])];
+  const cur = heardMeta.lang ?? lang;
+  const options = [...new Set([lang, "en", "hi", ...(heardMeta.detectedLanguages ?? [])])].filter((x) => x in LANG_NATIVE);
   return (
     <p className="flex flex-wrap items-center gap-1.5 text-[0.875rem] text-muted">
       {t.heardIn}
@@ -296,18 +332,24 @@ function HeardLang() {
   );
 }
 const LANG_NATIVE: Record<string, string> = { en: "English", hi: "हिन्दी", bn: "বাংলা", ta: "தமிழ்", te: "తెలుగు", mr: "मराठी",
-  gu: "ગુજરાતી", kn: "ಕನ್ನಡ", ml: "മലയാളം", or: "ଓଡ଼ିଆ" };
+  gu: "ગુજરાતી", kn: "ಕನ್ನಡ", ml: "മലയാളം", or: "ଓଡ଼ିଆ",
+  pa: "ਪੰਜਾਬੀ", as: "অসমীয়া", ur: "اردو" };
 
 export function HeardConfirm({ v, className = "" }: { v: VoiceCapture; className?: string }) {
   const { t } = useI18n();
   const id = useId();
   if (v.state !== "confirm") return null;
   return (
-    <div role="group" aria-label={t.didIHear} className={`lift space-y-2 rounded-[18px] border border-border bg-surface p-4 text-left shadow-[var(--rim),var(--e2)] ${className}`}>
+    <div role="group" aria-label={t.didIHear} className={`lift space-y-2 rounded-[18px] border border-border bg-surface p-4 text-start shadow-[var(--rim),var(--e2)] ${className}`}>
       <label htmlFor={id} className="display block text-[1.1875rem] font-bold">{t.didIHear}</label>
       <textarea id={id} rows={2} value={v.heard} onChange={(e) => v.edit(e.target.value)} onFocus={v.pause}
         className="input w-full resize-none" />
-      {heard.lang && <HeardLang />}
+      {heardMeta.lowConfidence && (
+        <p role="status" className="rounded-[12px] bg-warn-soft px-3 py-2 text-[0.875rem] font-medium text-warn">
+          {heardMeta.clarificationPrompt || t.lowAudioConfidence}
+        </p>
+      )}
+      {heardMeta.lang && <HeardLang />}
       <p aria-live="polite" className="text-[0.875rem] text-muted">
         {v.left !== null ? fill(t.sendingIn, { n: v.left }) : t.heardPaused}</p>
       {v.left !== null && (
@@ -430,8 +472,8 @@ export function FloatingMic({ inline = false }: { inline?: boolean }) {
   return (
     <div className={inline ? "relative" : "contents"}>
       {(v.state === "confirm" || v.state === "listening" || v.notice || v.actions.pending || v.actions.result) && (
-        <div className={inline ? "d-dialog-in absolute right-0 top-14 z-40 w-[380px]"
-          : "fixed inset-x-4 bottom-[calc(11rem+env(safe-area-inset-bottom))] z-30 md:inset-x-auto md:bottom-28 md:right-6 md:w-[380px]"}>
+        <div className={inline ? "d-dialog-in absolute end-0 top-14 z-40 w-[380px]"
+          : "fixed inset-x-4 bottom-[calc(11rem+env(safe-area-inset-bottom))] z-30 md:inset-x-auto md:bottom-28 md:end-6 md:w-[380px]"}>
           {v.actions.pending || v.actions.result ? <ActionCard a={v.actions} className="shadow-[var(--e3)]" />
             : v.state === "confirm" ? <HeardConfirm v={v} className="shadow-[var(--e3)]" /> : (
             <div className="lift flex items-center gap-3 rounded-[18px] border border-border bg-surface p-3 shadow-[var(--rim),var(--e3)]">
@@ -443,7 +485,7 @@ export function FloatingMic({ inline = false }: { inline?: boolean }) {
       )}
       <button onClick={v.toggle} aria-label={`${v.state === "listening" ? t.listening : t.speak} (${t.voiceShortcut})`} aria-pressed={v.state === "listening"}
         title={t.voiceShortcut}
-        className={inline ? "rounded-full" : "floating-mic fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-3 z-30 rounded-full p-1 md:bottom-6 md:right-6"}>
+        className={inline ? "rounded-full" : "floating-mic fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] end-3 z-30 rounded-full p-1 md:bottom-6 md:end-6"}>
         <VoiceWell state={v.state} level={lastLevel(v.levels)} className={inline ? "h-11 w-11" : "h-16 w-16"}>
           <Icon aria-hidden className={`${inline ? "h-5 w-5" : "h-7 w-7"} ${v.state === "transcribing" ? "animate-spin" : ""}`} />
         </VoiceWell>
@@ -452,10 +494,32 @@ export function FloatingMic({ inline = false }: { inline?: boolean }) {
   );
 }
 
+/** Listen / Stop: while the answer is being read aloud the button becomes Stop and cuts the reading off at once
+ *  (also when the person leaves the page). */
 export function ListenButton({ onClick, label }: { onClick: () => void; label: string }) {
+  const { t } = useI18n();
+  const [busy, setBusy] = useState(false);
+  const seen = useRef(false);
+  const mine = useRef(false);  // this button started the reading
+  mine.current = busy;
+  useEffect(() => {
+    if (!busy) return;
+    seen.current = false;
+    const started = Date.now();
+    const id = setInterval(() => {
+      if (isSpeaking()) seen.current = true;
+      // finished, or nothing could read it (no voice for this language): back to Listen
+      else if (seen.current || Date.now() - started > 8000) setBusy(false);
+    }, 250);
+    return () => clearInterval(id);
+  }, [busy]);
+  useEffect(() => () => { if (mine.current) stopSpeaking(); }, []);
+  const stop = () => { stopSpeaking(); setBusy(false); };
   return (
-    <button onClick={onClick} className="inline-flex min-h-12 items-center gap-1.5 rounded-full border-[1.5px] border-border-input bg-surface px-3.5 text-[0.9375rem] font-semibold shadow-[var(--rim)] hover:bg-surface-2">
-      <Volume2 aria-hidden className="h-4 w-4" />{label}
+    <button onClick={() => (busy ? stop() : (setBusy(true), onClick()))} aria-pressed={busy}
+      className={`inline-flex min-h-12 items-center gap-1.5 rounded-full border-[1.5px] px-3.5 text-[0.9375rem] font-semibold shadow-[var(--rim)] ${busy ? "border-brand bg-brand-soft" : "border-border-input bg-surface hover:bg-surface-2"}`}>
+      {busy ? <Square aria-hidden className="h-4 w-4" fill="currentColor" /> : <Volume2 aria-hidden className="h-4 w-4" />}
+      {busy ? t.stop : label}
     </button>
   );
 }

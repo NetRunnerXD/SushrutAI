@@ -1,6 +1,7 @@
 "use client";
 
-import { api, ApiError } from "./api";
+import { API, api, ApiError, getProfile, getTokens } from "./api";
+import { DEFAULT_SILENCE_CONFIG, type SilenceConfig } from "./orchestrator";
 
 /**
  * Voice input, local-first:
@@ -33,10 +34,92 @@ function meter(stream: MediaStream): { level: () => number; close: () => void } 
 
 /** The language the server heard in the last recording (it detects among the app language, English and Hindi).
  *  The answer is written in it, so speaking Hindi to the English app gets a Hindi answer. */
-export const heard: { lang: string | null; confidence: number } = { lang: null, confidence: 0 };
+export const heard: {
+  lang: string | null;
+  confidence: number;
+  rawTranscript?: string;
+  normalizedTranscript?: string;
+  lowConfidence?: boolean;
+  clarificationPrompt?: string | null;
+  codeSwitched?: boolean;
+  detectedLanguages?: string[];
+  segments?: { start: number; end: number; text: string; language?: string }[];
+  engine?: string;
+  onPartial: ((text: string) => void) | null;
+} = { lang: null, confidence: 0, onPartial: null };
 export function setHeardLang(l: string | null) { heard.lang = l; heard.confidence = l ? 1 : 0; }
+export function clearHeardMeta() {
+  heard.lang = null; heard.confidence = 0; heard.rawTranscript = undefined;
+  heard.normalizedTranscript = undefined; heard.lowConfidence = false;
+  heard.clarificationPrompt = null; heard.codeSwitched = false;
+  heard.detectedLanguages = undefined; heard.segments = undefined; heard.engine = undefined;
+}
+
+async function startGeminiRecording(lang: string): Promise<Recorder> {
+  const { startGeminiLive } = await import("./geminiLive");
+  let latest = "";
+  let finish: (s: string) => void = () => {};
+  const done = new Promise<string>((res) => { finish = res; });
+  const listenAs = spokenRoute() ? "auto" : lang;
+  const handle = await startGeminiLive({
+    mode: "transcribe", lang: listenAs,
+    onEvent: (ev) => {
+      if (ev.lang) setHeardLang(ev.lang.split("-")[0]);
+      if ((ev.type === "interim" || ev.type === "final") && ev.text) {
+        latest = ev.text;
+        heard.onPartial?.(ev.text);
+      }
+      if (ev.type === "final" && stopping) finish(latest.trim());
+      if (ev.type === "error") finish(latest.trim());
+    },
+  });
+  let stopping = false;
+  heard.engine = "Gemini 3.5 Transcribe Live";
+  return {
+    level: handle.level,
+    stop: () => {
+      stopping = true;
+      handle.endAudio();
+      const timer = setTimeout(() => finish(latest.trim()), 2500);
+      return done.finally(() => { clearTimeout(timer); handle.stop(); });
+    },
+  };
+}
+
+async function startGeminiHandsFree(lang: string, opts: {
+  onUtterance: (text: string, lang?: string, f?: VoiceFeatures) => void;
+  onPartial?: (fragment: string, merged: string) => void;
+  onBargeIn?: (spokenSoFar: string) => void;
+  onState: (s: HandsFreeState) => void;
+  onError: (e: unknown) => void;
+}): Promise<HandsFree> {
+  const { startGeminiLive } = await import("./geminiLive");
+  opts.onState("listening");
+  const listenAs = spokenRoute() ? "auto" : lang;
+  const handle = await startGeminiLive({
+    mode: "transcribe", lang: listenAs,
+    onEvent: (ev) => {
+      const heardLang = (ev.lang || lang).split("-")[0];
+      if (ev.type === "interim" && ev.text) {
+        if (isSpeaking()) { stopSpeaking(); opts.onBargeIn?.(lastSpoken?.text ?? ""); }
+        opts.onPartial?.(ev.text, ev.text);
+        opts.onState("speech");
+      }
+      if (ev.type === "final" && ev.text?.trim()) {
+        if (ev.lang) setHeardLang(heardLang);
+        opts.onUtterance(ev.text.trim(), heardLang);
+        opts.onState("listening");
+      }
+      if (ev.type === "error") opts.onError(new Error(ev.message || "Gemini Live stopped"));
+    },
+  });
+  return { stop: () => { handle.stop(); opts.onState("idle"); } };
+}
 
 export async function startServerRecording(lang: string): Promise<Recorder> {
+  if (spokenRoute() || voicePrefs().engine === "gemini_transcribe") {
+    try { return await startGeminiRecording(lang); } catch { /* local recording still works */ }
+  }
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
   const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "";
   const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
@@ -53,12 +136,28 @@ export async function startServerRecording(lang: string): Promise<Recorder> {
           m.close();
           const fd = new FormData();
           fd.append("file", new Blob(chunks, { type: rec.mimeType || "audio/webm" }), "speech.webm");
-          fd.append("lang", "auto");
+          fd.append("lang", sttLang() === "auto" ? "auto" : lang);
+          fd.append("engine", voicePrefs().engine ?? "local");
           fd.append("ui", lang);
           try {
-            const r = await api<{ text: string; lang?: string; confidence?: number }>("/stt", { method: "POST", body: fd });
+            const r = await api<{
+              text: string; lang?: string; confidence?: number;
+              raw_transcript?: string; normalized_transcript?: string;
+              low_confidence?: boolean; clarification_prompt?: string | null;
+              code_switched?: boolean; detected_languages?: string[];
+              segments?: { start: number; end: number; text: string; language?: string }[];
+              engine?: string;
+            }>("/stt", { method: "POST", body: fd });
             heard.lang = r.lang ?? null;
             heard.confidence = r.confidence ?? 0;
+            heard.rawTranscript = r.raw_transcript ?? r.text;
+            heard.normalizedTranscript = r.normalized_transcript ?? r.text;
+            heard.lowConfidence = !!r.low_confidence;
+            heard.clarificationPrompt = r.clarification_prompt ?? null;
+            heard.codeSwitched = !!r.code_switched;
+            heard.detectedLanguages = r.detected_languages;
+            heard.segments = r.segments;
+            heard.engine = r.engine;
             resolve(r.text);
           } catch (e) {
             reject(e);
@@ -109,13 +208,69 @@ export const isNoServerSpeech = (e: unknown) => e instanceof ApiError && e.statu
  */
 export type HandsFree = { stop: () => void };
 
+/** How an utterance sounded (measured on this device; nothing leaves it): speaking time, loudness, words. */
+export type VoiceFeatures = { ms: number; rms: number; words: number };
+
+export type HandsFreeState =
+  | "idle"
+  | "listening"
+  | "speech"
+  | "transcribing"
+  | "pause_detected"
+  | "waiting_for_continuation"
+  | "session_paused";
+
+/** Open a low-latency streaming WebSocket when tokens allow; resolves null if unavailable so HTTP /stt works seamlessly. */
+export function openVoiceWebSocket(lang: string, onPartial: (res: any) => void): {
+  sendChunk: (bytes: ArrayBuffer) => void;
+  finalize: () => void;
+  reset: () => void;
+  close: () => void;
+} | null {
+  try {
+    const t = getTokens();
+    if (!t || typeof WebSocket === "undefined") return null;
+    const wsBase = API.replace(/^http/, "ws");
+    const prof = getProfile()?.id;
+    const qs = new URLSearchParams({ token: t.access_token, lang: sttLang() === "auto" ? "auto" : lang, ui: lang });
+    if (prof) qs.set("profile_id", prof);
+    const ws = new WebSocket(`${wsBase}/voice/stream?${qs.toString()}`);
+    let open = false;
+    ws.onopen = () => {
+      open = true;
+      ws.send(JSON.stringify({ type: "config", format: "webm", lang: sttLang() === "auto" ? "auto" : lang, ui: lang }));
+    };
+    ws.onmessage = (e) => {
+      try { onPartial(JSON.parse(e.data)); } catch { /* ignore */ }
+    };
+    return {
+      sendChunk: (buf) => { if (open && ws.readyState === WebSocket.OPEN) ws.send(buf); },
+      finalize: () => { if (open && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "finalize" })); },
+      reset: () => { if (open && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "reset" })); },
+      close: () => { try { ws.close(); } catch { /* ignore */ } },
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function startHandsFree(lang: string, opts: {
-  onUtterance: (text: string, lang?: string) => void;
-  onState: (s: "idle" | "speech" | "transcribing") => void;
+  onUtterance: (text: string, lang?: string, f?: VoiceFeatures) => void;
+  onPartial?: (fragment: string, merged: string) => void;
+  onBargeIn?: (spokenSoFar: string) => void;
+  onGentlePrompt?: () => void;
+  onState: (s: HandsFreeState) => void;
   onError: (e: unknown) => void;
+  silence?: SilenceConfig;
 }): Promise<HandsFree> {
+  if (spokenRoute() || voicePrefs().engine === "gemini_transcribe") return startGeminiHandsFree(lang, opts);
+  const cfg = opts.silence ?? DEFAULT_SILENCE_CONFIG;
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
   const ctx = new AudioContext();
+  const wake = () => { if (ctx.state === "suspended") ctx.resume().catch(() => {}); };
+  wake();
+  window.addEventListener("pointerdown", wake, { once: true });
+  window.addEventListener("keydown", wake, { once: true });
   const src = ctx.createMediaStreamSource(stream);
   const analyser = ctx.createAnalyser();
   analyser.fftSize = 1024;
@@ -125,27 +280,79 @@ export async function startHandsFree(lang: string, opts: {
 
   let noise = 0.01, rec: MediaRecorder | null = null, chunks: Blob[] = [];
   let speechMs = 0, silenceMs = 0, stopped = false, last = performance.now();
+  let voicedMs = 0, rmsSum = 0, rmsN = 0;
+  let openFragments: string[] = [];
+  let waitingSince: number | null = null;
+  let gentleSent = false;
+  let speakingStartedAt = 0;
+  let wasSpeaking = false;
+  let activeLang: string | undefined = undefined;
+  const wsClient = openVoiceWebSocket(lang, (res) => {
+    if (res?.is_partial && res?.text?.trim()) {
+      const merged = [...openFragments, res.text.trim()].join(" ").trim();
+      opts.onPartial?.(res.text.trim(), merged);
+    }
+  });
 
-  const finish = () => {
+  const flushTurn = () => {
+    const merged = openFragments.join(" ").replace(/\s+/g, " ").trim();
+    const f: VoiceFeatures = { ms: voicedMs, rms: rmsN ? rmsSum / rmsN : 0, words: merged ? merged.split(/\s+/).length : 0 };
+    openFragments = [];
+    waitingSince = null;
+    gentleSent = false;
+    voicedMs = 0; rmsSum = 0; rmsN = 0;
+    if (merged) opts.onUtterance(merged, activeLang, f);
+    opts.onState("listening");
+  };
+
+  const finishFragment = () => {
     const r = rec;
     rec = null;
     if (!r) return;
     r.onstop = async () => {
       const blob = new Blob(chunks, { type: r.mimeType || "audio/webm" });
       chunks = [];
-      if (blob.size < 4000) { opts.onState("idle"); return; }
+      if (blob.size < 3500) {
+        if (!openFragments.length) opts.onState("listening");
+        return;
+      }
       opts.onState("transcribing");
       const fd = new FormData();
       fd.append("file", blob, "speech.webm");
-      fd.append("lang", "auto");
+      fd.append("lang", sttLang() === "auto" ? "auto" : lang);
+      fd.append("engine", voicePrefs().engine ?? "local");
       fd.append("ui", lang);
       try {
-        const res = await api<{ text: string; lang?: string; confidence?: number }>("/stt", { method: "POST", body: fd });
+        const res = await api<{
+          text: string; lang?: string; confidence?: number;
+          raw_transcript?: string; normalized_transcript?: string;
+          low_confidence?: boolean; clarification_prompt?: string | null;
+          code_switched?: boolean; detected_languages?: string[];
+          segments?: { start: number; end: number; text: string; language?: string }[];
+          engine?: string;
+        }>("/stt", { method: "POST", body: fd });
         heard.lang = res.lang ?? null;
         heard.confidence = res.confidence ?? 0;
-        if (res.text?.trim()) opts.onUtterance(res.text.trim(), res.lang);
+        heard.rawTranscript = res.raw_transcript ?? res.text;
+        heard.normalizedTranscript = res.normalized_transcript ?? res.text;
+        heard.lowConfidence = !!res.low_confidence;
+        heard.clarificationPrompt = res.clarification_prompt ?? null;
+        heard.codeSwitched = !!res.code_switched;
+        heard.detectedLanguages = res.detected_languages;
+        heard.segments = res.segments;
+        heard.engine = res.engine;
+        activeLang = res.lang;
+        const piece = (res.normalized_transcript || res.text || "").trim();
+        if (piece) {
+          openFragments.push(piece);
+          const merged = openFragments.join(" ").replace(/\s+/g, " ").trim();
+          opts.onPartial?.(piece, merged);
+          waitingSince = performance.now();
+          opts.onState("waiting_for_continuation");
+          return;
+        }
       } catch (e) { opts.onError(e); }
-      opts.onState("idle");
+      opts.onState(openFragments.length ? "waiting_for_continuation" : "listening");
     };
     r.stop();
   };
@@ -154,34 +361,71 @@ export async function startHandsFree(lang: string, opts: {
     if (stopped) return;
     const now = performance.now(), dt = now - last;
     last = now;
+    const ttsActive = isSpeaking();
+    if (ttsActive && !wasSpeaking) speakingStartedAt = now;
+    wasSpeaking = ttsActive;
+
     analyser.getFloatTimeDomainData(buf);
     let sum = 0;
     for (const v of buf) sum += v * v;
     const rms = Math.sqrt(sum / buf.length);
-    const loud = rms > Math.max(0.02, noise * 3);
-    if (!loud) noise = noise * 0.98 + rms * 0.02; // adaptive noise floor
+
+    // Acoustic playback-aware barge-in gate: ignore initial 200ms TTS speaker onset and require stronger energy while AI speaks
+    const gateThresh = ttsActive ? Math.max(0.045, noise * 4.5) : Math.max(0.02, noise * 3);
+    const loud = (!ttsActive || (now - speakingStartedAt) > 200) && rms > gateThresh;
+    if (!loud && !ttsActive) noise = noise * 0.98 + rms * 0.02;
+
     if (loud) {
       speechMs += dt; silenceMs = 0;
-      if (speechMs > 150 && isSpeaking()) stopSpeaking(); // barge-in
-      if (!rec && speechMs > 200) {
+      waitingSince = null;
+      gentleSent = false;
+      if (rec) { voicedMs += dt; rmsSum += rms; rmsN++; }
+      if (speechMs > 150 && ttsActive) {
+        const spokenBefore = lastSpoken?.text ?? "";
+        stopSpeaking();
+        opts.onBargeIn?.(spokenBefore);
+      }
+      if (!rec && speechMs > 180) {
         chunks = [];
         rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
-        rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-        rec.start(200);
+        rec.ondataavailable = (e) => {
+          if (e.data.size) {
+            chunks.push(e.data);
+            e.data.arrayBuffer().then((ab) => wsClient?.sendChunk(ab)).catch(() => {});
+          }
+        };
+        rec.start(250);
         opts.onState("speech");
       }
     } else {
       silenceMs += dt;
       if (silenceMs > 300) speechMs = 0;
-      if (rec && silenceMs > 900) finish();
+      if (rec && silenceMs >= cfg.pauseDetectMs) {
+        opts.onState("pause_detected");
+        finishFragment();
+      }
+      if (!rec && openFragments.length > 0 && waitingSince !== null) {
+        const waited = now - waitingSince;
+        if (waited >= cfg.gentleAckMs && !gentleSent) {
+          gentleSent = true;
+          opts.onGentlePrompt?.();
+        }
+        if (waited >= cfg.continuationGraceMs) {
+          flushTurn();
+        }
+      } else if (!rec && openFragments.length === 0 && silenceMs >= cfg.sessionPauseMs) {
+        opts.onState("session_paused");
+      }
     }
     requestAnimationFrame(tick);
   };
+  opts.onState("listening");
   requestAnimationFrame(tick);
   return {
     stop: () => {
       stopped = true;
       if (rec) rec.stop();
+      wsClient?.close();
       stream.getTracks().forEach((t) => t.stop());
       ctx.close();
     },
@@ -236,17 +480,23 @@ function speechRate(): number {
 
 /** Script of a text -> app language (a Hindi answer in the English app is read with a Hindi voice). */
 const SCRIPTS: [RegExp, string][] = [[/[\u0900-\u097F]/, "hi"], [/[\u0980-\u09FF]/, "bn"], [/[\u0B80-\u0BFF]/, "ta"],
-  [/[\u0C00-\u0C7F]/, "te"], [/[\u0A80-\u0AFF]/, "gu"], [/[\u0C80-\u0CFF]/, "kn"], [/[\u0D00-\u0D7F]/, "ml"], [/[\u0B00-\u0B7F]/, "or"]];
+  [/[\u0C00-\u0C7F]/, "te"], [/[\u0A80-\u0AFF]/, "gu"], [/[\u0C80-\u0CFF]/, "kn"], [/[\u0D00-\u0D7F]/, "ml"], [/[\u0B00-\u0B7F]/, "or"],
+  [/[\u0A00-\u0A7F]/, "pa"], [/[\u0600-\u06FF]/, "ur"]];
 export function langOfText(text: string, fallback: string): string {
   const letters = text.replace(/[^\p{L}]/gu, "");
   for (const [re, l] of SCRIPTS) {
     const n = (letters.match(new RegExp(re.source, "g")) ?? []).length;
-    if (n > letters.length * 0.3) return l === "hi" && fallback === "mr" ? "mr" : l;
+    if (n > letters.length * 0.3) {
+      if (l === "hi" && fallback === "mr") return "mr";
+      // Bengali script is shared: Assamese has its own ৰ and ৱ, or the person's app language says so
+      if (l === "bn" && (/[\u09F0\u09F1]/.test(letters) || fallback === "as")) return "as";
+      return l;
+    }
   }
   return /[A-Za-z]/.test(letters) && !SCRIPTS.some(([re]) => re.test(letters)) ? "en" : fallback;
 }
 const BCP: Record<string, string> = { en: "en-IN", hi: "hi-IN", bn: "bn-IN", ta: "ta-IN", te: "te-IN", mr: "mr-IN",
-  gu: "gu-IN", kn: "kn-IN", ml: "ml-IN", or: "or-IN" };
+  gu: "gu-IN", kn: "kn-IN", ml: "ml-IN", or: "or-IN", pa: "pa-IN", as: "as-IN", ur: "ur-IN" };
 
 /** Device voices (on-device text-to-speech). Loaded asynchronously by most browsers. */
 export function deviceVoices(): Promise<SpeechSynthesisVoice[]> {
@@ -260,12 +510,29 @@ export function deviceVoices(): Promise<SpeechSynthesisVoice[]> {
   });
 }
 
-type VoicePrefs = { voices?: Record<string, string>; pitch?: number };
+type VoicePrefs = {
+  voices?: Record<string, string>; pitch?: number;
+  autoLang?: boolean;   // detect the spoken language each time (off: the app language is used, faster and lighter)
+  handsFree?: boolean;  // keep listening between answers on every page (on by default)
+  engine?: "local" | "sarvam" | "elevenlabs" | "gemini_transcribe";
+  talk?: "off" | "gemini_talk" | "gemini_flash";
+  spoken?: boolean;  // mic → Transcribe Live → English answer → speak back in the heard language
+  playback?: "device" | "gemini_tts";
+  voiceCare?: boolean;  // opt-in: learn the usual speaking pace / energy on this device and notice tiredness  // listening / read-aloud engine (cloud ones need the cloud_voice consent)
+};
 export function voicePrefs(): VoicePrefs {
   try { return JSON.parse(localStorage.getItem("sushrut.voice") || "{}"); } catch { return {}; }
 }
+/** Spoken questions use Transcribe Live, the Settings answer model in English, then playback in the heard language. */
+export function spokenRoute(): boolean {
+  return voicePrefs().spoken === true;
+}
 export function setVoicePrefs(p: VoicePrefs) {
   try { localStorage.setItem("sushrut.voice", JSON.stringify({ ...voicePrefs(), ...p })); } catch { /* ignore */ }
+}
+/** What the server should listen for: the app language, or "auto" when language detection is switched on. */
+export function sttLang(): string {
+  return voicePrefs().autoLang ? "auto" : "app";
 }
 
 /** Best device voice for a language: the person's choice, else Indian English / the language's Indian voice,
@@ -287,19 +554,51 @@ export function pickVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechS
   return local(same) ?? null;
 }
 
-export async function speak(text: string, lang: string, _bcp?: string) {
+export type SpeakOpts = { confidence?: "high" | "medium" | "low" };
+/** Confidence in the voice: a steady pace for a confident answer; slightly slower and softer when unsure (the
+ *  written "not a diagnosis" line always stays). */
+function confidenceTone(o?: SpeakOpts): { rate: number; pitch: number } {
+  return o?.confidence === "low" ? { rate: 0.9, pitch: 0.95 } : o?.confidence === "medium" ? { rate: 0.96, pitch: 0.98 } : { rate: 1, pitch: 1 };
+}
+
+export async function speak(text: string, lang: string, _bcp?: string, opts?: SpeakOpts) {
+  const tone = confidenceTone(opts);
   stopSpeaking();
   const clean = text.replace(/[*_#>`]/g, "").slice(0, 1400);
   const l = langOfText(clean, lang);
   lastSpoken = { text, lang: l, bcp: BCP[l] ?? l };
+  // 0. a cloud voice the person chose (Sarvam / ElevenLabs): falls back to the device voice when unavailable
+  const prefs = voicePrefs();
+  const playback = prefs.playback ?? (spokenRoute() ? "gemini_tts" : "device");
+  if (playback === "gemini_tts") {
+    try {
+      const r = await api<{ audio_base64: string; format?: string }>("/tts", { method: "POST", body: JSON.stringify({ text: clean, lang: l, engine: "gemini" }) });
+      audio = new Audio(`data:audio/${r.format === "mp3" ? "mpeg" : "wav"};base64,${r.audio_base64}`);
+      audio.playbackRate = speechRate() * tone.rate;
+      (audio as any).preservesPitch = true;
+      await audio.play();
+      return;
+    } catch { /* the device voice speaks instead */ }
+  }
+  const engine = prefs.engine ?? "local";
+  if (engine === "sarvam" || engine === "elevenlabs") {
+    try {
+      const r = await api<{ audio_base64: string; format?: string }>("/tts", { method: "POST", body: JSON.stringify({ text: clean, lang: l, engine }) });
+      audio = new Audio(`data:audio/${r.format === "mp3" ? "mpeg" : "wav"};base64,${r.audio_base64}`);
+      audio.playbackRate = speechRate() * tone.rate;
+      (audio as any).preservesPitch = true;
+      await audio.play();
+      return;
+    } catch { /* fall through to the device voice */ }
+  }
   // 1. the device's own voice (on-device, instant, no data leaves the phone)
   const voice = pickVoice(await deviceVoices(), l);
   if (voice) {
     const u = new SpeechSynthesisUtterance(clean);
     u.voice = voice;
     u.lang = voice.lang;
-    u.rate = 0.95 * speechRate();
-    u.pitch = voicePrefs().pitch ?? 1;
+    u.rate = 0.95 * speechRate() * tone.rate;
+    u.pitch = (voicePrefs().pitch ?? 1) * tone.pitch;
     speechSynthesis.speak(u);
     return;
   }
@@ -308,7 +607,7 @@ export async function speak(text: string, lang: string, _bcp?: string) {
   try {
     const r = await api<{ audio_base64: string }>("/tts", { method: "POST", body: JSON.stringify({ text: clean, lang: l }) });
     audio = new Audio(`data:audio/wav;base64,${r.audio_base64}`);
-    audio.playbackRate = speechRate();
+    audio.playbackRate = speechRate() * tone.rate;
     (audio as any).preservesPitch = true;
     await audio.play();
   } catch { /* nothing can read this language aloud on this device */ }
