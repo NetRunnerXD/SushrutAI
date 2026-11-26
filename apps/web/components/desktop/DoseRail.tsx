@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useDoses } from "@/components/Home";
 import { api } from "@/lib/api";
-import { fill, useI18n } from "@/lib/i18n";
+import { fill, useI18n, bcp47 } from "@/lib/i18n";
 
 type Item = { medication_id: string; name: string; slot: string; time: string | null; status: string | null };
 type State = "taken" | "skipped" | "next" | "overdue" | "later";
@@ -44,7 +44,7 @@ export function DoseRail() {
   });
   const done = timed.filter((i) => st(i) === "taken").length;
   const fmt = (hhmm: string) => new Date(2000, 0, 1, ...hhmm.split(":").map(Number) as [number, number])
-    .toLocaleTimeString(lang === "hi" ? "hi-IN" : "en-IN", { hour: "numeric", minute: "2-digit" });
+    .toLocaleTimeString(bcp47(lang), { hour: "numeric", minute: "2-digit" });
 
   async function mark(list: Item[], status: "taken" | "skipped") {
     setLocal((c) => ({ ...c, ...Object.fromEntries(list.map((i) => [k(i), status])) }));

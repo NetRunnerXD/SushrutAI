@@ -48,13 +48,13 @@ export function DesktopShell({ nav, active, online, localOnly, logo, children }:
   return (
     <>
       <div aria-hidden className="d-backdrop" />
-      <a href="#main" className="sr-only z-50 rounded-[14px] bg-brand px-4 py-3 font-semibold text-brand-ink focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
+      <a href="#main" className="sr-only z-50 rounded-[14px] bg-brand px-4 py-3 font-semibold text-brand-ink focus:not-sr-only focus:fixed focus:start-3 focus:top-3">
         {t.skipToContent}</a>
       <div className="d-frame relative mx-4 my-4 flex min-h-[calc(100dvh-2rem)] min-[1600px]:mx-5 min-[1600px]:my-5">
         {/* rail column: 108px for the floating pill; 280px when the labelled menu is pinned (it then pushes the content) */}
         <div className={`relative shrink-0 transition-[width] duration-[280ms] ease-[var(--ease-out)] ${pinned ? "w-[280px] max-[1279px]:w-[108px]" : "w-[108px]"}`}>
           <aside aria-label="Main" onMouseEnter={enter} onMouseLeave={leave} onFocus={() => setHover(true)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setHover(false); }}
-            className={`sticky top-4 z-30 ml-4 flex h-[calc(100dvh-4rem)] max-h-[880px] flex-col rounded-[38px] border border-[var(--d-tile-line)] py-4 transition-[width,background-color,box-shadow] duration-[280ms] ease-[var(--ease-out)]
+            className={`sticky top-4 z-30 ms-4 flex h-[calc(100dvh-4rem)] max-h-[880px] flex-col rounded-[38px] border border-[var(--d-tile-line)] py-4 transition-[width,background-color,box-shadow] duration-[280ms] ease-[var(--ease-out)]
               ${expanded ? "w-[248px] bg-[var(--d-pop)] shadow-[var(--e3)]" : "w-[76px] bg-[var(--d-tile)]"}`}>
             <Link href="/" aria-label="SushrutAI home" className="mx-auto mb-5 flex items-center gap-3 self-stretch px-3.5">
               {logo}
@@ -69,7 +69,7 @@ export function DesktopShell({ nav, active, online, localOnly, logo, children }:
                       {on && <span aria-hidden className="d-notch" />}
                       <Link href={n.href} aria-current={on ? "page" : undefined} aria-label={n.label} title={expanded ? undefined : n.label}
                         className={`d-press flex h-12 items-center gap-3 rounded-full font-semibold transition-colors duration-[120ms]
-                          ${expanded ? "px-0.5 pr-4" : "justify-center"} ${on ? "text-text" : "text-muted hover:bg-[var(--d-tile-hover)] hover:text-text"}`}>
+                          ${expanded ? "px-0.5 pe-4" : "justify-center"} ${on ? "text-text" : "text-muted hover:bg-[var(--d-tile-hover)] hover:text-text"}`}>
                         <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ${on ? "bg-brand text-brand-ink shadow-[0_6px_18px_-6px_var(--d-accent-500)]" : ""}`}>
                           <n.icon aria-hidden className="h-[22px] w-[22px]" strokeWidth={on ? 2.3 : 2} />
                         </span>
@@ -81,12 +81,15 @@ export function DesktopShell({ nav, active, online, localOnly, logo, children }:
               </ul>
             </nav>
             <div className="space-y-1.5 px-3.5">
-              {expanded && (
-                <div className="d-rise space-y-2 px-1 pb-2">
+              {/* always mounted: it fades in after the rail has opened (no wrapping while the width animates) and
+                  fades out first when it closes */}
+              <div aria-hidden={!expanded} className={`overflow-hidden whitespace-nowrap px-1 transition-[opacity,max-height,transform] ease-[var(--ease-out)]
+                ${expanded ? "max-h-24 translate-y-0 pb-2 opacity-100 duration-[240ms] delay-[140ms]" : "pointer-events-none max-h-0 translate-y-1 opacity-0 duration-[120ms]"}`}>
+                <div className="space-y-2">
                   <PrivacyBadge local={localOnly} />
                   <p className="font-mono text-[0.8125rem] leading-relaxed text-muted">108 · 112 · Tele-MANAS 14416</p>
                 </div>
-              )}
+              </div>
               <button type="button" onClick={() => setPrefs({ deskRail: pinned ? "icons" : "pinned" })} aria-pressed={pinned}
                 aria-label={pinned ? t.collapseSidebar : t.expandSidebar} title={`${pinned ? t.collapseSidebar : t.expandSidebar} ( [ )`}
                 className={`flex h-12 w-full items-center gap-3 rounded-full text-muted hover:bg-[var(--d-tile-hover)] hover:text-text ${expanded ? "px-0.5" : "justify-center"}`}>
@@ -103,7 +106,7 @@ export function DesktopShell({ nav, active, online, localOnly, logo, children }:
           </aside>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col pr-4">
+        <div className="flex min-w-0 flex-1 flex-col pe-4">
           <header className="sticky top-4 z-20 mb-2 flex h-[72px] items-center gap-3 rounded-[22px] bg-[var(--d-frame)] px-4 backdrop-blur-xl print:hidden">
             <div className="flex min-w-0 flex-1 justify-center"><SearchButton field /></div>
             <FloatingMic inline />

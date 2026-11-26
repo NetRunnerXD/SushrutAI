@@ -27,7 +27,7 @@ export function MobileFrame() {
         <iframe ref={ref} title="SushrutAI" src={location.pathname + location.search}
           className="h-[calc(100dvh-2rem)] max-h-[960px] w-[440px] rounded-[24px] border border-[var(--d-frame-line)] bg-[var(--bg)] shadow-[var(--e3)]" />
         <button type="button" onClick={() => setPrefs({ ui: "auto" })}
-          className="d-press absolute bottom-6 right-6 inline-flex h-11 items-center gap-2 rounded-full border border-[var(--d-tile-line)] bg-[var(--d-pop)] px-4 font-semibold text-text shadow-[var(--e2)]">
+          className="d-press absolute bottom-6 end-6 inline-flex h-11 items-center gap-2 rounded-full border border-[var(--d-tile-line)] bg-[var(--d-pop)] px-4 font-semibold text-text shadow-[var(--e2)]">
           <Monitor aria-hidden className="h-4 w-4" />{t.useDesktopLayout}</button>
       </div>
     </>

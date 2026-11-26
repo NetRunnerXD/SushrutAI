@@ -33,7 +33,7 @@ export function HouseholdToday() {
           return (
             <li key={p.id ?? "me"}>
               <button disabled={current} onClick={() => switchProfile(p.id ? { id: p.id, name: p.name!, relation: p.relation } : null)}
-                className="flex min-h-16 w-full items-center gap-3 py-2 text-left disabled:cursor-default"
+                className="flex min-h-16 w-full items-center gap-3 py-2 text-start disabled:cursor-default"
                 aria-label={`${p.name ?? t.myself}${current ? "" : ` — ${t.switchTo}`}`}>
                 <Avatar name={p.name ?? undefined} relation={p.relation} />
                 <span className="min-w-0 flex-1">

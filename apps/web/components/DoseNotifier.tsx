@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { API, authHeaders, getProfile, getTokens } from "@/lib/api";
-import { useI18n } from "@/lib/i18n";
+import { API, getProfile, getTokens, authFetch } from "@/lib/api";
+import { useI18n, bcp47 } from "@/lib/i18n";
+import { speak } from "@/lib/voice";
+import { REMINDER_EVENT } from "./VoiceLoop";
 
 const PREF = "sushrut.doseNotifications";
 
@@ -39,8 +41,10 @@ export async function clearOfflineData() {
 
 /** Registers the service worker and schedules today's not-yet-taken doses as notifications with a "Taken" action.
  *  Re-schedules when doses change. Works while the app is open in a tab (browsers cannot wake a closed page). */
+const cancelled = new Set<string>();  // reminders cancelled by voice (this session)
+
 export function DoseNotifier() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   useEffect(() => {
     if (!swSupported()) return;
     navigator.serviceWorker.register("/sw.js").catch(() => {});
@@ -51,7 +55,7 @@ export function DoseNotifier() {
       if (!notificationsOn() || Notification.permission !== "granted") return;
       let items: any[] = [];
       try {
-        const r = await fetch(`${API}/me/doses`, { headers: authHeaders() });
+        const r = await authFetch(`${API}/me/doses`);
         if (r.ok) items = (await r.json()).items ?? [];
       } catch { return; }
       const reg = await navigator.serviceWorker.ready;
@@ -62,6 +66,7 @@ export function DoseNotifier() {
         const ms = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).getTime() - now.getTime();
         if (ms <= 0) continue;
         timers.push(window.setTimeout(() => {
+          remind(d, `${t.reminderBody} ${d.name}`);
           reg.showNotification("SushrutAI", {
             body: `${t.reminderBody} ${d.name}`, tag: `${d.medication_id}-${d.slot}`,
             data: { api: API, token: getTokens()?.access_token, profile: getProfile()?.id, medication_id: d.medication_id, slot: d.slot },
@@ -71,9 +76,25 @@ export function DoseNotifier() {
         }, ms));
       }
     };
+    // Spoken reminders (with the app open): said aloud as well as shown; "remind me later" repeats it in 15
+    // minutes, "cancel the reminder" stops it for that dose today.
+    let last: { d: any; text: string } | null = null;
+    const remind = (d: any, text: string) => {
+      if (cancelled.has(`${d.medication_id}-${d.slot}`)) return;
+      last = { d, text };
+      speak(`${text}. ${t.reminderVoiceHint}`, lang, bcp47(lang));
+    };
+    const onVoice = (e: Event) => {
+      const what = (e as CustomEvent).detail;
+      if (!last) return;
+      const cur = last;
+      if (what === "snooze") { timers.push(window.setTimeout(() => remind(cur.d, cur.text), 15 * 60 * 1000)); speak(t.reminderSnoozed, lang, bcp47(lang)); }
+      if (what === "cancelReminder") { cancelled.add(`${cur.d.medication_id}-${cur.d.slot}`); speak(t.reminderCancelled, lang, bcp47(lang)); }
+    };
     schedule();
     window.addEventListener("sushrut:data-changed", schedule);
-    return () => { timers.forEach(clearTimeout); window.removeEventListener("sushrut:data-changed", schedule); };
-  }, [t]);
+    window.addEventListener(REMINDER_EVENT, onVoice);
+    return () => { timers.forEach(clearTimeout); window.removeEventListener("sushrut:data-changed", schedule); window.removeEventListener(REMINDER_EVENT, onVoice); };
+  }, [t, lang]);
   return null;
 }

@@ -14,7 +14,7 @@ import { DisclaimerChip } from "@/components/ui/Trust";
 import { Chip, VitalCard } from "@/components/ui/Medical";
 import { VoiceOrb } from "@/components/Voice";
 import { api } from "@/lib/api";
-import { fill, useI18n } from "@/lib/i18n";
+import { bcp47, fill, useI18n } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs";
 import { SYMPTOM_CHIPS } from "@/lib/symptoms";
 import { HouseholdToday } from "@/components/HouseholdToday";
@@ -49,7 +49,7 @@ export default function Home() {
 }
 
 function FullHome() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const router = useRouter();
   const desktop = useIsDesktop();
   const { order, hidden } = useHomeLayout();
@@ -120,7 +120,6 @@ function FullHome() {
           <input id="home-ask" className="input" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={t.orType} />
           <button className="btn btn-outline shrink-0" disabled={!typed.trim()}>{t.send}</button>
         </form>
-        <DisclaimerChip />
       </Card>
     ),
     attention: (
@@ -131,7 +130,7 @@ function FullHome() {
         ) : (
           <ul className="space-y-2">
             {alerts.map((a, i) => (
-              <li key={i} className={`flex flex-wrap items-center gap-2 rounded-[16px] border-[1.5px] p-2 pl-3 ${a.tone === "danger" ? "border-danger/60 bg-danger-soft text-danger" : "border-warn/50 bg-warn-soft text-warn"}`}>
+              <li key={i} className={`flex flex-wrap items-center gap-2 rounded-[16px] border-[1.5px] p-2 ps-3 ${a.tone === "danger" ? "border-danger/60 bg-danger-soft text-danger" : "border-warn/50 bg-warn-soft text-warn"}`}>
                 {a.followUp ? (
                   <>
                     <span className="flex min-h-12 min-w-0 flex-1 items-center gap-2 font-semibold">
@@ -213,7 +212,7 @@ function FullHome() {
       <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
         <div>
           <h1 className="text-[2.125rem] leading-[1.1] lg:text-[2.75rem]">{greeting(t)}</h1>
-          <p className="mt-1 text-[1.0625rem] font-semibold text-muted">{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</p>
+          <p className="mt-1 text-[1.0625rem] font-semibold text-muted">{new Date().toLocaleDateString(bcp47(lang), { weekday: "long", day: "numeric", month: "long" })}</p>
         </div>
 
       </div>
@@ -230,6 +229,7 @@ function FullHome() {
           <button onClick={() => setCustomise(true)} className="inline-flex min-h-12 items-center gap-1.5 rounded-full border-[1.5px] border-border-input bg-surface px-3.5 text-[0.9375rem] font-semibold shadow-[var(--rim)] hover:bg-surface-2">
           <Settings2 aria-hidden className="h-4 w-4" />{t.customiseHome}</button>
       </div>
+      <div className="flex justify-center"><DisclaimerChip /></div>
       <CustomiseHome open={customise} onClose={() => setCustomise(false)} labels={labels} />
     </div>
   );

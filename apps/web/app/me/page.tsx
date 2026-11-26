@@ -58,7 +58,7 @@ export default function Me() {
   const open = (s: Section) => { setDraft({ ...p }); setEdit(s); };
   async function save() {
     const keys = ["dob", "sex", "blood_group", "height_cm", "state_code", "diet", "smoking_status", "tobacco_chewing", "alcohol_units_wk",
-      "activity_level", "pregnancy_status", "lactating", "emergency_contact"];
+      "activity_level", "pregnancy_status", "lactating", "emergency_contact", "occupation", "sleep", "hydration", "healthcare_access", "literacy_level"];
     const body: any = {};
     for (const k of keys) if (draft[k] !== undefined && draft[k] !== "" && draft[k] !== p[k]) body[k] = draft[k];
     if (body.height_cm) body.height_cm = Number(body.height_cm);
@@ -75,12 +75,12 @@ export default function Me() {
 
   const filled = (ks: string[]) => ks.filter((k) => p[k] != null && p[k] !== "").length;
   const sections: { key: Section; icon: any; title: string; keys: string[]; summary: string; show?: boolean }[] = [
-    { key: "basics", icon: User, title: t.basics, keys: ["dob", "sex", "state_code"],
-      summary: [p.dob && `${new Date().getFullYear() - Number(p.dob.slice(0, 4))} yrs`, p.sex, STATES.find((s) => s[0] === p.state_code)?.[1]].filter(Boolean).join(" · ") },
+    { key: "basics", icon: User, title: t.basics, keys: ["dob", "sex", "state_code", "healthcare_access", "literacy_level"],
+      summary: [p.dob && `${new Date().getFullYear() - Number(p.dob.slice(0, 4))} yrs`, p.sex, STATES.find((s) => s[0] === p.state_code)?.[1], p.healthcare_access].filter(Boolean).join(" · ") },
     { key: "body", icon: Ruler, title: t.body, keys: ["blood_group", "height_cm"],
       summary: [p.blood_group && `${t.bloodGroup} ${p.blood_group}`, p.height_cm && `${p.height_cm} cm`, p.bmi && `BMI ${p.bmi.value} (${p.bmi.category})`].filter(Boolean).join(" · ") },
-    { key: "lifestyle", icon: Activity, title: t.lifestyle, keys: ["diet", "smoking_status", "activity_level"],
-      summary: [p.diet, p.smoking_status && `smoking: ${p.smoking_status}`, p.activity_level].filter(Boolean).join(" · ") },
+    { key: "lifestyle", icon: Activity, title: t.lifestyle, keys: ["diet", "smoking_status", "activity_level", "occupation", "sleep", "hydration"],
+      summary: [p.occupation, p.diet, p.smoking_status && `smoking: ${p.smoking_status}`, p.activity_level].filter(Boolean).join(" · ") },
     { key: "women", icon: Venus, title: t.womensHealth, keys: ["pregnancy_status"], show: p.sex === "female", summary: p.pregnancy_status?.replace("_", " ") ?? "" },
     { key: "contact", icon: Phone, title: t.emergencyContact, keys: ["emergency_contact"], summary: p.emergency_contact ?? "" },
   ];
@@ -111,7 +111,7 @@ export default function Me() {
       <ul className="space-y-2 desk:grid desk:grid-cols-2 desk:gap-3 desk:space-y-0">
         {sections.filter((s) => s.show !== false).map((s) => (
           <li key={s.key}>
-            <button onClick={() => open(s.key)} className="flex min-h-16 w-full items-center gap-3 rounded-[16px] border border-border bg-surface p-4 text-left hover:border-border-input">
+            <button onClick={() => open(s.key)} className="flex min-h-16 w-full items-center gap-3 rounded-[16px] border border-border bg-surface p-4 text-start hover:border-border-input">
               <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full well text-text"><s.icon className="h-5 w-5" /></span>
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{s.title}</span>
@@ -128,7 +128,7 @@ export default function Me() {
         <CardHeader icon={ShieldAlert} title={t.allergiesLabel} />
         <ul className="mb-3 flex flex-wrap gap-2">
           {allergies.map((a) => (
-            <li key={a.id} className="inline-flex min-h-12 items-center gap-1 rounded-full bg-danger-soft pl-3 font-semibold text-danger">{a.substance}
+            <li key={a.id} className="inline-flex min-h-12 items-center gap-1 rounded-full bg-danger-soft ps-3 font-semibold text-danger">{a.substance}
               <button aria-label={`Remove ${a.substance}`} onClick={async () => { await api(`/me/allergies/${a.id}`, { method: "DELETE" }); load(); }}
                 className="grid h-12 w-12 place-items-center"><X aria-hidden className="h-4 w-4" /></button></li>
           ))}
@@ -147,7 +147,7 @@ export default function Me() {
         <CardHeader icon={Stethoscope} title={t.conditionsLabel} />
         <ul className="mb-3 flex flex-wrap gap-2">
           {conds.map((c) => (
-            <li key={c.id} className="inline-flex min-h-12 items-center gap-1 rounded-full bg-surface-2 pl-3 font-semibold">{c.display}
+            <li key={c.id} className="inline-flex min-h-12 items-center gap-1 rounded-full bg-surface-2 ps-3 font-semibold">{c.display}
               <button aria-label={`Remove ${c.display}`} onClick={async () => { await api(`/me/conditions/${c.id}`, { method: "DELETE" }); load(); }}
                 className="grid h-12 w-12 place-items-center"><X aria-hidden className="h-4 w-4" /></button></li>
           ))}
@@ -180,6 +180,8 @@ export default function Me() {
             <Field label="Sex"><Seg label="Sex" value={draft.sex} onChange={(v) => set("sex", v)} options={[["female", "Female"], ["male", "Male"], ["intersex", "Intersex"]]} /></Field>
             <Field label="State"><select className="input" value={draft.state_code ?? ""} onChange={(e) => set("state_code", e.target.value || null)}>
               <option value="">—</option>{STATES.map(([c, n]) => <option key={c} value={c}>{n}</option>)}</select></Field>
+            <Field label={t.healthcareAccessLabel}><input className="input" value={draft.healthcare_access ?? ""} onChange={(e) => set("healthcare_access", e.target.value)} placeholder="e.g. PHC 5 km away, district hospital 20 km" /></Field>
+            <Field label={t.readingPrefLabel}><Seg label={t.readingPrefLabel} value={draft.literacy_level} onChange={(v) => set("literacy_level", v)} options={[["limited", "Very simple words"], ["non_reader", "Voice / very simple"], ["fluent", "Standard detail"]]} /></Field>
           </>)}
           {edit === "body" && (<>
             <Field label={t.bloodGroup}><Seg label={t.bloodGroup} value={draft.blood_group} onChange={(v) => set("blood_group", v)}
@@ -194,6 +196,9 @@ export default function Me() {
             <Field label="Chew tobacco (gutka / khaini)?"><Seg label="Tobacco" value={draft.tobacco_chewing === true ? "y" : draft.tobacco_chewing === false ? "n" : null}
               onChange={(v) => set("tobacco_chewing", v === "y" ? true : v === "n" ? false : null)} options={[["n", t.no], ["y", t.yes]]} /></Field>
             <Field label="Physical activity"><Seg label="Activity" value={draft.activity_level} onChange={(v) => set("activity_level", v)} options={[["sedentary", "Mostly sitting"], ["light", "Light"], ["moderate", "Moderate"], ["active", "Active"]]} /></Field>
+            <Field label={t.occupationLabel}><input className="input" value={draft.occupation ?? ""} onChange={(e) => set("occupation", e.target.value)} placeholder="e.g. Farming, shopkeeper, teacher" /></Field>
+            <Field label={t.sleepLabel}><input className="input" value={draft.sleep ?? ""} onChange={(e) => set("sleep", e.target.value)} placeholder="e.g. 6 hours, waking up often" /></Field>
+            <Field label={t.hydrationLabel}><input className="input" value={draft.hydration ?? ""} onChange={(e) => set("hydration", e.target.value)} placeholder="e.g. Drinking less water, poor appetite" /></Field>
           </>)}
           {edit === "women" && (
             <Field label="Pregnancy"><Seg label="Pregnancy" value={draft.pregnancy_status} onChange={(v) => set("pregnancy_status", v)}

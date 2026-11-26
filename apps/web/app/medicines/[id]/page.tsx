@@ -83,7 +83,7 @@ export default function MedicineDetail() {
 
         {tab === "how" && (
           <Card className="space-y-3">
-            {ex?.how_to_take?.length ? <ul className="list-disc space-y-1 pl-5">{ex.how_to_take.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul> : <p className="text-muted">—</p>}
+            {ex?.how_to_take?.length ? <ul className="list-disc space-y-1 ps-5">{ex.how_to_take.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul> : <p className="text-muted">—</p>}
             {ex?.with_food && <p className="rounded-[12px] bg-surface-2 p-3"><b>Food:</b> {ex.with_food}</p>}
             <Banner tone="info" icon={Info}>Always take it exactly as your doctor prescribed. Do not change the dose yourself.</Banner>
             {ex && <ListenButton label={t.readAloud} onClick={() => say([...(ex.how_to_take ?? []), ex.with_food ?? ""].join(". "))} />}
@@ -93,9 +93,9 @@ export default function MedicineDetail() {
         {tab === "effects" && (
           <div className="grid gap-4 sm:grid-cols-2">
             <Card><h2 className="mb-2 text-[1.0625rem]">{t.commonEffects}</h2>
-              <ul className="list-disc space-y-1 pl-5">{(ex?.common_side_effects ?? []).map((x: string, i: number) => <li key={i}>{x}</li>)}</ul></Card>
+              <ul className="list-disc space-y-1 ps-5">{(ex?.common_side_effects ?? []).map((x: string, i: number) => <li key={i}>{x}</li>)}</ul></Card>
             <Card className="border-danger"><h2 className="mb-2 flex items-center gap-2 text-[1.0625rem] text-danger"><ShieldAlert aria-hidden className="h-5 w-5" />{t.seeDoctorIf}</h2>
-              <ul className="list-disc space-y-1 pl-5">{(ex?.serious_side_effects_see_doctor ?? []).map((x: string, i: number) => <li key={i}>{x}</li>)}</ul></Card>
+              <ul className="list-disc space-y-1 ps-5">{(ex?.serious_side_effects_see_doctor ?? []).map((x: string, i: number) => <li key={i}>{x}</li>)}</ul></Card>
           </div>
         )}
 
@@ -119,7 +119,7 @@ export default function MedicineDetail() {
                           {[t.sameComposition, t.sameForm, t.sameRelease].map((x) => <span key={x} className="inline-flex items-center gap-0.5"><Check aria-hidden className="h-3.5 w-3.5" />{x}</span>)}
                         </p>
                       </div>
-                      <div className="shrink-0 text-right">
+                      <div className="shrink-0 text-end">
                         <p className="font-mono text-[1.125rem] font-semibold">{rs(a.price?.per_unit_inr)}</p>
                         <p className="text-[0.75rem] text-muted">{t.perUnit}</p>
                         {a.savings_pct > 0 && <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-accent px-2 text-[0.8125rem] font-semibold text-accent-ink">
@@ -142,7 +142,7 @@ export default function MedicineDetail() {
             {personal.map((a: any, i: number) => <Banner key={i} tone={a.level === "high" ? "danger" : "warning"}>{a.text}</Banner>)}
             {ex?.do_not_take_if?.length > 0 && (
               <Card><h2 className="mb-2 text-[1.0625rem]">{t.doNotTakeIf}</h2>
-                <ul className="list-disc space-y-1 pl-5">{ex.do_not_take_if.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul></Card>
+                <ul className="list-disc space-y-1 ps-5">{ex.do_not_take_if.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul></Card>
             )}
           </div>
         )}

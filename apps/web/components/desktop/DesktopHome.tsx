@@ -71,12 +71,11 @@ export function DesktopHome() {
         <section aria-label={t.cardVoice} className="d-tile col-span-full grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-8 gap-y-3 p-6">
           <div className="max-w-[300px]"><VoiceOrb row onText={askWith} /></div>
           <div className="min-w-0 space-y-3">
+            <Suggestions sessionId={null} refreshKey={0} onSend={askWith} onEdit={(q) => setTyped(q)} />
             <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (typed.trim()) askWith(typed); }}>
               <label htmlFor="d-ask" className="sr-only">{t.orType}</label>
               <input id="d-ask" className="input min-h-11 flex-1" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={t.orType} />
             </form>
-            <Suggestions sessionId={null} refreshKey={0} onSend={askWith} onEdit={(q) => setTyped(q)} />
-            <DisclaimerChip />
           </div>
         </section>
 
@@ -125,6 +124,7 @@ export function DesktopHome() {
           )}
         </div>
       </div>
+      <div className="flex justify-center pb-2"><DisclaimerChip /></div>
     </div>
   );
 }

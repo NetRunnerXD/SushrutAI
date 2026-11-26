@@ -1,14 +1,16 @@
 "use client";
 
-import { IdCard, Printer, Share2, Stethoscope } from "lucide-react";
+import { IdCard, Printer, Share2, Square, Stethoscope, Volume2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Medical";
 import { Banner } from "@/components/ui/Trust";
 import { api } from "@/lib/api";
-import { fill, useI18n } from "@/lib/i18n";
+import { bcp47, fill, useI18n } from "@/lib/i18n";
+import { isSpeaking, speak, stopSpeaking } from "@/lib/voice";
+import { useSearchParams } from "next/navigation";
 import { VisitQuestions } from "@/components/VisitQuestions";
 
 const SLOT = (f: any) => (f && f.per_day != null ? `${f.morning ?? 0}-${f.afternoon ?? 0}-${f.night ?? 0}` : f?.label ?? "");
@@ -39,11 +41,29 @@ function asText(s: any, t: any): string {
   return L.join("\n");
 }
 
-export default function VisitSummary() {
-  const { t } = useI18n();
+export default function VisitSummaryPage() {
+  return <Suspense fallback={null}><VisitSummary /></Suspense>;
+}
+
+function VisitSummary() {
+  const { t, lang } = useI18n();
+  const params = useSearchParams();
   const [days, setDays] = useState(90);
   const [s, setS] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const play = () => {
+    if (!s?.spoken) return;
+    if (playing || isSpeaking()) { stopSpeaking(); setPlaying(false); return; }
+    speak(s.spoken, lang, bcp47(lang));  // the summary is written in English: played as is for the doctor
+    setPlaying(true);
+    const id = setInterval(() => { if (!isSpeaking()) { setPlaying(false); clearInterval(id); } }, 500);
+  };
+  // "Prepare summary for doctor" by voice opens this page with ?speak=1: read it out once it is ready
+  const [autoPlayed, setAutoPlayed] = useState(false);
+  useEffect(() => {
+    if (s && params.get("speak") === "1" && !autoPlayed) { setAutoPlayed(true); play(); }
+  }, [s]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setS(null);
@@ -63,7 +83,8 @@ export default function VisitSummary() {
             <Chip key={d} selected={days === d} onClick={() => setDays(d)}>{l}</Chip>))}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button icon={Printer} disabled={!s} onClick={() => window.print()}>{t.visitPrint}</Button>
+          <Button icon={playing ? Square : Volume2} disabled={!s?.spoken} onClick={play}>{playing ? t.stop : t.playToDoctor}</Button>
+          <Button variant="secondary" icon={Printer} disabled={!s} onClick={() => window.print()}>{t.visitPrint}</Button>
           {typeof navigator !== "undefined" && "share" in navigator && (
             <Button variant="secondary" icon={Share2} disabled={!s}
               onClick={() => navigator.share({ title: t.visitTitle, text: asText(s, t) }).catch(() => {})}>{t.visitShare}</Button>)}
@@ -97,11 +118,11 @@ export default function VisitSummary() {
           </Section>
 
           <Section title={t.visitMeds} empty={!s.medicines.length && none}>
-            <div className="overflow-x-auto"><table className="w-full min-w-[18rem] text-left text-[0.9375rem]">
+            <div className="overflow-x-auto"><table className="w-full min-w-[18rem] text-start text-[0.9375rem]">
               <tbody className="divide-y divide-border">
                 {s.medicines.map((m: any, i: number) => (
-                  <tr key={i}><td className="py-1.5 pr-2 font-semibold">{m.name}{m.dose ? ` ${m.dose}` : ""}</td>
-                    <td className="py-1.5 pr-2 font-mono">{SLOT(m.frequency)}</td>
+                  <tr key={i}><td className="py-1.5 pe-2 font-semibold">{m.name}{m.dose ? ` ${m.dose}` : ""}</td>
+                    <td className="py-1.5 pe-2 font-mono">{SLOT(m.frequency)}</td>
                     <td className="py-1.5 text-muted">{m.timing?.replace(/_/g, " ")}{m.since ? ` · since ${day(m.since)}` : ""}</td></tr>))}
               </tbody>
             </table></div>
@@ -128,6 +149,26 @@ export default function VisitSummary() {
               {s.checkins.unwell_days.length > 0 && <p className="text-[0.9375rem] text-muted">{t.unwellDays}: {s.checkins.unwell_days.map(day).join(", ")}</p>}
             </Section>)}
 
+          {s.episodes?.length > 0 && (
+            <Section title={t.visitEpisodes}>
+              <ul className="space-y-3">{s.episodes.map((e: any, i: number) => (
+                <li key={i}><p className="font-semibold">{e.title} <span className="font-normal text-muted">— {day(e.started_at)}{e.ended_at ? ` → ${day(e.ended_at)}` : ""}</span></p>
+                  {e.timeline.length > 0 && <ul className="mt-1 list-disc space-y-0.5 ps-5 text-[0.9375rem]">{e.timeline.map((l: string, j: number) => <li key={j}>{l}</li>)}</ul>}
+                </li>))}</ul>
+            </Section>)}
+
+          {s.medicines_tried?.length > 0 && (
+            <Section title={t.visitMedsTried}>
+              <ul className="space-y-1">{s.medicines_tried.map((m: any, i: number) => (
+                <li key={i}><span className="font-semibold">{m.medicine}</span> — {String(m.effect).replace("_", " ")}{m.note ? ` (${m.note})` : ""} <span className="text-muted">· {day(m.at)}</span></li>))}</ul>
+            </Section>)}
+
+          {s.documents?.length > 0 && (
+            <Section title={t.visitDocs}>
+              <ul className="space-y-1">{s.documents.map((d: any) => (
+                <li key={d.id}><Link href="/records?tab=library" className="text-info underline">{d.title || d.kind}</Link> <span className="text-muted">· {day(d.date)}</span></li>))}</ul>
+            </Section>)}
+
           {s.symptom_checks.length > 0 && (
             <Section title={t.visitChecks}>
               <ul className="space-y-2">{s.symptom_checks.map((c: any, i: number) => (
@@ -139,13 +180,13 @@ export default function VisitSummary() {
 
           {s.questions_asked.length > 0 && (
             <Section title={t.visitAsked}>
-              <ul className="list-disc space-y-0.5 pl-5 text-[0.9375rem]">{s.questions_asked.map((q: any, i: number) => <li key={i}>{q.text}</li>)}</ul>
+              <ul className="list-disc space-y-0.5 ps-5 text-[0.9375rem]">{s.questions_asked.map((q: any, i: number) => <li key={i}>{q.text}</li>)}</ul>
             </Section>)}
 
           <VisitQuestions />
 
           <Section title={t.visitQuestions}>
-            <ol className="list-decimal space-y-1 pl-5">{s.questions_to_ask.map((q: string, i: number) => <li key={i}>{q}</li>)}</ol>
+            <ol className="list-decimal space-y-1 ps-5">{s.questions_to_ask.map((q: string, i: number) => <li key={i}>{q}</li>)}</ol>
           </Section>
 
           <p className="border-t border-border pt-3 text-[0.8125rem] text-muted">{s.note}</p>

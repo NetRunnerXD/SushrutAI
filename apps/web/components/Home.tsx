@@ -152,7 +152,7 @@ export function CustomiseHome({ open, onClose, labels }: { open: boolean; onClos
       <p className="mb-3 text-muted">{t.customiseHelp}</p>
       <ol className="space-y-1.5">
         {order.map((k, i) => (
-          <li key={k} className={`flex items-center gap-2 rounded-[16px] bg-surface-2 p-2 pl-3 ${hidden.has(k) ? "opacity-60" : ""}`}>
+          <li key={k} className={`flex items-center gap-2 rounded-[16px] bg-surface-2 p-2 ps-3 ${hidden.has(k) ? "opacity-60" : ""}`}>
             <span className="min-w-0 flex-1 font-semibold">{labels[k]}</span>
             <button aria-label={`${t.moveUp}: ${labels[k]}`} disabled={i === 0} onClick={() => move(i, -1)}
               className="grid h-12 w-12 place-items-center rounded-full bg-surface disabled:opacity-40"><ArrowUp aria-hidden className="h-5 w-5" /></button>
@@ -185,7 +185,7 @@ export function SimpleHome() {
   const { openSOS } = useSOS();
   const { items } = useDoses();
   const next = nextDose(items);
-  const tile = "display flex min-h-32 w-full items-center gap-4 rounded-[24px] p-5 text-left text-[1.625rem] font-bold leading-tight shadow-[var(--rim),var(--e2)]";
+  const tile = "display flex min-h-32 w-full items-center gap-4 rounded-[24px] p-5 text-start text-[1.625rem] font-bold leading-tight shadow-[var(--rim),var(--e2)]";
   return (
     <div className="mx-auto max-w-xl space-y-4">
       <div className={`${tile} bg-text text-bg`}>
@@ -207,7 +207,7 @@ export function SimpleHome() {
         ) : <p className="font-sans text-[1.125rem] font-normal text-muted">{t.noMedsToday}</p>}
       </div>
       <div className={`${tile} bg-emergency text-white`}>
-        <button onClick={openSOS} className="flex min-h-20 flex-1 items-center gap-4 rounded-[16px] text-left">
+        <button onClick={openSOS} className="flex min-h-20 flex-1 items-center gap-4 rounded-[16px] text-start">
           <Siren aria-hidden className="h-12 w-12 shrink-0" /><span className="flex-1">{t.simpleEmergency}</span></button>
         <SpeakLabel text={t.simpleEmergency} />
       </div>

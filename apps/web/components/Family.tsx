@@ -3,7 +3,7 @@
 import { Check, Plus, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { api, getProfile, switchProfile, type ActiveProfile } from "@/lib/api";
+import { api, getProfile, getTokens, switchProfile, type ActiveProfile } from "@/lib/api";
 import { fill, useI18n } from "@/lib/i18n";
 import { Sheet } from "./ui/Sheet";
 
@@ -33,6 +33,7 @@ export function spiceOf(id?: string | null): string {
 // One request serves every component that mounts together (header tiers, switcher, page); dropped on change.
 let shared: Promise<Member[]> | null = null;
 function fetchFamily(fresh = false): Promise<Member[]> {
+  if (!getTokens()) return Promise.resolve([]);
   if (fresh || !shared) {
     shared = api<Member[]>("/family").then((ms) => { rememberFamily(ms); return ms; });
     shared.catch(() => { shared = null; });
@@ -50,7 +51,11 @@ export function useFamily() {
     load();
     const onChange = () => load(true);
     window.addEventListener("sushrut:family-changed", onChange);
-    return () => window.removeEventListener("sushrut:family-changed", onChange);
+    window.addEventListener("sushrut:auth-changed", onChange);
+    return () => {
+      window.removeEventListener("sushrut:family-changed", onChange);
+      window.removeEventListener("sushrut:auth-changed", onChange);
+    };
   }, [load]);
   return { members, reload: load };
 }
@@ -86,7 +91,7 @@ export function ProfileSwitcher() {
   const Row = ({ m, current }: { m: Member | null; current: boolean }) => (
     <button onClick={() => (current ? setOpen(false) : switchProfile(m && { id: m.id, name: m.name, relation: m.relation }))}
       aria-current={current ? "true" : undefined}
-      className={`flex min-h-14 w-full items-center gap-3 rounded-[14px] px-3 text-left ${current ? "bg-brand-soft" : "hover:bg-surface-2"}`}>
+      className={`flex min-h-14 w-full items-center gap-3 rounded-[14px] px-3 text-start ${current ? "bg-brand-soft" : "hover:bg-surface-2"}`}>
       <Avatar name={m?.name} id={m?.id} />
       <span className="flex-1"><span className="block font-semibold">{m ? m.name : t.myself}</span>
         {m && <span className="block text-[0.9375rem] text-muted">{memberLine(m, t)}</span>}</span>

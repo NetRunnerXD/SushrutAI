@@ -43,8 +43,8 @@ export default function Medicines() {
       <form onSubmit={search} role="search" className="flex gap-2">
         <label htmlFor="msearch" className="sr-only">{t.medsSearch}</label>
         <div className="relative flex-1">
-          <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-          <input id="msearch" type="search" className="input pl-10" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.medsSearch} />
+          <Search aria-hidden className="pointer-events-none absolute start-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
+          <input id="msearch" type="search" className="input ps-10" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.medsSearch} />
         </div>
         <button className="btn btn-primary" disabled={searching || q.trim().length < 2}><Search aria-hidden className="h-5 w-5" /><span className="sr-only sm:not-sr-only">Search</span></button>
       </form>
@@ -64,7 +64,7 @@ export default function Medicines() {
                         <span className="text-muted">{p.form} {p.release_type !== "IR" ? `· ${p.release_type}` : ""}</span>
                       </span>
                     </span>
-                    <span className="text-right"><span className="block font-mono font-semibold">{rs(p.price?.per_unit_inr)}</span>
+                    <span className="text-end"><span className="block font-mono font-semibold">{rs(p.price?.per_unit_inr)}</span>
                       <span className="text-[0.75rem] text-muted">{t.perUnit}</span></span>
                     <ChevronRight aria-hidden className="h-5 w-5 text-muted" />
                   </Link>

@@ -98,7 +98,7 @@ export function DoseTimeline({ compact = false }: { compact?: boolean }) {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="min-w-0">
                         <p className="font-semibold">
-                          <span className="mr-2 font-mono font-bold">{i.time ?? "—"}</span>{i.name}
+                          <span className="me-2 font-mono font-bold">{i.time ?? "—"}</span>{i.name}
                         </p>
                         {!compact && <div className="mt-2"><DosePictogram frequency={i.frequency} timing={i.timing} /></div>}
                         {i.days_left != null && i.days_left <= 3 && i.days_left >= 0 && (

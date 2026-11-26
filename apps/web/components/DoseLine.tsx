@@ -4,7 +4,7 @@ import { Check, ChevronDown, Pill, X } from "lucide-react";
 import Link from "next/link";
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { fill, useI18n } from "@/lib/i18n";
+import { fill, useI18n, bcp47 } from "@/lib/i18n";
 
 export type DoseItem = { medication_id: string; name: string; slot: string; time: string | null; status: string | null };
 
@@ -54,7 +54,7 @@ export function DoseLine({ items, size = "md" }: { items: DoseItem[]; size?: "md
     window.dispatchEvent(new Event("sushrut:data-changed"));
   }
   const fmt = (hhmm: string) => new Date(2000, 0, 1, ...hhmm.split(":").map(Number) as [number, number])
-    .toLocaleTimeString(lang === "hi" ? "hi-IN" : "en-IN", { hour: "numeric", minute: "2-digit" });
+    .toLocaleTimeString(bcp47(lang), { hour: "numeric", minute: "2-digit" });
   const until = (m: number) => { const d = m - nowM; return d <= 0 ? (d > -60 ? t.dueNow : t.overdue) : d < 60 ? fill(t.inMinutes, { n: d }) : fill(t.inHours, { h: Math.floor(d / 60), m: d % 60 }); };
   if (!stops.length) return null;
   return <Rail stops={stops} nowIdx={nowIdx} passed={passed} row={row} lg={lg} body={{ t, now, open, setOpen, statusOf, mark, fmt, until, justTook, done, total: timed.length }} />;

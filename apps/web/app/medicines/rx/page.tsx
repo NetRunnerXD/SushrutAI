@@ -1,5 +1,6 @@
 "use client";
 
+import { Storylines } from "@/components/answer/Storylines";
 import { Camera, CheckCircle2, Eye, EyeOff, ImageUp, Loader2, Minus, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, PageTitle } from "@/components/ui/Card";
 import { DosePictogram, Steps } from "@/components/ui/Medical";
 import { Banner, DisclaimerChip } from "@/components/ui/Trust";
-import { API, api, authHeaders } from "@/lib/api";
+import { API, api, authFetch } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { AskAbout } from "@/components/AskAbout";
 import { discardDoc, ImageCheckBanner, KindMismatchBanner, mismatch, READER_HREF, uploadDoc, type ImageIssue, type UploadResult } from "@/components/ImageCheck";
@@ -36,7 +37,7 @@ function RxInner() {
     setRx(r);
     setTicks({});
     if (r.document_id) {
-      const res = await fetch(`${API}/documents/${r.document_id}/content`, { headers: authHeaders() });
+      const res = await authFetch(`${API}/documents/${r.document_id}/content`);
       if (res.ok) setImg(URL.createObjectURL(await res.blob()));
     }
   }
@@ -182,7 +183,7 @@ function RxInner() {
                         <input className="input mt-1 text-text" value={m.strength ?? ""} disabled={rx.status === "confirmed"} onChange={(e) => edit(i, "strength", e.target.value)} /></label>
                     </div>
                     {m.candidates?.[0] && m.product_id && (
-                      <p className="mt-2 text-[0.875rem]">Matched: <b>{m.candidates[0].name}</b>{m.candidates[0].is_janaushadhi && <span className="ml-1 rounded bg-accent px-1.5 font-semibold text-accent-ink">{t.janAushadhi}</span>}</p>
+                      <p className="mt-2 text-[0.875rem]">Matched: <b>{m.candidates[0].name}</b>{m.candidates[0].is_janaushadhi && <span className="ms-1 rounded bg-accent px-1.5 font-semibold text-accent-ink">{t.janAushadhi}</span>}</p>
                     )}
                     <div className="mt-3"><DosePictogram frequency={m.frequency} timing={m.timing} /></div>
                     {m.duration_days && <p className="mt-2 text-[0.9375rem]">For <b>{m.duration_days} days</b></p>}
@@ -201,9 +202,11 @@ function RxInner() {
               {rx.tests?.length > 0 && <li className="rounded-[16px] bg-surface-2 p-3"><b>{t.tests}:</b> {rx.tests.join(", ")}</li>}
             </ol>
           </div>
+          {rx.status === "confirmed" && <RxStories names={rx.medications.map((m: any) => [m.name, m.strength].filter(Boolean).join(" "))}
+            printed={rx.medications.map((m: any) => m.composition ?? "")} />}
           <DisclaimerChip />
 
-          <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 border-t border-border bg-surface p-3 shadow-[var(--e2)] md:bottom-0 md:left-[var(--sbw)]">
+          <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 border-t border-border bg-surface p-3 shadow-[var(--e2)] md:bottom-0 md:start-[var(--sbw)]">
             <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3">
               {rx.status === "confirmed" ? (
                 <>
@@ -213,7 +216,7 @@ function RxInner() {
               ) : (
                 <>
                   {!allTicked && <p className="flex-1 text-[0.9375rem] text-warn">{t.rxNeedsTicks}</p>}
-                  <Button size="lg" className="ml-auto" loading={saving} disabled={!allTicked} onClick={confirm}>{t.rxConfirm}</Button>
+                  <Button size="lg" className="ms-auto" loading={saving} disabled={!allTicked} onClick={confirm}>{t.rxConfirm}</Button>
                 </>
               )}
             </div>
@@ -226,4 +229,18 @@ function RxInner() {
 
 export default function Rx() {
   return <Suspense><RxInner /></Suspense>;
+}
+
+/** After saving: each medicine's salt, a cheaper same-salt option and how it went before, as short stories. */
+function RxStories({ names, printed }: { names: string[]; printed: string[] }) {
+  const { lang } = useI18n();
+  const [items, setItems] = useState<any[] | null>(null);
+  const key = names.join("|");
+  useEffect(() => {
+    if (!names.length) return;
+    api<any[]>("/medicines/storyline", { method: "POST", body: JSON.stringify({ names: names.slice(0, 8), printed, lang }) })
+      .then(setItems).catch(() => setItems([]));
+  }, [key, lang]);  // eslint-disable-line react-hooks/exhaustive-deps
+  if (items === null) return <div className="skeleton h-24" />;
+  return <Storylines items={items} />;
 }

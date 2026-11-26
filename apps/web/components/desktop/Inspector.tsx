@@ -25,7 +25,7 @@ export function Inspector({ open, onClose, profile, questions, onJump, sources }
   if (!open) return null;
   return (
     <aside ref={ref} tabIndex={-1} aria-label={t.inspector}
-      className="d-pop d-drawer-in fixed bottom-6 right-6 top-24 z-40 flex w-[360px] flex-col overflow-hidden min-[1600px]:w-[400px]">
+      className="d-pop d-drawer-in fixed bottom-6 end-6 top-24 z-40 flex w-[360px] flex-col overflow-hidden min-[1600px]:w-[400px]">
       <div className="flex items-center justify-between gap-2 border-b border-[var(--d-tile-line)] px-4 py-3">
         <h2 className="text-[1.0625rem] font-bold">{t.inspector}</h2>
         <button type="button" aria-label={`${t.close} (i)`} onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full hover:bg-[var(--d-tile-hover)]"><X aria-hidden className="h-4 w-4" /></button>
@@ -38,7 +38,7 @@ export function Inspector({ open, onClose, profile, questions, onJump, sources }
             <ol className="space-y-0.5">
               {questions.map((q) => (
                 <li key={q.i}><button type="button" onClick={() => onJump(q.i)}
-                  className="w-full truncate rounded-[10px] px-2 py-1.5 text-left text-[0.9375rem] hover:bg-[var(--d-tile-hover)]">{q.text}</button></li>
+                  className="w-full truncate rounded-[10px] px-2 py-1.5 text-start text-[0.9375rem] hover:bg-[var(--d-tile-hover)]">{q.text}</button></li>
               ))}
             </ol>
           )}

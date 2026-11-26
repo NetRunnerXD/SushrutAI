@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, MessageCircle, PanelLeftClose, PanelLeftOpen, Pill, FolderHeart, UserRound, WifiOff, type LucideIcon } from "lucide-react";
+import { ClipboardList, Home, MessageCircle, PanelLeftClose, PanelLeftOpen, Pill, FolderHeart, UserRound, WifiOff, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -13,14 +13,16 @@ import { SearchButton } from "./Search";
 import { LanguageButton } from "./LanguagePicker";
 import { PrivacyBadge } from "./ui/Trust";
 import { FloatingMic } from "./Voice";
+import { VoiceLoopProvider } from "./VoiceLoop";
 import { DoseNotifier } from "./DoseNotifier";
 import { DesktopShell } from "./desktop/DesktopShell";
 import { MobileFrame, useReportPathToFrame } from "./desktop/MobileFrame";
 import { useUiMode } from "@/lib/ui-mode";
 
-const NAV: { href: string; key: "navHome" | "navAsk" | "navMedicines" | "navRecords" | "navMe"; icon: LucideIcon }[] = [
+const NAV: { href: string; key: "navHome" | "navAsk" | "navContext" | "navMedicines" | "navRecords" | "navMe"; icon: LucideIcon }[] = [
   { href: "/", key: "navHome", icon: Home },
   { href: "/ask", key: "navAsk", icon: MessageCircle },
+  { href: "/context", key: "navContext", icon: ClipboardList },
   { href: "/medicines", key: "navMedicines", icon: Pill },
   { href: "/records", key: "navRecords", icon: FolderHeart },
   { href: "/me", key: "navMe", icon: UserRound },
@@ -126,7 +128,7 @@ function Inner({ children }: { children: ReactNode }) {
   }
   return (
     <div className="app-grid min-h-dvh print:block">
-      <a href="#main" className="sr-only z-50 rounded-[14px] bg-brand px-4 py-3 font-semibold text-brand-ink focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
+      <a href="#main" className="sr-only z-50 rounded-[14px] bg-brand px-4 py-3 font-semibold text-brand-ink focus:not-sr-only focus:fixed focus:start-3 focus:top-3">
         {t.skipToContent}
       </a>
 
@@ -238,7 +240,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <PrefsProvider>
       <I18nProvider>
         <EmergencyProvider>
-          <Inner>{children}</Inner>
+          <VoiceLoopProvider><Inner>{children}</Inner></VoiceLoopProvider>
         </EmergencyProvider>
       </I18nProvider>
     </PrefsProvider>
