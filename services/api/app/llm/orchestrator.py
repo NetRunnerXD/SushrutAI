@@ -52,6 +52,16 @@ async def translate_answer(structured: dict, lang: str) -> bool:
             texts.append(re.sub(r"\*\*([^*]+)\*\*", r"\1", t))  # bold markers do not survive translation
             where.append(loc)
     add(structured.get("reply"), ("reply",))
+    if isinstance(structured.get("spoken_response"), str):
+        add(structured.get("spoken_response"), ("spoken_response",))
+    for i, seg in enumerate(structured.get("spoken_segments") or []):
+        if isinstance(seg, dict):
+            add(seg.get("text"), ("spoken_seg", i))
+    for i, sec in enumerate(structured.get("sync_sections") or []):
+        if isinstance(sec, dict):
+            add(sec.get("title"), ("sync_sec", i, "title"))
+            add(sec.get("screen_text"), ("sync_sec", i, "screen_text"))
+            add(sec.get("spoken_text"), ("sync_sec", i, "spoken_text"))
     for i, st in enumerate(structured.get("storylines") or []):
         add(st.get("text"), ("story", i))
     for k in _READ_LISTS:
@@ -62,16 +72,57 @@ async def translate_answer(structured: dict, lang: str) -> bool:
         for f in ("supporting", "against"):
             for j, x in enumerate(pc.get(f) or []):
                 add(x, ("pc", i, f, j))
-    if not texts or not speech.available("transformers"):
+    if not texts:
         return False
-    try:
-        out = await asyncio.to_thread(speech.translate_many, texts, "en", lang)
-    except Exception as e:  # noqa: BLE001
-        log.warning("answer translation failed: %s", e)
-        return False
+    out: list[str] | None = None
+    if speech.available("transformers"):
+        try:
+            out = await asyncio.to_thread(speech.translate_many, texts, "en", lang)
+        except Exception as e:  # noqa: BLE001
+            log.warning("answer translation failed: %s", e)
+            out = None
+    if out is None:
+        from app.llm.providers import ProviderUnavailable, full_cloud_allowed, gemini
+        if not (full_cloud_allowed.get() and gemini().available):
+            return False
+        target_name = LANG_NAMES.get(lang, lang)
+        try:
+            import json as _json
+            s = get_settings()
+            res = await gemini().chat(
+                s.gemini_fast_model,
+                [
+                    {"role": "system", "content": (
+                        f"Translate the JSON array of English health strings into natural {target_name} ({lang}). "
+                        "Keep numbers, dosages, units, medicine names, and helpline numbers (108, 112, 14416) exact. "
+                        "Return ONLY a JSON array of the same length with the translated strings."
+                    )},
+                    {"role": "user", "content": _json.dumps(texts, ensure_ascii=False)},
+                ],
+                temperature=0.1,
+                num_predict=1800,
+            )
+            raw = res.text.strip()
+            if raw.startswith("```"):
+                raw = raw.strip("`")
+                raw = raw[raw.find("\n") + 1:] if "\n" in raw else raw
+            parsed = _json.loads(raw[raw.find("["):raw.rfind("]") + 1])
+            if isinstance(parsed, list) and len(parsed) == len(texts) and all(isinstance(x, str) for x in parsed):
+                out = parsed
+            else:
+                return False
+        except (ProviderUnavailable, Exception) as e:  # noqa: BLE001
+            log.warning("cloud answer translation failed: %s", e)
+            return False
     for loc, t in zip(where, out):
         if loc[0] == "reply":
             structured["reply"] = t
+        elif loc[0] == "spoken_response":
+            structured["spoken_response"] = t
+        elif loc[0] == "spoken_seg":
+            structured["spoken_segments"][loc[1]]["text"] = t
+        elif loc[0] == "sync_sec":
+            structured["sync_sections"][loc[1]][loc[2]] = t
         elif loc[0] == "story":
             structured["storylines"][loc[1]]["text"] = t
         elif loc[0] == "pc":
@@ -450,9 +501,16 @@ async def profile_summary(db: AsyncSession, cu: CurrentUser) -> tuple[str, float
     parts: list[str] = []
     age = None
     if p:
+        if getattr(p, "name_enc", None):
+            if pname := cu.cipher.dec(p.name_enc):
+                parts.append(f"name {pname}")
         age = _age(cu.cipher.dec(p.dob_enc))
+        if age is None and getattr(p, "age_years", None) is not None:
+            age = float(p.age_years)
         if age is not None:
             parts.append(f"age {age:.0f}y" if age >= 2 else f"age {age * 12:.0f} months")
+            if age < 18:
+                parts.append("minor patient (under 18 — involve parent/guardian)")
         if p.sex:
             parts.append(f"sex {p.sex}")
         if p.pregnancy_status in ("pregnant", "possibly_pregnant"):
@@ -593,15 +651,24 @@ async def to_english(text: str, lang: str) -> str:
         except Exception:  # noqa: BLE001 — fall back to the LLM
             pass
     from app.config import get_settings
-    from app.llm.providers import ProviderUnavailable, ollama
+    from app.llm.providers import ProviderUnavailable, full_cloud_allowed, gemini, ollama
 
+    sys_msg = {"role": "system", "content": (
+        "Translate the user's text to plain English. Keep medicine names, "
+        "numbers and durations exactly. Output only the translation."
+    )}
     try:
-        res = await ollama().chat(get_settings().llm_model, [
-            {"role": "system", "content": "Translate the user's text to plain English. Keep medicine names, "
-                                          "numbers and durations exactly. Output only the translation."},
-            {"role": "user", "content": text}], temperature=0.0, num_ctx=1024)
+        res = await ollama().chat(get_settings().llm_model, [sys_msg, {"role": "user", "content": text}],
+                                  temperature=0.0, num_ctx=1024)
         return res.text.strip().strip('"')[:600] or text
     except ProviderUnavailable:
+        if full_cloud_allowed.get() and gemini().available:
+            try:
+                res = await gemini().chat(get_settings().gemini_fast_model, [sys_msg, {"role": "user", "content": text}],
+                                          temperature=0.0, num_predict=250)
+                return res.text.strip().strip('"')[:600] or text
+            except ProviderUnavailable:
+                return text
         return text
 
 
@@ -746,7 +813,7 @@ Rules:
 - Rank possible conditions from most to least likely; give at most 5. Mark urgency honestly; fever for 3 or more
   days, or any condition that needs tests (dengue, malaria, typhoid, TB…), is at least `see_doctor_24h`.
 - `name_en` is the condition's standard English name; `name` is in the user's language.
-- `specialist` must be one of the allowed values; use "General Physician" when unsure.
+- `specialist` must be one of the allowed values matching CLINICAL ROUTING & STEWARDSHIP CONTEXT; NEVER default to "General Physician" when a specific specialty (Cardiologist, Gastroenterologist, Orthopaedician, Neurologist, Dermatologist, Endocrinologist, Nephrologist, Pulmonologist, Gynaecologist, Paediatrician, Psychiatrist, Urologist, ENT Specialist, Ophthalmologist) is appropriate.
 - Personalise to the patient context (age, sex, pregnancy, allergies, conditions, current medicines). Flag allergy or interaction concerns.
 - Plain words first: when a medical idea is needed, explain it with everyday words or a comparison familiar in
   India FIRST, and only then, optionally, "doctors call this …".
@@ -758,18 +825,13 @@ Rules:
   means the ongoing fever). If they ask whether this happened before, what usually works for them, or to compare
   with an earlier time, answer from the memory only, with dates; if the memory has nothing, say so.
 - Nutrition advice should fit Indian diets (dal, roti, rice, millets, curd, seasonal fruit) and the user's diet preference.
-- Help the person now. `reply`: 3-5 short sentences in two short paragraphs separated by a blank line, in your own
-  plain words (never copy passages from SOURCES, and name at most the two most likely conditions there — the full
-  ranked list goes in `possible_conditions`): first what the symptoms can match and how likely; then the most useful thing to do now and when to see which doctor. Put the
-  single most important phrase in **double asterisks**. No headings and no bullet lists in `reply`, and do not repeat
-  the `self_care` or `watch_for` items there (they are shown as their own lists). `self_care`: 3-6 concrete things to do at home (rest, fluids or ORS, food, hygiene, position,
-  a warm compress for cramps or muscle pain, a cold one for a fresh injury or swelling, what to avoid) — no medicines. `watch_for`: 2-5 warning signs that mean seeing a doctor
-  urgently. Say when and which doctor to see.
-- If key information is missing, ask up to 3 short follow-up questions in `follow_up_questions`.
+- Prioritize ACCURACY > SPEED > RELEVANCE > PATIENT SAFETY. Never sacrifice safety for speed, and keep `reply` fast and concise (3-4 short sentences, zero boilerplate intros): first what the symptoms may match (without claiming a confirmed diagnosis); then the clearest next step, appropriate specialist, and whether any initial test is justified (never suggest CT/MRI or broad panels without clear clinical justification; if no immediate test is indicated, say physical examination comes first). Put the single most important phrase in **double asterisks**. No headings and no bullet lists in `reply`, and do not repeat the `self_care` or `watch_for` items there (they are shown as their own lists). `self_care`: 3-6 concrete things to do at home (rest, fluids or ORS, food, hygiene, position, a warm compress for cramps or muscle pain, a cold one for a fresh injury or swelling, what to avoid) — no medicines. `watch_for`: 2-5 warning signs that mean seeing a doctor urgently or calling 112/108.
+- If key information is missing, ask ONE focused priority question at a time in `follow_up_questions` (and at most 2 concise secondary follow-ups), following OPQRST (onset, location, duration, character, severity, relieving/aggravating, associated symptoms, red flags) before drawing conclusions.
 - Do not guess unidentified medicines from vague descriptions ("white pill"); if the person cannot read the strip, ask them to share a photo or ask a pharmacist/health worker.
-- Clearly distinguish patient-reported information vs confirmed diagnoses; never fabricate past consultations or missing dates.
+- Clearly distinguish patient-reported information vs confirmed diagnoses vs AI observations; never fabricate past consultations, doctor names, clinic hours, hospitals, or missing dates.
 - Do not repeat generic self-introductions or boilerplate disclaimers during an ongoing conversation; address the patient's exact question, correction, or causal hypothesis using CLINICAL REASONING STATE and THEIR HEALTH MEMORY directly.
 - Write `reply` and every user-facing string in {LANG_NAMES.get(lang, 'English')}, in simple everyday words a rural or non-medical person understands. Keep medical terms in English in brackets when helpful.
+- At the end of a full guidance turn, briefly invite the patient to share if they have any other health concern or question.
 - Respond ONLY with JSON matching the schema."""
 
 
@@ -789,9 +851,12 @@ _KIND_FOCUS = {
     "nutrition_lifestyle": "This is a food, diet, exercise, sleep or lifestyle question. Give practical advice that fits "
                            "Indian meals (dal, roti, rice, millets, curd, sabzi, seasonal fruit) and the person's "
                            "diet preference and health conditions.",
-    "medicine": "This is a question about a medicine: what it is for, how it is generally taken, common side effects, "
-                "precautions and interactions with the person's other medicines or allergies. Never tell them to start, "
-                "stop or change a dose — that is for their doctor or pharmacist.",
+    "medicine": "This is a question about a medicine. Using reliable medical knowledge only (never fabricate uncertain facts), "
+                "clearly cover where relevant: generic name, common brand names, drug category & class, main uses, how it works, "
+                "common dosage forms & route, Rx vs OTC status, common and serious side effects, contraindications, drug/food/alcohol "
+                "interactions, pregnancy & breastfeeding precautions, storage, overdose emergency response (108/112), and monitoring. "
+                "Never prescribe or tell them to start, stop, or change a dose — explain that exact dosing depends on age, indication, "
+                "kidney/liver function, other medicines, and their doctor or pharmacist.",
     "report_question": "This is a question about a medical test or report value. Explain in simple words what the "
                        "test measures and what the value usually means, and when to discuss it with a doctor.",
     "general_health": "This is a general health question. Answer it clearly and practically.",
@@ -909,7 +974,8 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
                  allow_cloud: bool = False, context: str = "", hint_kind: str | None = None,
                  on_delta: Callable[[str], None] | None = None, model_pref: str = "balanced",
                  spoken_prefix: str | None = None, force_english: bool = False,
-                 use_record: bool = True) -> TurnResult:
+                 use_record: bool = True, channel: str = "text",
+                 patient_snapshot: object | None = None) -> TurnResult:
     """context: records attached with 'Ask about this'; hint_kind: the kind of question that record implies.
     on_delta: receives the reply text written so far while the model is writing (a draft: the final TurnResult
     is authoritative, after every guard has run)."""
@@ -955,7 +1021,10 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
                 call_numbers=cs.call_numbers,
             )
     if rf.triggered and rf.kind in ("emergency", "mental_health"):
-        return TurnResult(reply="\n\n".join(rf.messages), structured=None, red_flag=rf.as_dict(),
+        from app.services.emergency_triage import EmergencyTriageService
+        em_assess = EmergencyTriageService().assess(text, lang=lang, age_years=age, recent_turns=[h["content"] for h in (history or []) if h.get("role") == "user"][-2:])
+        rf_dict = {**rf.as_dict(), "spoken_alert": em_assess.spoken_alert, "screen_title": em_assess.screen_title}
+        return TurnResult(reply="\n\n".join(em_assess.messages or rf.messages), structured=None, red_flag=rf_dict,
                           disclaimer=disclaimer(lang))
     # In the middle of the chat's questions: "yes" / "no" / "not sure" answer the pending question
     diff = None
@@ -964,7 +1033,12 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
         eng0 = await to_english(text, lang) if lang in PIVOT_LANGS and not text.isascii() else ""
         step = await chat_flow.handle_reply(db, cu, session_id, text, eng0, "hi" if lang == "hi" else "en")
         if step.kind == "ask":
-            return await _clarify_turn(step, lang, rf)
+            clar_res = await _clarify_turn(step, lang, rf)
+            if isinstance(clar_res.structured, dict):
+                clar_res.structured["recommendation_ready"] = False
+            from app.services.consultation_state_machine import consultation_state_machine
+            consultation_state_machine.record_followup_question(session_id, clar_res.reply)
+            return clar_res
         if step.kind == "finish":
             diff = step
             text = step.complaint or text  # the answer is about what they first described
@@ -1012,8 +1086,13 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
     lap("intent")
     if hint_kind and kind in ("general_health", "off_topic", "greeting", "thanks_bye", "about_app"):
         kind = hint_kind  # "explain this" about an attached lab result is a report question
-    if kind in ("general_health", "off_topic") and followup_kind(english, history) == "symptoms":
-        kind = "symptoms"  # "how long will it last?" in a symptom chat keeps its urgency and possible causes
+    if kind in ("general_health", "off_topic"):
+        if followup_kind(english, history) == "symptoms":
+            kind = "symptoms"  # "how long will it last?" in a symptom chat keeps its urgency and possible causes
+        elif history:
+            from app.clinical.context_manager import build_consultation_context
+            if build_consultation_context(history, text, lang=out_lang).symptoms:
+                kind = "symptoms"  # short follow-up reply inherits ongoing symptom consultation context
     if kind in intent_mod.FIXED_REPLY and not context:  # exact greeting / thanks / "who are you" phrases only
         return _fixed_turn(kind, lang, rf)
     if diff:
@@ -1032,11 +1111,16 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
                     mem0 = ""
             complaint_en = english if (english or "").strip() and (english or "").strip() != text.strip() else text
             step = await chat_flow.start(db, cu, session_id, complaint_en, summary, age,
-                                         "hi" if out_lang == "hi" else "en", mem0, allow_cloud=False,
-                                         model_pref="balanced")
+                                         "hi" if out_lang == "hi" else "en", mem0, allow_cloud=allow_cloud,
+                                         model_pref=model_pref)
             lap("plan")
             if step.kind == "ask":
-                return await _clarify_turn(step, out_lang, rf)
+                clar_res = await _clarify_turn(step, out_lang, rf)
+                if isinstance(clar_res.structured, dict):
+                    clar_res.structured["recommendation_ready"] = False
+                from app.services.consultation_state_machine import consultation_state_machine
+                consultation_state_machine.record_followup_question(session_id, clar_res.reply)
+                return clar_res
             if step.kind == "finish":
                 diff = step
     if diff is not None:
@@ -1055,7 +1139,8 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
                         rerank_top=4 if speed == "instant" else 10)
     lap("search")
     messages = [{"role": "system", "content": _system_prompt(lang) if symptomatic else _general_prompt(lang, kind)}]
-    messages += conversation_messages(history)
+    # Compact history to the most recent 6 turns when long so TTFT stays low while clinical context holds prior symptoms.
+    messages += conversation_messages((history or [])[-6:])
     record = f"RECORD THE USER IS ASKING ABOUT (from their own health record):\n{context}\n\n" if context else ""
     try:  # the person's own health memory + active clinical reasoning state
         from app.clinical.extract import extract_deterministic
@@ -1084,7 +1169,89 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
     record += f"THEIR HEALTH MEMORY (their own history, from earlier chats and readings):\n{mem}\n\n" if mem else ""
     heard = (f"ALREADY SAID ALOUD (the person interrupted after this): {spoken_prefix[:1000]}\n\n"
              if spoken_prefix else "")
-    messages.append({"role": "user", "content": heard + f"PATIENT CONTEXT: {summary}\n\n{record}{_sources_block(hits)}\n\n"
+    cdss_ctx = None
+    cdss_block = ""
+    q_plan = None
+    ctx_state = None
+    q_bundle = None
+    reason_bundle = None
+    if symptomatic:
+        try:
+            from app.clinical.cdss import cdss_prompt_block
+            from app.services.adaptive_questions import AdaptiveQuestionService
+            from app.services.clinical_reasoning import ClinicalReasoningService
+            from app.services.patient_profile import PatientProfileService, PatientSnapshot
+
+            q_svc = AdaptiveQuestionService()
+            ctx_state = q_svc.build_context(history, text, lang=out_lang)
+            snap = patient_snapshot if isinstance(patient_snapshot, PatientSnapshot) else (
+                await PatientProfileService().load_snapshot(db, cu, session_id=session_id) if cu else PatientSnapshot(user_id="anonymous", age=int(age) if age is not None else None)
+            )
+            reason_bundle = ClinicalReasoningService().evaluate(
+                ctx_state,
+                patient=snap,
+                lang=out_lang,
+                session_id=session_id,
+                red_flag_triggered=rf.triggered,
+                red_flag_kind=rf.kind,
+            )
+            cdss_ctx = reason_bundle["cdss"]
+            q_bundle = q_svc.plan(ctx_state, cdss_ctx["routing"], lang=out_lang, channel=channel, emergency_stop=(cdss_ctx["routing"].urgency_level == 1))
+            if CHAT_DIFFERENTIAL and session_id and not rf.triggered and not images and hint_kind != "report":
+                from app.services.consultation_state_machine import consultation_state_machine
+                c_state = consultation_state_machine.get_or_create(session_id)
+                if not c_state.min_followups_met:
+                    asked_set = {q.strip().lower() for q in c_state.asked_questions}
+                    cands = [q for q in ([q_bundle.get("primary_question")] + list(q_bundle.get("questions") or [])) if q]
+                    fallbacks = {
+                        "bn": [
+                            "এই সমস্যাটি কতদিন ধরে হচ্ছে এবং কখন বেশি বাড়ে?",
+                            "এর সাথে কি জ্বর, দুর্বলতা বা অন্য কোনো উপসর্গ আছে?",
+                            "ব্যথা বা অস্বস্তি কতটা তীব্র (হালকা, মাঝারি না তীব্র) এবং আগে কি এমন হয়েছিল?",
+                        ],
+                        "hi": [
+                            "यह समस्या कितने दिनों से है और कब अधिक बढ़ती है?",
+                            "क्या इसके साथ बुखार, कमजोरी या कोई अन्य लक्षण भी है?",
+                            "तकलीफ कितनी तीव्र है और क्या पहले भी ऐसा हुआ है?",
+                        ],
+                        "en": [
+                            "How long have you had this symptom, and what makes it better or worse?",
+                            "Do you have any associated symptoms like fever, weakness, or nausea?",
+                            "How severe is it right now (mild, moderate, or severe), and have you had it before?",
+                        ],
+                    }.get(out_lang if out_lang in ("bn", "hi") else "en", [])
+                    next_q = next((q for q in cands + fallbacks if q.strip().lower() not in asked_set), None)
+                    if next_q:
+                        consultation_state_machine.record_followup_question(session_id, next_q)
+                        fq_structured = {
+                            "kind": "clarify",
+                            "reply": next_q,
+                            "follow_up_questions": [next_q],
+                            "recommendation_ready": False,
+                            "spoken_response": next_q,
+                            "spoken_segments": [{"section_id": "follow_up_questions", "text": next_q}],
+                            "language": out_lang,
+                        }
+                        return TurnResult(
+                            reply=next_q,
+                            structured=fq_structured,
+                            red_flag=rf.as_dict(),
+                            disclaimer=disclaimer(out_lang),
+                            provider="sushrut_followup",
+                            model="deterministic",
+                            tier="L",
+                            kind="clarify",
+                            english=english if english != text else "",
+                        )
+            q_note = (
+                f"\n- Adaptive Next Question (ask ONE focused question if needed, DO NOT repeat answered topics): {q_bundle['primary_question']}\n"
+                if q_bundle.get("should_ask") and q_bundle.get("primary_question")
+                else "\n- Sufficient clinical context is available: deliver the COMPLETE assessment, department, doctor qualification, justified investigations, and next steps now.\n"
+            )
+            cdss_block = ctx_state.prompt_block() + "\n\n" + cdss_prompt_block(cdss_ctx) + q_note + "\n"
+        except Exception:  # noqa: BLE001 — CDSS enrichment never breaks answer delivery
+            cdss_ctx = None
+    messages.append({"role": "user", "content": heard + f"PATIENT CONTEXT: {summary}\n\n{record}{cdss_block}{_sources_block(hits)}\n\n"
                                                 + (f"USER MESSAGE (translated from {LANG_NAMES.get(out_lang, out_lang)}): "
                                                    f"{english}" if pivot else
                                                    f"USER MESSAGE ({LANG_NAMES.get(lang, lang)}): {text}"
@@ -1134,7 +1301,7 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
             structured["reply"] = NO_REPLY_LEAD.get(lang, NO_REPLY_LEAD["en"])
     if isinstance(structured.get("reply"), str):
         structured["reply"] = dedupe_repeats(structured["reply"])[0]
-        structured["reply"], trimmed = tidy_reply(structured["reply"])
+        structured["reply"], trimmed = tidy_reply(structured["reply"], max_sentences=12)
         if trimmed:
             refusal_warnings.append("reply_tidied")
     if diff is not None and diff.ranked:
@@ -1244,6 +1411,44 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
             seen_pages.add(page)
             consulted.append({"title": h.title, "url": h.source_url, "source": h.source_id})
     structured["consulted"] = consulted[:3]
+    if symptomatic and cdss_ctx is not None:
+        try:
+            from app.clinical.cdss import enrich_structured_response, validate_and_repair_response
+            from app.services.clinical_reasoning import ClinicalReasoningService
+
+            structured["possible_conditions"] = ClinicalReasoningService.label_conditions(structured.get("possible_conditions"))
+            next_q = q_bundle.get("primary_question") if (q_bundle and q_bundle.get("should_ask")) else None
+            warnings.extend(validate_and_repair_response(
+                structured=structured,
+                cdss=cdss_ctx,
+                answered_topics=ctx_state.answered_topics if ctx_state else None,
+                next_question=next_q,
+                lang=out_lang,
+            ))
+            enrich_structured_response(
+                text=ctx_state.merged_clinical_text if ctx_state else text,
+                lang=out_lang,
+                structured=structured,
+                cdss=cdss_ctx,
+                citations=citations,
+                consulted=structured["consulted"],
+            )
+            if reason_bundle and reason_bundle.get("specialty"):
+                structured["recommended_specialist"] = {
+                    **structured.get("recommended_specialist", {}),
+                    **reason_bundle["specialty"],
+                }
+            if reason_bundle and reason_bundle.get("investigations"):
+                structured["recommended_tests"] = reason_bundle["investigations"]["items"]
+                structured["investigations_note"] = reason_bundle["investigations"]["clinician_note"]
+            if q_bundle and q_bundle.get("questions"):
+                merged_fqs = list(q_bundle["questions"])
+                for fq in structured.get("follow_up_questions") or []:
+                    if fq and fq not in merged_fqs:
+                        merged_fqs.append(fq)
+                structured["follow_up_questions"] = merged_fqs[:(1 if channel == "voice" else 3)]
+        except Exception:  # noqa: BLE001
+            log.exception("cdss enrichment failed")
     # Grounding: drop unsupported dose/number claims, flag other claims the sources don't back (Phase 3)
     import asyncio as _asyncio
 
@@ -1284,6 +1489,32 @@ async def answer(db: AsyncSession, cu: CurrentUser, text: str, *, lang: str = "e
             structured["reply"] = "\n\n".join(rf.messages) + "\n\n" + structured.get("reply", "")
         lang = out_lang
         lap("translate_answer")
+    if symptomatic or structured.get("reply"):
+        try:
+            from app.services.patient_profile import PatientProfileService
+            from app.services.voice_text_sync import VoiceTextSynchronizationService
+
+            minor_note = None
+            if age is not None and age < 18:
+                from app.services.patient_profile import PatientSnapshot
+                minor_note = PatientProfileService().minor_guidance_note(
+                    PatientSnapshot(user_id=cu.id if cu else "anon", age=int(age), minor_patient=True),
+                    lang=out_lang,
+                )
+            VoiceTextSynchronizationService().synchronize(
+                lang=out_lang,
+                structured=structured,
+                specialty=(reason_bundle or {}).get("specialty") if reason_bundle else structured.get("recommended_specialist"),
+                investigations=(reason_bundle or {}).get("investigations") if reason_bundle else None,
+                diet=(reason_bundle or {}).get("diet") if reason_bundle else structured.get("diet_and_lifestyle"),
+                followup_question=(structured.get("follow_up_questions") or [None])[0],
+                channel=channel,
+                minor_note=minor_note,
+            )
+        except Exception:  # noqa: BLE001
+            log.exception("voice-text synchronization failed")
+    if isinstance(structured, dict):
+        structured.setdefault("recommendation_ready", True)
     log.info("turn timings %s model=%s", T, res.model)
     log.info("retrieval hits=%s", [(round(h.score, 3), h.title[:40]) for h in hits])  # no user text in logs
     return TurnResult(reply=structured.get("reply", ""), structured=structured, red_flag=rf.as_dict(),

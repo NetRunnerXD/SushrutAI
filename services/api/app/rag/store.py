@@ -133,15 +133,24 @@ def invalidate_cache() -> None:
     _CACHE.clear()
 
 
+_SEARCH_CACHE: dict[tuple, tuple[float, list[Hit]]] = {}
+_CACHE_TTL_S = 300.0
+
+
 async def search(db: AsyncSession, query: str, *, collections: list[str] | None = None,
                  k: int = 6, candidates: int = 40, rerank: bool | None = None,
                  rerank_top: int = 10) -> list[Hit]:
     """Hybrid BM25 + dense (bge-m3) retrieval fused with RRF x source authority, then (if available) the
     bge-reranker-v2-m3 cross-encoder on the top `rerank_top` fused results. rerank=None -> use if loaded."""
+    import time as _time
     ix = await _index(db, collections)
     n = len(ix.meta)
     if not n:
         return []
+    ckey = (query.strip().lower(), tuple(sorted(collections or [])), k, rerank, rerank_top, n)
+    cached = _SEARCH_CACHE.get(ckey)
+    if cached and (_time.monotonic() - cached[0]) < _CACHE_TTL_S:
+        return list(cached[1])
 
     # lexical: BM25
     q = tokens(query)
@@ -185,6 +194,14 @@ async def search(db: AsyncSession, query: str, *, collections: list[str] | None 
         if scores:
             final = {i: s * (0.8 + 0.2 * ix.authority[i]) for i, s in zip(top, scores)}
             best = sorted(final, key=lambda i: -final[i])[:k]
-            return [Hit(*ix.meta[i], round(float(final[i]), 5)) for i in best]
+            res_hits = [Hit(*ix.meta[i], round(float(final[i]), 5)) for i in best]
+            if len(_SEARCH_CACHE) > 128:
+                _SEARCH_CACHE.clear()
+            _SEARCH_CACHE[ckey] = (_time.monotonic(), res_hits)
+            return res_hits
     best = top[:k]
-    return [Hit(*ix.meta[i], round(float(fused[i]), 5)) for i in best]
+    res_hits = [Hit(*ix.meta[i], round(float(fused[i]), 5)) for i in best]
+    if len(_SEARCH_CACHE) > 128:
+        _SEARCH_CACHE.clear()
+    _SEARCH_CACHE[ckey] = (_time.monotonic(), res_hits)
+    return res_hits

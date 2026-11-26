@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
-from app.llm.providers import ollama
+from app.llm.providers import ProviderUnavailable, full_cloud_allowed, gemini, ollama
 from app.models import Document
 from app.ocr.pipeline import load_image, preprocess
 from app.routers.documents import read_document
@@ -33,9 +33,16 @@ async def doc_image_b64(cu: CurrentUser, db: AsyncSession, doc_id: str, max_side
 
 
 async def _ask(model: str, prompt: str, b64: str, n: int = 6, ctx: int = 2048) -> str:
-    m = await ollama().chat(model, [{"role": "user", "content": prompt}], images=[b64], temperature=0.0,
-                            num_ctx=ctx, num_predict=n)
-    return m.text.strip().lower()
+    try:
+        m = await ollama().chat(model, [{"role": "user", "content": prompt}], images=[b64], temperature=0.0,
+                                num_ctx=ctx, num_predict=n)
+        return m.text.strip().lower()
+    except ProviderUnavailable:
+        if full_cloud_allowed.get() and gemini().available:
+            m = await gemini().chat(get_settings().gemini_model, [{"role": "user", "content": prompt}], images=[b64],
+                                    temperature=0.0, num_predict=max(n, 32))
+            return m.text.strip().lower()
+        raise
 
 
 async def classify_modality(b64: str) -> str:

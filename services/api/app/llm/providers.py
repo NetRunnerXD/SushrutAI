@@ -6,8 +6,10 @@ Tier C  = global free APIs (Groq, …)      -> de-identified + `cloud_llm_deiden
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+import os
 import time
 from contextvars import ContextVar
 from collections.abc import AsyncIterator
@@ -117,6 +119,14 @@ def _raise_for_server_error(model: str, r: httpx.Response) -> None:
         raise ModelBusy(f"Ollama error {r.status_code} for '{model}': {r.text[:200]}")
 
 
+_ollama_down_until: float = 0.0
+
+
+def reset_provider_cache() -> None:
+    global _ollama_down_until
+    _ollama_down_until = 0.0
+
+
 class Ollama:
     tier = "L"
     name = "ollama"
@@ -126,24 +136,41 @@ class Ollama:
         self.base = s.ollama_base_url.rstrip("/")
         self.timeout = s.llm_timeout_s
 
+    def _fast_skip(self) -> bool:
+        return not os.environ.get("PYTEST_CURRENT_TEST") and time.monotonic() < _ollama_down_until
+
+    def _mark_down(self) -> None:
+        global _ollama_down_until
+        if not os.environ.get("PYTEST_CURRENT_TEST"):
+            _ollama_down_until = time.monotonic() + 20.0
+
+    def _client_timeout(self) -> httpx.Timeout:
+        return httpx.Timeout(timeout=self.timeout, connect=0.4)
+
     async def running(self) -> list[dict]:
         """Models Ollama holds in memory now, with their size in VRAM (GB)."""
+        if self._fast_skip():
+            return []
         try:
-            async with httpx.AsyncClient(timeout=3) as c:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(3.0, connect=0.4)) as c:
                 r = await c.get(f"{self.base}/api/ps")
                 r.raise_for_status()
                 return [{"name": m["name"], "vram_gb": round(m.get("size_vram", 0) / 1e9, 1), "until": m.get("expires_at")}
                         for m in r.json().get("models", [])]
         except httpx.HTTPError:
+            self._mark_down()
             return []
 
     async def models(self) -> list[str]:
+        if self._fast_skip():
+            return []
         try:
-            async with httpx.AsyncClient(timeout=3) as c:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(3.0, connect=0.4)) as c:
                 r = await c.get(f"{self.base}/api/tags")
                 r.raise_for_status()
                 return [m["name"] for m in r.json().get("models", [])]
         except httpx.HTTPError:
+            self._mark_down()
             return []
 
     async def chat(self, model: str, messages: list[dict], *, schema: dict | None = None,
@@ -153,6 +180,8 @@ class Ollama:
                    on_token: Callable[[str], None] | None = None) -> LlmResult:
         """on_token: when given, the reply is streamed and on_token receives the whole text so far after each
         chunk (the result is identical to the non-streamed call)."""
+        if self._fast_skip():
+            raise ProviderUnavailable(f"Ollama not reachable at {self.base} (cached cooldown)")
         msgs = [dict(m) for m in messages]
         if images:
             msgs[-1]["images"] = images  # base64 strings, attached to the last user turn
@@ -173,12 +202,15 @@ class Ollama:
         if on_token is not None:
             return await self._chat_streamed(model, body, on_token, t0)
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as c:
+            async with httpx.AsyncClient(timeout=self._client_timeout()) as c:
                 r = await c.post(f"{self.base}/api/chat", json=body)
         except httpx.TimeoutException as e:
+            if isinstance(e, httpx.ConnectTimeout):
+                self._mark_down()
             raise ModelBusy(f"Model '{model}' did not answer within {self.timeout:.0f}s (busy with another request, "
                             f"running on CPU, or generating runaway output)") from e
         except httpx.HTTPError as e:
+            self._mark_down()
             raise ProviderUnavailable(f"Ollama not reachable at {self.base}: {e}") from e
         if r.status_code == 404:
             raise ModelMissing(f"Model '{model}' not pulled. Run: ollama pull {model}")
@@ -191,7 +223,7 @@ class Ollama:
         """Same request with stream=true. Closing the connection (task cancelled) stops generation in Ollama."""
         text = ""
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as c:
+            async with httpx.AsyncClient(timeout=self._client_timeout()) as c:
                 async with c.stream("POST", f"{self.base}/api/chat", json=body) as r:
                     if r.status_code == 404:
                         raise ModelMissing(f"Model '{model}' not pulled. Run: ollama pull {model}")
@@ -209,8 +241,11 @@ class Ollama:
                         if chunk.get("done"):
                             break
         except httpx.TimeoutException as e:
+            if isinstance(e, httpx.ConnectTimeout):
+                self._mark_down()
             raise ModelBusy(f"Model '{model}' did not answer within {self.timeout:.0f}s") from e
         except httpx.HTTPError as e:
+            self._mark_down()
             raise ProviderUnavailable(f"Ollama not reachable at {self.base}: {e}") from e
         return LlmResult(text, self.name, model, self.tier, int((time.perf_counter() - t0) * 1000))
 
@@ -234,10 +269,13 @@ class Ollama:
             raise ProviderUnavailable(f"Ollama stream failed: {e}") from e
 
     async def embed(self, model: str, texts: list[str]) -> list[list[float]]:
+        if self._fast_skip():
+            raise ProviderUnavailable(f"Ollama not reachable at {self.base} (cached cooldown)")
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as c:
+            async with httpx.AsyncClient(timeout=self._client_timeout()) as c:
                 r = await c.post(f"{self.base}/api/embed", json={"model": model, "input": texts})
         except httpx.HTTPError as e:
+            self._mark_down()
             raise ProviderUnavailable(str(e)) from e
         if r.status_code == 404:
             raise ProviderUnavailable(f"Embedding model '{model}' not pulled. Run: ollama pull {model}")
@@ -405,11 +443,27 @@ class Gemini:
             text = last["content"] if isinstance(last["content"], str) else json.dumps(last["content"], ensure_ascii=False)
             last["content"] = [{"type": "text", "text": text}] + [
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b}"}} for b in images]
+        s = get_settings()
+        candidates = list(dict.fromkeys([
+            model, s.gemini_model, "gemini-3.5-flash", s.gemini_fast_model, "gemini-3.5-flash-lite",
+        ]))
         t0 = time.perf_counter()
-        text = await _openai_chat("Gemini", f"{self.base}/chat/completions", self.key, model, msgs,
-                                  schema=schema, temperature=temperature, num_predict=num_predict,
-                                  on_token=on_token, timeout=90)
-        return LlmResult(text, self.name, model, self.tier, int((time.perf_counter() - t0) * 1000), {})
+        last_err: ProviderUnavailable | None = None
+        for idx, candidate in enumerate(candidates):
+            try:
+                text = await _openai_chat("Gemini", f"{self.base}/chat/completions", self.key, candidate, msgs,
+                                          schema=schema, temperature=temperature, num_predict=num_predict,
+                                          on_token=on_token, timeout=90)
+                return LlmResult(text, self.name, candidate, self.tier, int((time.perf_counter() - t0) * 1000), {})
+            except ProviderUnavailable as e:
+                last_err = e
+                msg = str(e)
+                transient = any(code in msg for code in ("429", "503", "404", "rate limit", "quota", "UNAVAILABLE"))
+                if not transient or idx == len(candidates) - 1:
+                    raise
+                if not os.environ.get("PYTEST_CURRENT_TEST"):
+                    await asyncio.sleep(min(0.4 * (idx + 1), 1.5))
+        raise last_err or ProviderUnavailable("Gemini unavailable")
 
 
 # Set per request by the routers: the person chose Gemini and gave the `cloud_llm_full` consent (offline mode off)
@@ -489,6 +543,26 @@ async def clinical_chat(messages: list[dict], *, schema: dict | None = None,
     Groq ("cloud" / prefer_cloud) only with allow_cloud, and only de-identified text — photos stay on the local
     vision model. A cloud failure falls back to the local model instead of failing the turn.
     """
+    from app.telemetry import inc, record_latency
+
+    try:
+        res = await _clinical_chat_impl(
+            messages, schema=schema, images=images, allow_cloud=allow_cloud, prefer_cloud=prefer_cloud,
+            num_predict=num_predict, repeat_penalty=repeat_penalty, on_token=on_token, model_pref=model_pref,
+        )
+        inc("llm_requests")
+        record_latency("llm_ms", res.latency_ms)
+        return res
+    except ProviderUnavailable:
+        inc("api_errors")
+        raise
+
+
+async def _clinical_chat_impl(messages: list[dict], *, schema: dict | None = None,
+                              images: list[str] | None = None, allow_cloud: bool = False,
+                              prefer_cloud: bool = False, num_predict: int | None = None,
+                              repeat_penalty: float | None = None,
+                              on_token: Callable[[str], None] | None = None, model_pref: str = "balanced") -> LlmResult:
     s = get_settings()
     if (g_model := gemini_model_for(model_pref)):
         try:
@@ -516,13 +590,17 @@ async def clinical_chat(messages: list[dict], *, schema: dict | None = None,
         return await ollama().chat(model, messages, schema=schema, images=images, num_predict=num_predict,
                                    repeat_penalty=repeat_penalty, on_token=on_token)
     except ProviderUnavailable as e:
-        if not images and model != s.llm_model:
+        if not images and model != s.llm_model and _ollama_down_until <= time.monotonic():
             # the "Faster" model failed (seen in the safety eval: it looped until Ollama aborted with "token repeat
             # limit reached") — answer with the careful model instead of showing the person an error
             log.warning("fast model %s failed (%s); retrying with %s", model, e, s.llm_model)
             return await clinical_chat(messages, schema=schema, allow_cloud=allow_cloud, prefer_cloud=False,
                                        num_predict=num_predict, repeat_penalty=repeat_penalty, on_token=on_token,
                                        model_pref="balanced")
+        if full_cloud_allowed.get() and gemini().available:
+            log.warning("local model unavailable (%s); using consented Gemini fallback", e)
+            return await gemini().chat(s.gemini_model, messages, schema=schema, images=images,
+                                       num_predict=num_predict, on_token=on_token)
         if allow_cloud and not images and groq().available and not prefer_cloud:
             # local model is down: Groq is the consented de-identified fallback, not a second try after Groq itself failed
             return await groq().chat(s.groq_llm_model, messages, schema=schema, num_predict=num_predict)
