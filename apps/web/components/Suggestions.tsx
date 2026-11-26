@@ -45,9 +45,9 @@ export function Suggestions({ sessionId, refreshKey, onSend, onEdit, variant = "
               onClick={() => { if (press.current === -1) { press.current = null; return; } onSend(q); }}
               onPointerDown={() => startPress(q)} onPointerUp={endPress} onPointerLeave={endPress}
               onContextMenu={(e) => { e.preventDefault(); onEdit(q); }}
-              className={`min-h-12 min-w-0 flex-1 px-3.5 text-left text-[0.9375rem] font-semibold hover:bg-surface-2 ${variant === "grid" ? "py-2" : ""}`}>{q}</button>
+              className={`min-h-12 min-w-0 flex-1 px-3.5 text-start text-[0.9375rem] font-semibold hover:bg-surface-2 ${variant === "grid" ? "py-2" : ""}`}>{q}</button>
             <button type="button" onClick={() => onEdit(q)} aria-label={`${t.editSuggestion}: ${q}`} title={t.editSuggestion}
-              className="grid w-12 shrink-0 place-items-center border-l border-border text-muted hover:bg-surface-2 hover:text-text">
+              className="grid w-12 shrink-0 place-items-center border-s border-border text-muted hover:bg-surface-2 hover:text-text">
               <Pencil aria-hidden className="h-3.5 w-3.5" /></button>
           </li>
         ))}

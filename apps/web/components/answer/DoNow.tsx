@@ -36,7 +36,7 @@ export function DoNow({ care, watch, question, symptomatic, defaultOpen }: {
       {!!watch?.length && (
         <div className="rounded-[14px] border-[1.5px] border-warn/50 bg-warn-soft p-3 text-warn">
           <p className="mb-1 flex items-center gap-1.5 font-semibold"><CircleAlert aria-hidden className="h-5 w-5" />{t.watchFor}</p>
-          <ul className="list-disc space-y-0.5 pl-6 text-text">{watch.map((x, i) => <li key={i}>{x}</li>)}</ul>
+          <ul className="list-disc space-y-0.5 ps-6 text-text">{watch.map((x, i) => <li key={i}>{x}</li>)}</ul>
         </div>
       )}
       {symptomatic && topic && (

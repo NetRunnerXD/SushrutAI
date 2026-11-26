@@ -38,7 +38,7 @@ function Cause({ c, i, onAsk }: { c: any; i: number; onAsk?: (q: string) => void
   };
   return (
     <li className="rounded-[14px] bg-surface p-2.5 shadow-[var(--rim)]">
-      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="w-full text-left">
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="w-full text-start">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="font-semibold">{i + 1}. {c.name}{c.name_en && c.name_en !== c.name ? <span lang="en" className="font-normal text-muted"> ({c.name_en})</span> : null}</span>
           <span className="flex items-center gap-2">

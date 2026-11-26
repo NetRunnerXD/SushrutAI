@@ -62,7 +62,7 @@ export function ReplyText({ text, terms = [], label }: { text: string; terms?: s
       {order.map((k, i) => k === "p" ? (
         <p key={i} className="text-[1.0625rem] leading-[1.7]"><Inline text={paras[pi++].join(" ")} terms={terms} /></p>
       ) : (
-        <ul key={i} className="list-disc space-y-1 pl-6 text-[1.0625rem] leading-[1.6]">
+        <ul key={i} className="list-disc space-y-1 ps-6 text-[1.0625rem] leading-[1.6]">
           {lists[li++].map((l, j) => <li key={j}><Inline text={l} terms={terms} /></li>)}
         </ul>
       ))}

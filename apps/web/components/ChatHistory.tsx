@@ -4,7 +4,7 @@ import { Check, Download, MessageCircle, Pencil, Pin, PinOff, Plus, Trash2, X } 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { useI18n } from "@/lib/i18n";
+import { bcp47, fill, useI18n } from "@/lib/i18n";
 
 export type ChatRow = { id: string; title: string; pinned: boolean; updated_at: string; count: number; urgency?: string | null };
 const URG_DOT: Record<string, string> = { emergency: "bg-emergency", see_doctor_24h: "bg-danger", see_doctor_week: "bg-warn", self_care: "bg-ok" };
@@ -31,6 +31,7 @@ export function ChatHistory({ current, onNew, onPick, refreshKey = 0 }: {
   const [editing, setEditing] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [confirm, setConfirm] = useState<string | null>(null);
+  const [confirmAll, setConfirmAll] = useState(false);
 
   const load = useCallback(() => { api<ChatRow[]>("/chat/sessions").then(setRows).catch(() => setRows([])); }, []);
   useEffect(load, [load, refreshKey]);
@@ -43,6 +44,13 @@ export function ChatHistory({ current, onNew, onPick, refreshKey = 0 }: {
     await api(`/chat/sessions/${id}`, { method: "DELETE" }).catch(() => {});
     setConfirm(null);
     if (id === current) onNew();
+    load();
+  };
+
+  const removeAll = async () => {
+    await api("/chat/sessions", { method: "DELETE" }).catch(() => {});
+    setConfirmAll(false);
+    onNew();
     load();
   };
 
@@ -100,7 +108,7 @@ export function ChatHistory({ current, onNew, onPick, refreshKey = 0 }: {
                     <span className="block truncate font-semibold">{r.title}</span>
                     <span className="flex items-center gap-1.5 text-[0.8125rem] text-muted">
                       {r.urgency && <span aria-label={t.urgency?.[r.urgency] ?? r.urgency} className={`h-2 w-2 rounded-full ${URG_DOT[r.urgency] ?? ""}`} />}
-                      <span className="font-mono">{new Date(r.updated_at).toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN", { day: "numeric", month: "short" })}</span>
+                      <span className="font-mono">{new Date(r.updated_at).toLocaleDateString(bcp47(lang), { day: "numeric", month: "short" })}</span>
                       · {Math.ceil(r.count / 2)} Q</span>
                   </span>
                 </Link>
@@ -124,6 +132,20 @@ export function ChatHistory({ current, onNew, onPick, refreshKey = 0 }: {
         ))}
         </div>
       )}
+      {rows && rows.length > 0 && (confirmAll ? (
+        <div role="alert" className="space-y-2 rounded-[16px] border-[1.5px] border-danger bg-danger-soft p-3 text-danger">
+          <p className="text-[0.9375rem] font-semibold">{fill(t.confirmDeleteAllChats, { n: rows.length })}</p>
+          <div className="flex gap-2">
+            <button type="button" onClick={removeAll} className="btn bg-danger text-on-tone">
+              <Trash2 aria-hidden className="h-5 w-5" />{t.deleteAll}</button>
+            <button type="button" onClick={() => setConfirmAll(false)} className="btn btn-outline">{t.cancel}</button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setConfirmAll(true)}
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full text-[0.9375rem] font-semibold text-danger hover:bg-danger-soft">
+          <Trash2 aria-hidden className="h-4 w-4" />{t.deleteAllChats}</button>
+      ))}
       {editing && <button type="button" onClick={() => setEditing(null)} className="sr-only"><X />{t.cancel}</button>}
     </div>
   );

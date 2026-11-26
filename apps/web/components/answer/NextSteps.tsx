@@ -52,7 +52,7 @@ export function NextSteps({ specialist, tests, urgent, defaultOpen }: {
       {!!tests?.length && (
         <div>
           <p className="mb-1 flex items-center gap-1.5 font-semibold"><FlaskConical aria-hidden className="h-4 w-4" />{t.tests}</p>
-          <ul className="list-disc space-y-0.5 pl-6">{tests.map((x, i) => <li key={i}>{x}</li>)}</ul>
+          <ul className="list-disc space-y-0.5 ps-6">{tests.map((x, i) => <li key={i}>{x}</li>)}</ul>
         </div>
       )}
       <div className="flex flex-wrap gap-2">
@@ -70,7 +70,7 @@ export function NextSteps({ specialist, tests, urgent, defaultOpen }: {
                 <span>{l.test_name}</span>
                 <span className={l.flag === "H" || l.flag === "L" ? "font-semibold text-danger" : ""}>
                   {l.value ?? "—"} {l.unit ?? ""}{l.flag === "H" ? ` (${t.flagHigh})` : l.flag === "L" ? ` (${t.flagLow})` : ""}
-                  <span className="ml-2 text-muted">{new Date(l.observed_at).toLocaleDateString()}</span></span>
+                  <span className="ms-2 text-muted">{new Date(l.observed_at).toLocaleDateString()}</span></span>
               </li>
             ))}
           </ul>
