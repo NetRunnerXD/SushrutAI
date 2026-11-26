@@ -13,7 +13,7 @@ The full architecture plan is in [`docs/PLAN.md`](docs/PLAN.md).
 
 | Feature | Status |
 |---|---|
-| Health assistant chat (text + voice, 10 languages) | ✅ Local **MedGemma-4B** via Ollama, with RAG over MedlinePlus, constrained-JSON answers, citations, and urgency/specialist guidance |
+| Health assistant chat (text + voice, 13 languages) | ✅ Local **MedGemma-4B** via Ollama, with RAG over MedlinePlus, constrained-JSON answers, citations, and urgency/specialist guidance |
 | Emergency red flags | ✅ Deterministic multilingual rules run *before* the model and override it (108/112, Tele-MANAS 14416) |
 | Safety post-processing | ✅ Urgency floor for must-not-miss conditions; medicine advice is stripped from self-care; bad citations are dropped |
 | Adaptive symptom check | ✅ One model call builds the plan; Bayesian updates and information-gain question selection run locally and instantly; red-flag questions come first |
@@ -23,8 +23,8 @@ The full architecture plan is in [`docs/PLAN.md`](docs/PLAN.md).
 | Patient profile & vitals | ✅ BMI with Asian-Indian cut-offs; PHI encrypted per user (AES-256-GCM envelope) |
 | DPDP | ✅ Itemised consent, consent ledger, data export, erasure with crypto-shredding, PII scrubbing before any cloud call |
 | Auth | ✅ Guest mode, email OTP (dev mode prints the code), phone OTP via Firebase ID-token verification |
-| Local voice | ✅ IndicConformer-600M speech recognition (9 Indian languages), faster-whisper large-v3-turbo (English/Hinglish), MMS-TTS speech output, hands-free mode with voice-activity detection and barge-in |
-| Translation | ✅ IndicTrans2 (local) turns native-script questions into English for retrieval |
+| Local voice | ✅ IndicConformer-600M speech recognition (12 Indian languages), faster-whisper large-v3-turbo (English/Hinglish), MMS-TTS speech output in 12 Indian languages (English uses the device voice), hands-free mode with voice-activity detection and barge-in |
+| Translation | ✅ IndicTrans2 (local) turns native-script questions into English for retrieval. For the 11 languages other than English and Hindi, the answer is written in English and translated back (the local chat models write those languages poorly) |
 | Second safety layer | ✅ Llama-Guard-3-1B (local) blocks self-harm methods, poisons/weapons and illegal drug access; the "specialised advice" category is ignored |
 | Knowledge base | ✅ 956 chunks from 27 ICMR Standard Treatment Workflows + 54 MedlinePlus topics, hybrid search with bge-m3 |
 | Triage public-health rules | ✅ Dengue, malaria and typhoid must be considered for fever in monsoon or in endemic states; TB for cough ≥ 2 weeks (NTEP) |
@@ -33,8 +33,16 @@ The full architecture plan is in [`docs/PLAN.md`](docs/PLAN.md).
 | Reminders | ✅ Calendar (.ics) export that works offline on any phone, plus in-browser notifications |
 | Health record | ✅ Timeline and FHIR R4 export (Patient, AllergyIntolerance, Condition, MedicationStatement, Observation with LOINC) |
 | Offline mode | ✅ Per-user toggle or `OFFLINE_MODE=1` server-wide; blocks every cloud call |
+| Hands-free voice everywhere | ✅ One continuous listening loop on every page (on by default once the microphone is allowed): "stop", "pause", "continue", "repeat", "explain simply", "tell me more", "yes / no", "open my medicines", "prepare summary for doctor", "call the nearest hospital", "how was my week", "remind me later". Instant on-device matching for common phrases, the server understands every app language through English. Risky actions (calls, long-term saves) are read out first and wait for a clear yes |
+| Questions before possibilities | ✅ A first symptom message gets 1–3 questions (danger signs first, then the most informative), one combined "you haven't mentioned…" check, and a voice choice when two possibilities stay close; then 2–3 ranked possibilities with deterministic urgency (`CHAT_DIFFERENTIAL=off` restores the old behaviour) |
+| Health memory | ✅ Values said in chat are saved with a visible "Saved: 101 °F · 2 days" chip (undo), grouped into episodes that carry context across days; symptoms, triggers and how medicines worked are read by a small model in the background; patterns ("loose motion 3 times this month"), medicine check-ins on day 1 and 2, and a timeline |
+| Medicine storylines | ✅ Brand → salt (catalogue, printed composition, or the model marked "unverified"), a cheaper same-salt Jan Aushadhi option and how it went for you before, told as one short story; photo of a strip: "what is this?" / "is this what the doctor gave?" |
+| Doctor summary | ✅ Episodes with their timeline, values, medicines tried and how they went, documents; "Play to doctor" reads it aloud |
+| Emergency nearby | ✅ Nearest hospitals and ambulance services from OpenStreetMap (location rounded to ~100 m, cached for offline), Google Places fills missing numbers when a key is set; a responder summary to play on speaker; 108 / 112 always first |
+| Cloud options | ✅ Gemini (answers, incl. photos), Sarvam AI and ElevenLabs (voice) when their keys are set and the person chooses them (consent recorded; offline mode blocks them). See [docs/API_KEYS.md](docs/API_KEYS.md) |
+| Device-aware memory use | ✅ Ollama keep-alive per model kind (vision readers freed after 2 min), idle speech / translation models released after 10 min (sooner when RAM runs low); Settings shows this computer and what is loaded |
 | Postgres | ✅ Docker Postgres + pgvector with row-level security under a non-superuser app role; all tests pass on SQLite and Postgres |
-| UI languages | 🟡 English and Hindi complete; draft strings for 8 more languages, which need native-speaker review |
+| UI languages | 🟡 13 languages. English and Hindi hand-written; for the other 11, safety and navigation text is hand-written and the rest is machine-translated with IndicTrans2 (`apps/web/scripts/i18n_translate.py`). Urdu mirrors the layout right to left. Native-speaker review pending |
 
 ## Run it
 
@@ -127,8 +135,10 @@ Other sources:
 | Ingest all new sources, then pick the "consulted sources" threshold | `& eval\run_ingest.ps1` (GPU: run alone) |
 | Advice / chat / safety evals, grouped by model, live progress | `& eval\run_after_evals.ps1` |
 | Spoken-language detection (mic / hands-free) | `.venv\Scripts\python -I -X utf8 ..\..\eval\lang_detect_eval.py` |
-| Follow-up questions keep their topic | `.venv\Scripts\python -I -X utf8 ..\..\evalollowup_eval.py` |
-| Round-3 checks (follow-ups, safety Careful + Auto), live progress | `& evalun_round3_evals.ps1` |
+| Voice round trip per language (TTS → STT, character error rate) | `.venv\Scripts\python -I -X utf8 ..\..\eval\voice_roundtrip_eval.py` |
+| Follow-up questions keep their topic | `.venv\Scripts\python -I -X utf8 ..\..\eval\followup_eval.py` |
+| Round-3 checks (follow-ups, safety Careful + Auto), live progress | `& eval
+un_round3_evals.ps1` |
 | Suggestion chips: rules vs tiny CPU models | `.venv\Scripts\python -I -X utf8 ..\..\eval\suggest_eval.py` (rules won; set `SUGGEST_MODEL` to try a model) |
 
 ### Data currently loaded (2026-11-20)
@@ -240,4 +250,4 @@ cd services/api && .venv/Scripts/python -m pytest -q
 - **Not run on real data yet:**
   - Lab-report and medical-image parsing have only unit and probe tests; no real lab report or X-ray was available.
   - Surya OCR is installed but off by default (`RX_OCR_HINT=surya` turns it on); it has not been shown to help the reader yet.
-- **UI languages:** English and Hindi are complete. The other 8 have draft strings for the main screens, need native review, and fall back to English per string.
+- **UI languages:** English and Hindi are hand-written. The other 11 are machine-translated drafts (with hand-written emergency and navigation text) that need native-speaker review; a handful of strings per language stay in English where translation lost a placeholder. Re-run `node apps/web/scripts/i18n-extract.mjs` then `services/api/.venv/Scripts/python apps/web/scripts/i18n_translate.py` after adding English strings (cached, so only new strings are translated).

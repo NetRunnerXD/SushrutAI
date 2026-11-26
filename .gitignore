@@ -27,3 +27,11 @@ Thumbs.db
 # build caches
 *.tsbuildinfo
 eval/reports/*.log
+# regenerable: i18n extract/translate scratch, and full eval dumps (summaries stay tracked)
+apps/web/scripts/i18n-todo.json
+apps/web/scripts/i18n-cache/
+eval/reports/*_full.json
+eval/reports/voice_intent.json
+eval/reports/voice_roundtrip.json
+eval/reports/differential.json
+eval/reports/extract.json

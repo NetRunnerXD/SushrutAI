@@ -35,7 +35,7 @@ Success means people get to the right care sooner, take medicines correctly, and
 
 ## Positioning
 
-It runs on the family's own computer: the AI models are local, and health data is encrypted per person and never leaves home unless the user consents to a named cloud service. It speaks 10 Indian languages (Hindi, English, Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Odia) by voice. It grounds answers in Indian public sources: ICMR standard treatment workflows, MoHFW schedules, the CDSCO banned list, Jan Aushadhi prices.
+It runs on the family's own computer: the AI models are local, and health data is encrypted per person and never leaves home unless the user consents to a named cloud service. It speaks 13 languages (Hindi, English, Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Odia, Punjabi, Assamese, Urdu) by voice; Urdu lays the app out right to left. It grounds answers in Indian public sources: ICMR standard treatment workflows, MoHFW schedules, the CDSCO banned list, Jan Aushadhi prices.
 
 ## Operating Context
 
@@ -76,7 +76,7 @@ It runs on the family's own computer: the AI models are local, and health data i
   - a single GPU, so concurrent model work slows everything down.
 - **Terminology:** "information, not a diagnosis"; "see a doctor today / this week"; "Jan Aushadhi"; "MCP card"; "ASHA".
 - **Open decisions:**
-  - native-speaker review of 8 of the 10 languages (only English and Hindi are complete);
+  - native-speaker review of 11 of the 13 languages (English and Hindi are hand-written; the others are hand-written for safety and navigation text and machine-translated with IndicTrans2 for the rest);
   - a licensed brand-name medicine price dataset;
   - commercial licensing of DDInter and MMS-TTS (both non-commercial);
   - clinician review of the safety prompt set;

@@ -35,6 +35,9 @@ Review before any commercial launch.
 | AI4Bharat IndicTrans2 dist-200M (en↔indic) | Translation | HF cache (C:) | MIT | Any | — |
 | faster-whisper large-v3-turbo | English/Hinglish STT | `D:\hf` | MIT (OpenAI Whisper weights) | Any | — |
 | faster-whisper small (`Systran/faster-whisper-small`) | Spoken-language detection for the mic and hands-free mode (which of the app language, English and Hindi is spoken; ~1.6 s on CPU). eval/reports/lang_detect.json | HF cache | MIT (OpenAI Whisper weights) | Any | — |
-| Meta MMS-TTS (`facebook/mms-tts-*`) | Default text-to-speech | `D:\hf` | **CC BY-NC 4.0** (non-commercial) | Development, non-commercial | Switch to Indic Parler-TTS (Apache-2.0; gated — accept terms on HF and set TTS_ENGINE=parler) |
+| Meta MMS-TTS (`facebook/mms-tts-*`: hin, ben, mar, tel, tam, guj, kan, mal, ory, pan, asm, urd-script_arabic) | Default text-to-speech | `D:\hf` | **CC BY-NC 4.0** (non-commercial) | Development, non-commercial | Switch to Indic Parler-TTS (Apache-2.0; gated — accept terms on HF and set TTS_ENGINE=parler) |
 | ICMR Standard Treatment Workflows | 27 specialty PDFs → 956 KB chunks | `data/sources/icmr_stw/` | Government of India public guidance | Retrieval with attribution | Keep "source: ICMR STW" citations |
 | MedMCQA (validation split) | Model accuracy eval | `data/eval/medmcqa/` | Apache-2.0 (per dataset card; verify) | Evaluation | — |
+| Google Noto Sans Gurmukhi, Noto Nastaliq Urdu (via next/font, self-hosted) | Punjabi and Urdu interface text | `apps/web` build | SIL OFL 1.1 | Any | — |
+| OpenStreetMap data via the Overpass API (nearby hospitals) | Emergency sheet | queried live, last list cached on the device | ODbL 1.0 (attribution: "© OpenStreetMap contributors") | Any, with attribution | Shown as "From OpenStreetMap" |
+| Google Gemini API, Google Places API (New), Sarvam AI, ElevenLabs | Optional cloud answers / voice / phone numbers | cloud services, only when a key is set and the person chooses them | Service terms of each provider (not open licences) | Per provider terms; Gemini free tier may use inputs to improve Google products | Disclosed in the consent text and docs/API_KEYS.md |

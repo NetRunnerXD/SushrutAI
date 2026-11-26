@@ -61,7 +61,7 @@ typography:
     fontWeight: 700
     lineHeight: 1.375
   body:
-    fontFamily: "Noto Sans, Noto Sans Devanagari, Bengali, Tamil, Telugu, Gujarati, Kannada, Malayalam, Oriya, system-ui, sans-serif"
+    fontFamily: "Noto Sans, Noto Sans Devanagari, Bengali, Tamil, Telugu, Gujarati, Kannada, Malayalam, Oriya, Gurmukhi, Nastaliq Urdu, system-ui, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.6
@@ -248,7 +248,7 @@ A cool steel neutral field carrying three narrow, meaning-bound colour families:
 ## Typography
 
 **Display Font:** Mukta (Ek Type), Latin and Devanagari, weights 600/700/800, with each script falling through to its Noto Sans family.
-**Body Font:** Noto Sans plus Noto Sans Devanagari, Bengali, Tamil, Telugu, Gujarati, Kannada, Malayalam and Oriya (400/600/700), self-hosted and subset per script.
+**Body Font:** Noto Sans plus Noto Sans Devanagari, Bengali, Tamil, Telugu, Gujarati, Kannada, Malayalam, Oriya and Gurmukhi, and Noto Nastaliq Urdu (400/600/700), self-hosted and subset per script. Urdu gets a taller line height (2.1) because Nastaliq slants and stacks, and the whole layout mirrors right to left (logical `ps-`/`ms-`/`start-` classes; direction arrows flip).
 **Numerals:** the body face with tabular, lining figures (`font-mono` utility), so doses, times and readings align on one numeral scale.
 
 **Character:** an Indian humanist sans for headings, warm and sturdy, over a neutral, very legible body that reads the same in ten scripts.
