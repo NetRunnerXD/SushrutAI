@@ -109,6 +109,110 @@ class SilenceConfig:
         }
 
 
+ELDERLY_SILENCE_CONFIG = SilenceConfig(
+    pause_detect_ms=3000,         # 0-3s: short pause
+    continuation_grace_ms=15000,  # 3-15s: normal/extended thinking pause
+    gentle_ack_ms=25000,          # 15-25s: long thinking pause; >25s gently ask if more time needed
+    session_pause_ms=60000,
+)
+
+
+def is_completion_command(text: str) -> bool:
+    """True when the patient explicitly says they finished speaking (English, Bengali, Hindi)."""
+    t = (text or "").strip().lower()
+    if not t:
+        return False
+    return any(p in t for p in (
+        "i'm finished speaking",
+        "i am finished speaking",
+        "finished speaking",
+        "done speaking",
+        "that's all",
+        "thats all",
+        "আমি বলা শেষ করেছি",
+        "বলা শেষ করেছি",
+        "এইটুকুই",
+        "ব্যস এইটুকু",
+        "मेरी बात पूरी हो गई है",
+        "बात पूरी हो गई",
+        "बस इतना ही",
+    ))
+
+
+class InterruptionType(str, Enum):
+    CORRECTION = "CORRECTION"              # Type A: patient corrects prior info
+    ADDED_SYMPTOM = "ADDED_SYMPTOM"        # Type B: patient adds another symptom
+    ACKNOWLEDGEMENT = "ACKNOWLEDGEMENT"    # Type C: short backchannel ("হ্যাঁ", "আচ্ছা", "okay")
+    THINKING_PAUSE = "THINKING_PAUSE"      # Type D: "wait / let me think"
+    EMERGENCY = "EMERGENCY"                # Type E: chest pain / breathing / stroke red-flag
+    GENERAL_BARGE_IN = "GENERAL_BARGE_IN"  # Standard meaningful interruption
+
+
+_ACK_PHRASES = frozenset({
+    "হ্যাঁ", "না", "আচ্ছা", "হুম", "উম্ম", "ঠিক আছে", "বুঝেছি", "হুঁ",
+    "yes", "yeah", "yep", "no", "hmm", "uh huh", "okay", "ok", "right", "i see",
+    "हाँ", "हां", "जी", "नहीं", "अच्छा", "हम्म", "ठीक है", "समझ गया", "समझ गई",
+})
+
+_THINKING_PHRASES = (
+    "একটু দাঁড়ান", "মনে করতে দিন", "নামটা কী যেন", "কী যেন", "দাঁড়ান",
+    "wait", "let me think", "hold on", "one second", "trying to remember",
+    "रुकिए", "थोड़ा सोचने", "याद करने दें", "क्या नाम था",
+)
+
+_CORRECTION_PHRASES = (
+    "না না", "সেটা নয়", "তা নয়", "আসলে", "ভুল বলেছি", "ঠিক নয়", "নয়,",
+    "no no", "not that", "actually", "i meant", "instead", "correction", "wrong",
+    "नहीं नहीं", "वह नहीं", "दरअसल", "मेरा मतलब", "गलत बोला",
+)
+
+_ADDED_SYMPTOM_PHRASES = (
+    "আর একটা", "আরও", "পাশাপাশি", "সাথে", "তাছাড়া", "মাঝে মাঝে", "বুকটাও",
+    "also", "and also", "besides", "another thing", "plus", "along with",
+    "और एक", "साथ में", "इसके अलावा", "कभी-कभी",
+)
+
+
+def is_acknowledgement(text: str) -> bool:
+    """True if utterance is purely a brief conversational acknowledgement."""
+    cleaned = (text or "").strip().lower().strip(".,!?।")
+    if not cleaned:
+        return False
+    if cleaned in _ACK_PHRASES:
+        return True
+    words = cleaned.split()
+    return len(words) <= 2 and all(w in _ACK_PHRASES for w in words)
+
+
+def classify_interruption(
+    text: str,
+    *,
+    ai_is_asking_question: bool = False,
+    lang: str = "en",
+) -> InterruptionType:
+    """Classify a patient interruption into SUSHRUTAI's 5 clinical-conversational types."""
+    t = (text or "").strip()
+    if not t:
+        return InterruptionType.GENERAL_BARGE_IN
+    try:
+        from app.safety.red_flags import check as check_red_flag
+        rf = check_red_flag(t, lang=lang)
+        if rf and getattr(rf, "triggered", False):
+            return InterruptionType.EMERGENCY
+    except Exception:
+        pass
+    low = t.lower()
+    if any(p in low for p in _THINKING_PHRASES):
+        return InterruptionType.THINKING_PAUSE
+    if not ai_is_asking_question and is_acknowledgement(t):
+        return InterruptionType.ACKNOWLEDGEMENT
+    if any(p in low for p in _CORRECTION_PHRASES):
+        return InterruptionType.CORRECTION
+    if any(p in low for p in _ADDED_SYMPTOM_PHRASES):
+        return InterruptionType.ADDED_SYMPTOM
+    return InterruptionType.GENERAL_BARGE_IN
+
+
 @dataclass
 class StateTransition:
     from_state: ConversationState
@@ -129,6 +233,14 @@ class ActiveRuntime:
     cancel_event: asyncio.Event = field(default_factory=asyncio.Event)
     open_fragments: list[str] = field(default_factory=list)
     spoken_prefix: str | None = None
+    raw_transcript: str = ""
+    working_transcript: str = ""
+    committed_transcript: str = ""
+    generated_text: str = ""
+    spoken_text: str = ""
+    pending_text: str = ""
+    response_status: str = "idle"
+    last_interruption_type: str | None = None
     transitions: list[StateTransition] = field(default_factory=list)
 
     def bump_generation(self) -> tuple[str, asyncio.Event]:
@@ -245,6 +357,8 @@ class ConversationOrchestrator:
                 rt.open_fragments.append(frag)
 
         merged = rt.merged_text()
+        rt.raw_transcript = merged
+        rt.working_transcript = merged
         enc.open_fragment_enc = cu.cipher.enc(merged) if merged else None
         if rt.state in (ConversationState.IDLE, ConversationState.PAUSE_DETECTED, ConversationState.WAITING_FOR_CONTINUATION, ConversationState.SESSION_PAUSED):
             await self.transition(db, cu, encounter_id, ConversationState.LISTENING, reason="Speech fragment resumed")
@@ -267,6 +381,9 @@ class ConversationOrchestrator:
         if final_text.strip():
             await self.append_fragment(db, cu, encounter_id, final_text)
         committed = rt.merged_text()
+        rt.committed_transcript = committed
+        rt.raw_transcript = committed
+        rt.working_transcript = committed
         rt.open_fragments.clear()
         enc.open_fragment_enc = None
         gen_id, _ = rt.bump_generation()
@@ -288,32 +405,55 @@ class ConversationOrchestrator:
         spoken_prefix: str | None = None,
         interruption_text: str = "",
         cancelled_generation_id: str | None = None,
+        ai_is_asking_question: bool = False,
     ) -> dict:
-        """Interrupt active generation/playback immediately, record spoken prefix, and bind new generation ID."""
+        """Interrupt active generation/playback immediately, classify the interruption, record spoken prefix, and bind new generation ID."""
         enc = await db.get(Encounter, encounter_id)
         if enc is None or enc.user_id != cu.id:
             raise KeyError("Encounter not found")
         rt = self.runtime_for(encounter_id, cu.id)
+        itype = classify_interruption(
+            interruption_text,
+            ai_is_asking_question=ai_is_asking_question,
+            lang=enc.language or "en",
+        )
+        rt.last_interruption_type = itype.value
+        if itype == InterruptionType.ACKNOWLEDGEMENT and not ai_is_asking_question:
+            return {
+                "encounter_id": encounter_id,
+                "interruption_type": itype.value,
+                "should_stop_tts": False,
+                "cancelled_generation_id": None,
+                "generation_id": rt.generation_id,
+                "spoken_prefix_preserved": rt.spoken_prefix,
+                "state": rt.state.value,
+            }
         if cancelled_generation_id:
             rt.cancelled_ids.add(cancelled_generation_id)
         old_gen = cancelled_generation_id or rt.generation_id
         new_gen, _ = rt.bump_generation()
         if spoken_prefix:
             rt.spoken_prefix = spoken_prefix[:1000]
+            rt.spoken_text = spoken_prefix[:1000]
+        rt.response_status = "interrupted"
         await self.transition(
             db,
             cu,
             encounter_id,
             ConversationState.BARGE_IN,
-            reason=f"User interrupted during {old_gen}",
+            reason=f"User interrupted ({itype.value}) during {old_gen}",
         )
         if interruption_text.strip():
             rt.open_fragments = [interruption_text.strip()]
+            rt.raw_transcript = interruption_text.strip()
+            rt.working_transcript = interruption_text.strip()
             enc.open_fragment_enc = cu.cipher.enc(interruption_text.strip())
         next_state = ConversationState.LISTENING
         await self.transition(db, cu, encounter_id, next_state, reason="Ready for interrupting utterance")
         return {
             "encounter_id": encounter_id,
+            "interruption_type": itype.value,
+            "should_stop_tts": True,
             "cancelled_generation_id": old_gen,
             "generation_id": new_gen,
             "spoken_prefix_preserved": rt.spoken_prefix,
@@ -353,6 +493,11 @@ class ConversationOrchestrator:
             "generation_id": encounter.active_generation_id or rt.generation_id,
             "open_fragment": open_frag,
             "spoken_prefix": rt.spoken_prefix,
+            "raw_transcript": rt.raw_transcript or open_frag,
+            "working_transcript": rt.working_transcript or open_frag,
+            "committed_transcript": rt.committed_transcript,
+            "response_status": rt.response_status,
+            "last_interruption_type": rt.last_interruption_type,
             "interview_outcome": encounter.interview_outcome,
             "questions_asked": encounter.questions_asked,
             "silence_config": self.silence.as_dict(),
