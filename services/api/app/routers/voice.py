@@ -212,28 +212,113 @@ async def _sarvam_tts(text: str, lang: str) -> dict | None:
 Engine = Literal["local", "sarvam", "elevenlabs", "gemini"]
 
 
+def _normalize_stt_payload(text: str, lang_hint: str, engine: str, tier: str, seconds: float) -> dict:
+    """Apply deterministic transcript normalization & language/code-switching metadata uniformly across STT engines."""
+    analysis = N.analyze_transcript(text or "", lang_hint=lang_hint)
+    return {
+        "text": analysis.normalized_transcript or analysis.raw_transcript,
+        "raw_transcript": analysis.raw_transcript,
+        "normalized_transcript": analysis.normalized_transcript,
+        "lang": analysis.primary_language,
+        "detected_languages": analysis.detected_languages,
+        "code_switched": analysis.code_switched,
+        "banglish_influenced": analysis.banglish_influenced,
+        "confidence": analysis.confidence,
+        "audio_confidence": analysis.confidence,
+        "low_confidence": analysis.low_confidence,
+        "clarification_prompt": analysis.clarification_prompt,
+        "segments": [s.as_dict() for s in analysis.segments],
+        "engine": engine,
+        "tier": tier,
+        "seconds": round(seconds, 2),
+    }
+
+
+async def _gemini_stt(audio: bytes, mime: str, lang: str) -> dict | None:
+    """Transcribe recorded audio (WebM/Opus/WAV/OGG) with Gemini multimodal transcription.
+
+    Preserves native Bengali/Hindi scripts and code-switched English medical/brand terms without requiring
+    local FFmpeg/PyAV or Whisper weights.
+    """
+    s = get_settings()
+    if not s.gemini_api_key or not audio:
+        return None
+    t0 = time.time()
+    clean_mime = (mime or "audio/webm").split(";")[0].strip() or "audio/webm"
+    hint_map = {"bn": "Bengali (bn-IN) and English code-switching", "hi": "Hindi (hi-IN) and English/Hinglish", "en": "Indian English (en-IN)"}
+    hint = hint_map.get(lang, "Bengali, Hindi, or Indian English (preserving code-switching)")
+    prompt = (
+        f"Transcribe this patient audio verbatim. Expected language(s): {hint}. "
+        "CRITICAL: Write spoken Bengali in native Unicode Bengali script (বাংলা, e.g. আমার জ্বর আর মাথা ঘুরছে), "
+        "spoken Hindi in Devanagari (देवनागरी), and English words/medicine names (e.g. Dolo 650, Paracetamol, BP) in English. "
+        "NEVER transliterate Bengali or Hindi into Latin/Roman letters unless the speaker actually spoke English words. "
+        "Do not translate or invent words. Output only the transcript."
+    )
+    req = {
+        "contents": [{"parts": [{"text": prompt}, {"inlineData": {"mimeType": clean_mime, "data": base64.b64encode(audio).decode()}}]}],
+        "generationConfig": {"temperature": 0.0, "maxOutputTokens": 512},
+    }
+    models_to_try = list(dict.fromkeys([s.gemini_transcribe_model, s.gemini_fast_model, "gemini-3.5-flash"]))
+    headers = {"x-goog-api-key": s.gemini_api_key}
+    async with httpx.AsyncClient(timeout=45) as c:
+        for m in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent"
+            try:
+                r = await c.post(url, headers=headers, json=req)
+            except httpx.HTTPError as e:
+                log.warning("Gemini STT (%s) network error: %s", m, e)
+                continue
+            if r.status_code in (429, 503):
+                log.warning("Gemini STT (%s) %s; trying fallback", m, r.status_code)
+                continue
+            if r.status_code >= 400:
+                log.warning("Gemini STT (%s) %s: %s", m, r.status_code, r.text[:200])
+                continue
+            parts = (((r.json().get("candidates") or [{}])[0].get("content") or {}).get("parts") or [])
+            text = " ".join(str(p.get("text") or "").strip() for p in parts if p.get("text")).strip()
+            if not text:
+                return _normalize_stt_payload("", lang if lang not in ("auto", "app") else "en", m, "G", time.time() - t0)
+            use_hint = lang if lang not in ("auto", "app", "") else "en"
+            return _normalize_stt_payload(text, use_hint, m, "G", time.time() - t0)
+    return None
+
+
 @router.post("/stt")
 async def stt(file: UploadFile = File(...), lang: str = Form("auto"), ui: str = Form("en"), engine: str = Form("local"),
               cu: CurrentUser = Depends(current_user), db: AsyncSession = Depends(get_db)):
     """lang: the app language ("auto": detect among the app language, English and Hindi). engine: "local" (default),
-    or the cloud voice the person chose in Settings ("sarvam" | "elevenlabs"; needs the cloud_voice consent and
-    offline mode off — otherwise the local engines answer)."""
+    "gemini", or the cloud voice the person chose in Settings ("sarvam" | "elevenlabs"; needs consent and offline
+    mode off — otherwise the local engines answer)."""
     audio = await file.read(25 * 1024 * 1024)
     mime = file.content_type or "audio/webm"
     ui = ui if ui in INDIC | {"en"} else "en"
     res = None
     want = ui if lang in ("auto", "app") else lang
-    if engine in ("sarvam", "elevenlabs") and await cloud_allowed(db, cu.account_id, "cloud_voice"):
+    t_start = time.perf_counter()
+    if engine in ("gemini", "gemini_transcribe"):
+        if not (await cloud_allowed(db, cu.account_id, "cloud_llm_live")
+                or await cloud_allowed(db, cu.account_id, "cloud_speech")):
+            raise HTTPException(403, "Cloud speech consent required in Privacy settings.")
+        res = await _gemini_stt(audio, mime, want if lang != "auto" else "auto")
+    if res is None and engine in ("sarvam", "elevenlabs") and await cloud_allowed(db, cu.account_id, "cloud_voice"):
         res = await (_sarvam_stt(audio, mime, want) if engine == "sarvam" else _eleven_stt(audio, mime, want))
         if res is None:  # the chosen engine failed: try the other one under the same consent
             res = await (_eleven_stt(audio, mime, want) if engine == "sarvam" else _sarvam_stt(audio, mime, want))
     if res is None:
         res = await asyncio.to_thread(_local_stt, audio, lang, ui)
+    if res is None and await cloud_allowed(db, cu.account_id, "cloud_llm_live"):
+        res = await _gemini_stt(audio, mime, want if lang != "auto" else "auto")
     if res is None and await cloud_allowed(db, cu.account_id, "cloud_speech"):
         from app.speech import bhashini
         res = await _sarvam_stt(audio, mime, lang) or await bhashini.transcribe(audio, mime, want) or await _groq_stt(audio, mime, lang)
     if res is None:
+        from app.telemetry import inc
+        inc("api_errors")
         raise HTTPException(501, "No speech engine available. Use the browser's speech recognition instead.")
+    from app.telemetry import inc, record_latency
+    inc("stt_requests")
+    record_latency("stt_ms", (time.perf_counter() - t_start) * 1000.0)
+    res["stages"] = ["AUDIO_RECEIVED", "TRANSCRIPTION_COMPLETE"]
     return res
 
 
@@ -255,12 +340,39 @@ def _pcm_wav(pcm: bytes, rate: int) -> bytes:
     return buf.getvalue()
 
 
+_TTS_LANG_NAMES = {
+    "en": "Indian English",
+    "hi": "Hindi",
+    "bn": "Bengali",
+    "ta": "Tamil",
+    "te": "Telugu",
+    "mr": "Marathi",
+    "gu": "Gujarati",
+    "kn": "Kannada",
+    "ml": "Malayalam",
+    "or": "Odia",
+    "pa": "Punjabi",
+    "as": "Assamese",
+    "ur": "Urdu",
+}
+
+
 async def _gemini_tts(text: str, lang: str) -> dict | None:
-    """Speak a finished answer with Gemini Flash TTS. The text is already in the person's language."""
+    """Speak a finished answer with Gemini Flash TTS (with model fallback on 429/503)."""
     s = get_settings()
     if not s.gemini_api_key or not text.strip():
         return None
-    note = "" if lang in ("en", "auto") else f" Say this in {lang}. "
+    clean_lang = (lang or "en").split("-")[0].lower()
+    bcp = BCP47.get(clean_lang, clean_lang)
+    lang_name = _TTS_LANG_NAMES.get(clean_lang, clean_lang)
+    note = (
+        ""
+        if clean_lang in ("en", "auto", "")
+        else (
+            f"Speak the following text naturally in {lang_name} ({bcp}). "
+            "Maintain consistent accent and pronunciation; do NOT translate or insert English explanations: "
+        )
+    )
     body = {
         "contents": [{"parts": [{"text": note + text.strip()[:1500]}]}],
         "generationConfig": {
@@ -268,15 +380,32 @@ async def _gemini_tts(text: str, lang: str) -> dict | None:
             "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": s.gemini_tts_voice}}},
         },
     }
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{s.gemini_tts_model}:generateContent"
-    try:
-        async with httpx.AsyncClient(timeout=60) as c:
-            r = await c.post(url, params={"key": s.gemini_api_key}, json=body)
-    except httpx.HTTPError as e:
-        log.warning("Gemini TTS failed: %s", e)
-        return None
-    if r.status_code >= 400:
-        log.warning("Gemini TTS %s: %s", r.status_code, r.text[:200])
+    headers = {"x-goog-api-key": s.gemini_api_key}
+    models_to_try = list(dict.fromkeys([
+        s.gemini_tts_model,
+        s.gemini_tts_fallback_model,
+        "gemini-2.5-flash-preview-tts",
+    ]))
+    r: httpx.Response | None = None
+    used_model = s.gemini_tts_model
+    async with httpx.AsyncClient(timeout=45) as c:
+        for m in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent"
+            try:
+                resp = await c.post(url, headers=headers, json=body)
+            except httpx.HTTPError as e:
+                log.warning("Gemini TTS (%s) failed: %s", m, e)
+                continue
+            if resp.status_code in (429, 503):
+                log.warning("Gemini TTS (%s) %s; trying fallback", m, resp.status_code)
+                continue
+            if resp.status_code >= 400:
+                log.warning("Gemini TTS (%s) %s: %s", m, resp.status_code, resp.text[:200])
+                continue
+            r = resp
+            used_model = m
+            break
+    if r is None:
         return None
     parts = (((r.json().get("candidates") or [{}])[0].get("content") or {}).get("parts") or [])
     inline = next((p.get("inlineData") or p.get("inline_data") for p in parts if p.get("inlineData") or p.get("inline_data")), None)
@@ -292,32 +421,46 @@ async def _gemini_tts(text: str, lang: str) -> dict | None:
             rate = 24000
     wav = raw if mime.startswith("audio/wav") or raw[:4] == b"RIFF" else _pcm_wav(raw, rate)
     return {"audio_base64": base64.b64encode(wav).decode(), "format": "wav",
-            "engine": s.gemini_tts_model, "tier": "G"}
+            "engine": used_model, "tier": "G"}
 
 
 @router.post("/tts")
 async def tts(body: TtsIn, cu: CurrentUser = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    from app.telemetry import inc, record_latency
+
+    t0 = time.perf_counter()
     if body.engine == "gemini" and await cloud_allowed(db, cu.account_id, "cloud_llm_live"):
         if out := await _gemini_tts(body.text, body.lang):
+            inc("tts_requests")
+            record_latency("tts_ms", (time.perf_counter() - t0) * 1000.0)
             return out
     if body.engine in ("sarvam", "elevenlabs") and await cloud_allowed(db, cu.account_id, "cloud_voice"):
         out = await (_sarvam_tts(body.text, body.lang) if body.engine == "sarvam" else _eleven_tts(body.text))
         if out is None:
             out = await (_eleven_tts(body.text) if body.engine == "sarvam" else _sarvam_tts(body.text, body.lang))
         if out:
+            inc("tts_requests")
+            record_latency("tts_ms", (time.perf_counter() - t0) * 1000.0)
             return out
     if _local_ok["tts"] and body.lang != "en":
         try:
             wav, engine = await asyncio.to_thread(M.tts, body.text, body.lang)
+            inc("tts_requests")
+            record_latency("tts_ms", (time.perf_counter() - t0) * 1000.0)
             return {"audio_base64": base64.b64encode(wav).decode(), "format": "wav", "engine": engine, "tier": "L"}
         except Exception as e:  # noqa: BLE001 — fall through to cloud / browser
             log.warning("local TTS failed: %s", e)
     if await cloud_allowed(db, cu.account_id, "cloud_speech"):
         from app.speech import bhashini
         if out := await _sarvam_tts(body.text, body.lang):
+            inc("tts_requests")
+            record_latency("tts_ms", (time.perf_counter() - t0) * 1000.0)
             return out
         if out := await bhashini.synthesize(body.text, body.lang):
+            inc("tts_requests")
+            record_latency("tts_ms", (time.perf_counter() - t0) * 1000.0)
             return out
+    inc("api_errors")
     raise HTTPException(501, "No server TTS available; use browser speech synthesis")
 
 
@@ -330,6 +473,8 @@ async def engines():
             "languages": sorted(INDIC | {"en"}),
             "cloud_voices": [e for e, k in (("sarvam", get_settings().sarvam_api_key),
                                             ("elevenlabs", get_settings().elevenlabs_api_key)) if k],
+            "gemini_stt": bool(get_settings().gemini_api_key),
+            "gemini_tts": bool(get_settings().gemini_api_key),
             "live_voices": (["gemini_transcribe", "gemini_translate", "gemini_talk", "gemini_flash"]
                             if get_settings().gemini_api_key else [])}
 
