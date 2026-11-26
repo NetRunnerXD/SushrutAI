@@ -3,7 +3,10 @@
 import { BellRing, CalendarPlus, Download, Gauge, HelpCircle, Languages, Lock, MonitorSmartphone, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { LanguageGrid } from "@/components/LanguagePicker";
+import { CHAT_MODEL_KEY } from "@/components/ModelSwitch";
 import { VoicePicker } from "@/components/VoicePicker";
+import { useVoiceLoop } from "@/components/VoiceLoop";
+import { setVoicePrefs, spokenRoute, voicePrefs } from "@/lib/voice";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, PageTitle } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Medical";
@@ -35,6 +38,9 @@ function Group({ label, children }: { label: string; children: ReactNode }) {
 const CONSENT_LABEL: Record<string, string> = {
   history_storage: "Save my chats, prescriptions and reports", cloud_speech: "Use India-hosted voice services when needed",
   cloud_llm_deidentified: "Send de-identified hard questions to a cloud AI", model_improvement: "Help improve prescription reading",
+  cloud_llm_full: "Gemini answers: send questions, health context and photos to Google",
+  cloud_voice: "Cloud voice (Sarvam / ElevenLabs): send my voice and read-aloud text",
+  cloud_llm_live: "Gemini Live: send my microphone audio, and for Talk live the health context needed to answer, to Google",
 };
 
 export default function SettingsPage() {
@@ -111,6 +117,7 @@ export default function SettingsPage() {
             <Chip key={v} selected={prefs.rate === v} onClick={() => setPrefs({ rate: v })}>{l}</Chip>
           ))}
         </Group></div>
+        <VoiceLoopSettings />
         <div className="pt-3"><VoicePicker /></div>
       </Card>
 
@@ -167,22 +174,38 @@ export default function SettingsPage() {
           <div role="radiogroup" aria-label={t.answerSpeed} className="grid gap-2 sm:grid-cols-3">
             {([["auto", t.modelAuto, t.modelAutoHelp], ["balanced", t.modelBalanced, t.modelBalancedHelp], ["fast", t.modelFast, t.modelFastHelp],
                ["instant", t.modelInstant, t.modelInstantHelp],
-               ["cloud", t.modelCloud, t.modelCloudHelp]] as const)
+               ["cloud", t.modelCloud, t.modelCloudHelp],
+               ["gemini", t.modelGemini, t.modelGeminiHelp], ["gemini_fast", t.modelGeminiFast, t.modelGeminiFastHelp]] as const)
               .filter(([k]) => (s.model_options ?? ["balanced"]).includes(k))
               .map(([k, label, help]) => {
-                const cloudBlocked = k === "cloud" && (s.offline_mode || !consents.includes("cloud_llm_deidentified"));
+                const offlineBlocked = s.offline_mode && (k === "cloud" || k.startsWith("gemini"));
                 const on = (s.model_pref ?? "auto") === k;
                 return (
-                  <button key={k} type="button" role="radio" aria-checked={on} disabled={cloudBlocked}
-                    onClick={() => update({ model_pref: k })}
-                    className={`flex min-h-24 flex-col items-start gap-1 rounded-[16px] border-2 p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60
+                  <button key={k} type="button" role="radio" aria-checked={on} disabled={offlineBlocked}
+                    onClick={async () => {
+                      if (k === "cloud" && !consents.includes("cloud_llm_deidentified")) {
+                        if (!window.confirm(t.cloudConsent)) return;
+                        await toggleConsent("cloud_llm_deidentified", true);
+                      }
+                      if (k.startsWith("gemini") && !consents.includes("cloud_llm_full")) {
+                        if (!window.confirm(t.geminiConsent)) return;
+                        await toggleConsent("cloud_llm_full", true);
+                      }
+                      try { localStorage.setItem(CHAT_MODEL_KEY, k); } catch { /* ignore */ }
+                      update({ model_pref: k });
+                    }}
+                    className={`flex min-h-24 flex-col items-start gap-1 rounded-[16px] border-2 p-3 text-start transition-colors disabled:cursor-not-allowed disabled:opacity-60
                       ${on ? "border-brand bg-brand-soft" : "border-border bg-surface hover:border-border-input"}`}>
                     <span className="display text-[1.125rem] font-bold">{label}</span>
-                    <span className="text-[0.875rem] leading-snug text-muted">{cloudBlocked ? t.modelCloudNeeds : help}</span>
+                    <span className="text-[0.875rem] leading-snug text-muted">{offlineBlocked ? t.modelOfflineNeeds : help}</span>
                   </button>
                 );
               })}
           </div>
+          <p className="mt-3 text-[0.875rem] leading-snug text-muted">{t.spokenAnswerHelp}</p>
+          <SpokenAnswerSetting consents={consents} onConsent={(p) => toggleConsent(p, true)} offline={!!s.offline_mode} />
+          <VoiceEngineSetting consents={consents} onConsent={(p) => toggleConsent(p, true)} offline={!!s.offline_mode} />
+          <DeviceInfo />
         </Card>
       )}
 
@@ -199,7 +222,7 @@ export default function SettingsPage() {
       <Card id="s-help" className="scroll-mt-28 space-y-3">
         <CardHeader icon={HelpCircle} title={t.help} />
         <Banner tone="info" title={t.aboutAi}>
-          <ul className="list-disc space-y-1 pl-5">
+          <ul className="list-disc space-y-1 ps-5">
             <li>The assistant runs on small AI models on this device. It can be wrong — it is not a doctor.</li>
             <li>It reads about 9 in 10 printed lab-report values correctly, and about half of handwritten prescriptions — always check.</li>
             <li>Emergency words (like chest pain or difficulty breathing) are detected by fixed rules, before the AI answers.</li>
@@ -210,6 +233,152 @@ export default function SettingsPage() {
       </Card>
       </div>
       </div>
+    </div>
+  );
+}
+
+/** Hands-free (on by default) and spoken-language detection (off by default: the chosen language is used). */
+function VoiceLoopSettings() {
+  const { t } = useI18n();
+  const loop = useVoiceLoop();
+  const [autoLang, setAutoLang] = useState(false);
+  const [care, setCare] = useState(false);
+  useEffect(() => { setAutoLang(!!voicePrefs().autoLang); setCare(!!voicePrefs().voiceCare); }, []);
+  return (
+    <div className="pt-1">
+      <Toggle label={t.handsFreeSetting} help={t.handsFreeHelp} checked={!!loop?.on} onChange={() => { loop?.toggle(); }} />
+      <Toggle label={t.autoLangSetting} help={t.autoLangHelp} checked={autoLang}
+        onChange={(v) => { setAutoLang(v); setVoicePrefs({ autoLang: v }); }} />
+      <Toggle label={t.voiceCareSetting} help={t.voiceCareHelp} checked={care}
+        onChange={(v) => { setCare(v); setVoicePrefs({ voiceCare: v }); }} />
+    </div>
+  );
+}
+
+/** Spoken questions: Transcribe Live, the answer model chosen above, then playback in the heard language. */
+function SpokenAnswerSetting({ consents, onConsent, offline }: { consents: string[]; onConsent: (p: string) => Promise<void>; offline: boolean }) {
+  const { t } = useI18n();
+  const [on, setOn] = useState(spokenRoute());
+  const [playback, setPlayback] = useState(voicePrefs().playback ?? (spokenRoute() ? "gemini_tts" : "device"));
+  const enable = async (v: boolean) => {
+    if (v && !offline) {
+      if (!consents.includes("cloud_llm_live")) {
+        if (!window.confirm(t.liveConsent)) return;
+        await onConsent("cloud_llm_live");
+      }
+      if (!consents.includes("cloud_llm_full")) {
+        if (!window.confirm(t.geminiConsent)) return;
+        await onConsent("cloud_llm_full");
+      }
+    }
+    setOn(v);
+    setVoicePrefs({ spoken: v, playback: v ? "gemini_tts" : "device" });
+    if (v) setPlayback("gemini_tts");
+  };
+  const pickPlayback = async (p: "device" | "gemini_tts") => {
+    if (p === "gemini_tts" && !consents.includes("cloud_llm_live")) {
+      if (!window.confirm(t.liveConsent)) return;
+      await onConsent("cloud_llm_live");
+    }
+    setPlayback(p);
+    setVoicePrefs({ playback: p });
+  };
+  return (
+    <div className="pt-2">
+      <Toggle label={t.spokenAnswer} help={t.spokenAnswerHelp} checked={on} disabled={offline} onChange={enable} />
+      <p className="mb-2 mt-2 font-semibold">{t.playbackVoice}</p>
+      <div className="flex flex-wrap gap-2">
+        <Chip selected={playback === "device"} onClick={() => pickPlayback("device")}>{t.playbackDevice}</Chip>
+        <Chip selected={playback === "gemini_tts"} onClick={() => { if (!offline) pickPlayback("gemini_tts"); }}>{t.playbackGemini}</Chip>
+      </div>
+    </div>
+  );
+}
+
+/** Read-aloud and listening engine: this device / local voices, or a cloud voice the person chooses. */
+function VoiceEngineSetting({ consents, onConsent, offline }: { consents: string[]; onConsent: (p: string) => Promise<void>; offline: boolean }) {
+  const { t } = useI18n();
+  const [engine, setEngine] = useState<string>("local");
+  const [cloud, setCloud] = useState<string[]>([]);
+  const [live, setLive] = useState<string[]>([]);
+  const [talk, setTalk] = useState<string>("off");
+  useEffect(() => {
+    setEngine(voicePrefs().engine ?? "local");
+    setTalk(voicePrefs().talk ?? "off");
+    api<{ cloud_voices?: string[]; live_voices?: string[] }>("/voice/engines").then((r) => {
+      setCloud(r.cloud_voices ?? []);
+      setLive(r.live_voices ?? []);
+    }).catch(() => {});
+  }, []);
+  const pick = async (e: string) => {
+    const gemini = e.startsWith("gemini_");
+    const purpose = gemini ? "cloud_llm_live" : "cloud_voice";
+    if (e !== "local" && !consents.includes(purpose)) {
+      if (!window.confirm(gemini ? t.liveConsent : t.cloudVoiceConsent)) return;
+      await onConsent(purpose);
+    }
+    setEngine(e);
+    setVoicePrefs({ engine: e as any });
+  };
+  const pickTalk = async (v: "off" | "gemini_talk" | "gemini_flash") => {
+    if (v !== "off" && !consents.includes("cloud_llm_live")) {
+      if (!window.confirm(t.liveConsent)) return;
+      await onConsent("cloud_llm_live");
+    }
+    setTalk(v);
+    setVoicePrefs({ talk: v });
+  };
+  const name: Record<string, string> = {
+    sarvam: "Sarvam AI", elevenlabs: "ElevenLabs", gemini_transcribe: t.geminiTranscribe,
+  };
+  const opts: [string, string][] = [
+    ["local", t.voiceEngineLocal],
+    ...cloud.map((c) => [c, name[c] || c] as [string, string]),
+    ...(live.includes("gemini_transcribe") ? [["gemini_transcribe", t.geminiTranscribe] as [string, string]] : []),
+  ];
+  return (
+    <div className="pt-4">
+      <p className="mb-2 font-semibold">{t.voiceEngine}</p>
+      <div className="flex flex-wrap gap-2">
+        {opts.map(([k, l]) => <Chip key={k} selected={engine === k} onClick={() => { if (k === "local" || !offline) pick(k); }}>{l}</Chip>)}
+      </div>
+      {cloud.length === 0 && !live.length && <p className="mt-1 text-[0.875rem] text-muted">{t.voiceEngineNoKeys}</p>}
+      {live.includes("gemini_talk") && (
+        <div className="pt-4">
+          <p className="mb-2 font-semibold">{t.liveTalk}</p>
+          <div className="flex flex-wrap gap-2">
+            {(["off", "gemini_talk", "gemini_flash"] as const).map((k) => (
+              <Chip key={k} selected={talk === k} onClick={() => { if (k === "off" || !offline) pickTalk(k); }}>
+                {k === "off" ? t.voiceEngineLocal : k === "gemini_flash" ? t.liveFlash : t.liveTalk}
+              </Chip>
+            ))}
+          </div>
+          <p className="mt-1 text-[0.875rem] text-muted">{talk === "gemini_flash" ? t.liveFlashHelp : t.liveTalkHelp}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** This computer: memory, graphics memory, and which models are loaded right now. */
+// model names as people know them (product names, not translated)
+const SPEECH_MODEL_NAMES: Record<string, string> = {
+  it2: "IndicTrans2 (translation)", conformer: "IndicConformer (listening)", whisper: "Whisper (listening)",
+  lid: "Whisper (language detection)", mms: "MMS (read-aloud)", parler: "Indic Parler (read-aloud)",
+};
+
+function DeviceInfo() {
+  const { t } = useI18n();
+  const [d, setD] = useState<any>(null);
+  useEffect(() => { api("/system/device").then(setD).catch(() => {}); }, []);
+  if (!d) return null;
+  const loaded = [...(d.ollama_loaded ?? []).map((m: any) => `${m.name} (${m.vram_gb} GB)`),
+                  ...Object.keys(d.speech_models_loaded ?? {}).map((k) => SPEECH_MODEL_NAMES[k] ?? k)];
+  return (
+    <div className="mt-4 rounded-[14px] bg-surface-2 p-3 text-[0.9375rem]">
+      <p className="font-semibold">{t.thisComputer}</p>
+      <p className="text-muted">{[d.ram_gb && `${d.ram_gb} GB RAM (${d.ram_free_pct}% free)`, d.gpu && `${d.gpu} · ${d.vram_gb} GB`, `${d.cpu_cores} CPU threads`].filter(Boolean).join(" · ")}</p>
+      <p className="text-muted">{t.modelsLoaded}: {loaded.join(", ") || t.none}</p>
     </div>
   );
 }

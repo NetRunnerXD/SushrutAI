@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import {
   Mukta, Noto_Sans, Noto_Sans_Bengali, Noto_Sans_Devanagari, Noto_Sans_Gujarati, Noto_Sans_Kannada,
-  Noto_Sans_Malayalam, Noto_Sans_Oriya, Noto_Sans_Tamil, Noto_Sans_Telugu,
+  Noto_Sans_Gurmukhi, Noto_Sans_Malayalam, Noto_Sans_Oriya, Noto_Sans_Tamil, Noto_Sans_Telugu, Noto_Nastaliq_Urdu,
 } from "next/font/google";
 import "./globals.css";
 import { Shell } from "@/components/Shell";
@@ -18,9 +18,12 @@ const gujr = Noto_Sans_Gujarati({ display: "swap", weight: ["400", "600", "700"]
 const knda = Noto_Sans_Kannada({ display: "swap", weight: ["400", "600", "700"], subsets: ["kannada"], variable: "--font-noto-knda" });
 const mlym = Noto_Sans_Malayalam({ display: "swap", weight: ["400", "600", "700"], subsets: ["malayalam"], variable: "--font-noto-mlym" });
 const orya = Noto_Sans_Oriya({ display: "swap", weight: ["400", "600", "700"], subsets: ["oriya"], variable: "--font-noto-orya" });
+const guru = Noto_Sans_Gurmukhi({ display: "swap", weight: ["400", "600", "700"], subsets: ["gurmukhi"], variable: "--font-noto-guru" });
+// Urdu in Nastaliq, the style Urdu readers expect; it is tall, so :lang(ur) gets more line height in globals.css
+const urdu = Noto_Nastaliq_Urdu({ display: "swap", weight: ["400", "600", "700"], subsets: ["arabic"], variable: "--font-noto-urdu" });
 // Steel & Spice display: Mukta (Ek Type), an Indian humanist sans with Latin + Devanagari, for headings.
 const mukta = Mukta({ display: "swap", weight: ["600", "700", "800"], subsets: ["latin", "devanagari"], variable: "--font-mukta" });
-const fontVars = [noto, deva, beng, taml, telu, gujr, knda, mlym, orya, mukta].map((f) => f.variable).join(" ");
+const fontVars = [noto, deva, beng, taml, telu, gujr, knda, mlym, orya, guru, urdu, mukta].map((f) => f.variable).join(" ");
 
 export const metadata: Metadata = {
   title: { default: "SushrutAI", template: "%s · SushrutAI" },

@@ -14,7 +14,7 @@ export function LanguageGrid({ onPick }: { onPick?: (l: Lang) => void }) {
         return (
           <li key={l.code}>
             <button lang={l.code} onClick={() => { setLang(l.code); onPick?.(l.code); }} aria-pressed={active}
-              className={`flex min-h-16 w-full flex-col items-start justify-center rounded-[16px] border-2 px-4 py-2 text-left transition-colors
+              className={`flex min-h-16 w-full flex-col items-start justify-center rounded-[16px] border-2 px-4 py-2 text-start transition-colors
                 ${active ? "border-brand bg-brand-soft" : "border-border bg-surface shadow-[var(--rim)] hover:border-border-input"}`}>
               <span className="flex w-full items-center justify-between text-[1.25rem] font-semibold">
                 {l.label}{active && <Check aria-hidden className="h-5 w-5 text-muted" strokeWidth={2.6} />}

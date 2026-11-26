@@ -15,17 +15,22 @@ export const LANGS = [
   { code: "kn", label: "ಕನ್ನಡ", english: "Kannada", bcp: "kn-IN" },
   { code: "ml", label: "മലയാളം", english: "Malayalam", bcp: "ml-IN" },
   { code: "or", label: "ଓଡ଼ିଆ", english: "Odia", bcp: "or-IN" },
+  { code: "pa", label: "ਪੰਜਾਬੀ", english: "Punjabi", bcp: "pa-IN" },
+  { code: "as", label: "অসমীয়া", english: "Assamese", bcp: "as-IN" },
+  { code: "ur", label: "اردو", english: "Urdu", bcp: "ur-IN" },
 ] as const;
+/** Languages written right to left: the whole layout mirrors. */
+export const RTL_LANGS: readonly string[] = ["ur"];
 export type Lang = (typeof LANGS)[number]["code"];
 
 const en = {
   // brand & nav
-  appTagline: "Health help in your language", navHome: "Home", navAsk: "Ask", navMedicines: "Medicines",
+  appTagline: "Health help in your language", navHome: "Home", navAsk: "Ask", navContext: "Context", navMedicines: "Medicines",
   navRecords: "Records", navMe: "Me", skipToContent: "Skip to main content", language: "Language",
   collapseSidebar: "Collapse sidebar", expandSidebar: "Expand sidebar", newReply: "New reply",
   newChat: "New chat", chatHistory: "Your chats", searchChats: "Search your chats", noChats: "Your chats will appear here.",
   noChatsFound: "No chats match", renameChat: "Rename", pinChat: "Pin", unpinChat: "Unpin", deleteChat: "Delete",
-  confirmDeleteChat: "Delete this chat? This cannot be undone.", chatName: "Chat name", saveName: "Save name",
+  confirmDeleteChat: "Delete this chat? This cannot be undone.", deleteAllChats: "Delete all chats", confirmDeleteAllChats: "Delete all {n} chats? This cannot be undone.", deleteAll: "Delete all", chatName: "Chat name", saveName: "Save name",
   stopAnswer: "Stop", answerStopped: "Stopped. This answer is incomplete.", retry: "Try again", regenerate: "Answer again",
   copyAnswer: "Copy", copiedAnswer: "Copied", editQuestion: "Edit question", writingDraft: "Writing…",
   dropToAttach: "Drop photos or a PDF to attach", maxAttachments: "You can attach up to 3 files.",
@@ -38,6 +43,36 @@ const en = {
   modelInstant: "Instant", modelInstantHelp: "The smaller model with short answers and a quicker search, for quick questions. Symptoms, photos and documents stay with the careful models.",
   modelCloud: "Online", modelCloudHelp: "A larger AI over the internet. Only de-identified text is sent, never photos.",
   modelCloudNeeds: "Needs the “Send de-identified hard questions to a cloud AI” choice below, with offline mode off.",
+  modelOfflineNeeds: "Turn off offline mode to use an online model.",
+  liveInterpret: "Interpret",
+  liveTalk: "Talk live",
+  liveFlash: "Flash Live",
+  liveStopped: "The live voice stopped. You can still use the microphone on this device.",
+  liveTalkHelp: "Gemini 3.8 Live speaks. Health answers still come from Sushrut on this computer.",
+  liveFlashHelp: "Older Gemini 3 Flash Live. Google recommends Talk live (3.8) instead.",
+  geminiTranscribe: "Gemini Transcribe Live",
+  liveConsent: "Gemini Live sends your microphone audio to Google, outside India. Sushrut does not keep the recording. Allow this?",
+  scopeChat: "This chat",
+  scopeRecord: "My record",
+  scopeChatHelp: "This conversation only. Nothing from it is saved to your health record.",
+  scopeRecordHelp: "Answers can use your saved record, and what you say can be added to it.",
+  spokenAnswer: "Spoken answer",
+  spokenAnswerHelp: "The microphone uses Gemini Transcribe Live. The answer model you pick above writes in English. You hear the reply in the language you spoke, read by Gemini Flash TTS.",
+  playbackVoice: "Playback",
+  playbackGemini: "Gemini Flash TTS",
+  playbackDevice: "This device",
+  cloudConsent: "Online answers go to Groq, outside India. Names, phone numbers and ID numbers are removed first. Photos stay on this device. Allow this?",
+  nearbyPhonesMissing: "Hospital phone lookup did not answer. 108 and 112 still work.",
+  ctxFacts: "Source-linked clinical facts (tap to inspect or correct)",
+  ctxComplaints: "A. Current complaints", ctxSymptomDetails: "B. Symptom details", ctxHistory: "C. Medical history",
+  ctxMedications: "D. Medication history", ctxAllergies: "E. Allergies", ctxVitals: "F. Measurements and vitals",
+  ctxFunctional: "G. Functional impact", ctxTimeline: "H. Timeline", ctxUnknown: "I. Unknown or missing information",
+  ctxContradictions: "J. Contradictions",
+  ctxAssessment: "K. Clinical assessment and possibilities (AI-inferred — not a diagnosis)",
+  ctxPending: "L. Pending follow-up questions", ctxInvestigations: "M. Investigation considerations (a clinician decides)",
+  ctxFor: "For", ctxAgainst: "Against", ctxMissing: "Missing", ctxNextCheck: "Next check",
+  ctxAlreadyInRecords: "Already present in your uploaded lab records", ctxSpeaker: "Speaker",
+  ctxClinicalFact: "Clinical fact", ctxDailyLife: "daily life",
   answeredBy: "Answered by",
   // emergency
   sos: "SOS", sosOpen: "Emergency help", sosTitle: "Get help now", call108: "Call ambulance 108", call112: "Call emergency 112",
@@ -67,7 +102,7 @@ const en = {
   askTitle: "Ask SushrutAI", askPlaceholder: "Describe your symptoms or ask about a medicine…",
   send: "Send", speak: "Tap to speak", listening: "Listening… tap to stop", thinking: "Thinking carefully…",
   checkingSources: "Checking trusted sources…", transcribing: "Understanding your voice…",
-  didIHear: "Did I hear this right?", edit: "Edit", readAloud: "Listen", stop: "Stop", handsFree: "Hands-free",
+  didIHear: "Did I hear this right?", yesGoAhead: "Yes, go ahead", reminderVoiceHint: "Say taken, remind me later, or cancel the reminder", reminderSnoozed: "Okay, I will remind you in 15 minutes.", reminderCancelled: "Okay, no more reminders for this dose today.", didItWork: "Did it work for you?", workedBetter: "Better", workedSame: "Same", workedWorse: "Worse", thanksNoted: "Noted — thank you", voiceCareSetting: "Notice how I sound", voiceCareHelp: "Learns your usual speaking pace and energy on this device only, and asks gently if you sound much more tired than usual.", voiceTired: "You sound more tired than usual today — is the weakness stronger? Should we pause?", modelGemini: "Gemini", modelGeminiHelp: "Google's Gemini model over the internet: stronger reasoning. Your questions, the health details needed and photos are sent to Google.", modelGeminiFast: "Gemini Flash-Lite", modelGeminiFastHelp: "A faster Gemini with a larger free daily quota. Same data is sent to Google.", geminiConsent: "Gemini runs on Google's servers outside India. Your questions, the health details needed to answer them and any photos will be sent to Google, whose free tier may use them to improve its products. Offline mode stops this at any time. Continue?", cloudVoiceConsent: "Your voice recordings and the text read aloud will be sent to this service. Offline mode stops this at any time. Continue?", voiceEngine: "Voice engine (listening and read-aloud)", voiceEngineLocal: "This device", voiceEngineNoKeys: "Add a SARVAM_API_KEY or ELEVENLABS_API_KEY to .env to offer cloud voices (see docs/API_KEYS.md).", thisComputer: "This computer", modelsLoaded: "Loaded now", nearbyTitle: "Hospitals near you", findNearby: "Find near me", refresh: "Refresh", locationDenied: "Location is off. Allow location for this site, or call 108 / 112.", nearbyFailed: "Could not look up nearby hospitals. Call 108 / 112.", hasEmergency: "emergency", noNumber: "no number", nearbyNone: "No hospitals found nearby. Call 108 / 112.", nearbyUnavailable: "The map service is not answering right now. Call 108 / 112.", playResponderSummary: "Play summary to the responder", nearbyNote: "From OpenStreetMap; numbers can be out of date. Your location is used only to find these places.", willCall: "I will call {name} on {phone}.", playToDoctor: "Play to doctor", visitEpisodes: "Health episodes (symptom timeline)", visitMedsTried: "Medicines tried and how they went", visitDocs: "Documents and photos", saltUnverified: "please check the strip", sameSaltOptions: "Same salt, cheaper", yourChoice: "Your choice", questionNofM: "Question {n} of {m}", orJustSay: "Or just say your answer.", event_episode: "Health episode", event_health: "Health notes", savingFacts: "Saved to your health record", undoFact: "Remove", feverF: "°F", resumeVoice: "Continue", voicePaused: "Paused — say “continue” when ready", voiceLoopOn: "Listening — just speak", voiceLoopOff: "Hands-free off", handsFreeSetting: "Hands-free voice", handsFreeHelp: "Keep listening between answers on every page. Say “pause” or “stop” any time.", autoLangSetting: "Detect the spoken language", autoLangHelp: "Off: the app listens in the language you chose (faster, uses less memory). On: it works out which language you speak each time.", askSimpler: "Please explain that more simply, in one or two short sentences.", edit: "Edit", readAloud: "Listen", stop: "Stop", handsFree: "Hands-free",
   handsFreeOn: "Hands-free on", attachImage: "Attach report or photo", checkSymptoms: "Check my symptoms",
   exampleQuestions: "You can ask, for example:", examples: ["I have fever and body ache for 2 days", "Is Dolo 650 safe with BP tablets?",
     "What should a diabetic eat for breakfast?", "My child has loose motions"],
@@ -149,7 +184,7 @@ const en = {
   readRx: "Read a prescription", cheaperMeds: "Find cheaper medicines", myReports: "My reports",
   readThisRx: "Read this prescription", readThisReport: "Read this report", describeScan: "Describe this scan",
   watchFor: "See a doctor soon if", heardIn: "Heard in:", whenToSeeDoctor: "When to see a doctor", now: "now", allTaken: "All taken", inspector: "Details", careCalendar: "Care calendar", prevMonth: "Previous month", nextMonth: "Next month", nEvents: "{n} items",
-  nothingThisDay: "Nothing on this day.", dosesTakenOf: "{n} of {m} taken", dosesLeftToday: "{n} doses left today", doseLeftToday: "1 dose left today",
+  nothingThisDay: "Nothing on this day.", jumpToMonth: "Go to a month", nextUp: "Next up", addToCalendar: "Add to calendar", eventTitle: "Appointment or reminder", eventKind: "Type", eventTime: "Time", kindAppointment: "Appointment", kindReminder: "Reminder", kindNote: "Note", removeEvent: "Remove", dosesTakenOf: "{n} of {m} taken", dosesLeftToday: "{n} doses left today", doseLeftToday: "1 dose left today",
   reportsToCheck: "{n} reports to check", allCaughtUp: "You're all caught up today.", notYet: "Not yet", squeezeNote: "Desktop layout on a small screen.", useMobileLayout: "Use the mobile layout",
   useDesktopLayout: "Use the desktop layout", layoutTitle: "Layout", layoutAuto: "Automatic", layoutDesktop: "Desktop", layoutMobile: "Mobile",
   layoutHelp: "Automatic picks the desktop layout on computers and the mobile layout on phones. Ctrl+Shift+D switches.",
@@ -279,6 +314,42 @@ const en = {
   careDone: "Done on", careNeedDob: "Add a date of birth to see the vaccine schedule.", careAddDob: "Add date of birth",
   careAskHealthWorker: "Your ASHA, ANM or doctor can tell you about doses given late or missed.",
   careStatus: { done: "Done", due: "Due now", overdue: "Overdue", soon: "Coming soon", upcoming: "Later" },
+  // longitudinal clinical intelligence
+  clinicalStatusTab: "Health status",
+  encountersTab: "Visits",
+  activeSymptomsTitle: "Active symptoms",
+  resolvedSymptomsTitle: "Past / resolved",
+  returningPatientNote: "Welcome back — continuing with your earlier health record.",
+  lowAudioConfidence: "The audio was a bit unclear — please check the words or tap Say again.",
+  codeSwitchedBadge: "Mixed language heard",
+  discrepancyWarning: "Timeline difference noted — please check and confirm.",
+  confirmAccuracy: "Confirm",
+  markResolved: "Mark resolved",
+  resolveDiscrepancy: "Resolve",
+  verifiedConfirmed: "Confirmed",
+  patientReportedTag: "Patient reported",
+  unverifiedTag: "Unverified",
+  estimatedTag: "Estimated",
+  measuredTag: "Measured",
+  rawTranscriptLabel: "Exact words heard",
+  normalizedTranscriptLabel: "Cleaned note",
+  prioritizedQuestion: "Important follow-up question",
+  replyToQuestion: "Answer this question",
+  noActiveSymptoms: "No active symptoms recorded yet.",
+  noEncountersYet: "Your conversations will appear here as consultation visits.",
+  clinicalDisclaimerBar: "Collected from your reports for care support — not a medical diagnosis.",
+  occupationLabel: "Work / occupation",
+  sleepLabel: "Sleep",
+  hydrationLabel: "Water & food intake",
+  healthcareAccessLabel: "Nearby clinic access",
+  readingPrefLabel: "Explanation style",
+  eventTimelineLabel: "Clinical events & symptom changes",
+  unidentifiedMedBadge: "Name unclear — strip photo or pharmacist help needed",
+  contextPageSub: "Transparent clinical facts linked directly to your original words and timeline.",
+  uxListening: "I'm listening. Take your time.",
+  uxWaiting: "Take your time. You can continue whenever you're ready.",
+  uxProcessing: "Let me understand what you've told me.",
+  uxPaused: "Conversation paused — say continue whenever you're ready.",
 };
 
 const hi: Partial<typeof en> = {
@@ -300,6 +371,36 @@ const hi: Partial<typeof en> = {
   modelFast: "तेज़", modelFastHelp: "दवा, खाने और सामान्य सवालों के लिए छोटा मॉडल। लक्षण, फ़ोटो और दस्तावेज़ सावधान मॉडल ही देखते हैं।",
   modelCloud: "ऑनलाइन", modelCloudHelp: "इंटरनेट पर बड़ा AI। केवल पहचान हटाया गया टेक्स्ट भेजा जाता है, फ़ोटो कभी नहीं।",
   modelCloudNeeds: "नीचे “पहचान हटाकर कठिन सवाल क्लाउड AI को भेजें” चालू करें, और ऑफ़लाइन मोड बंद रखें।",
+  modelOfflineNeeds: "ऑनलाइन मॉडल के लिए ऑफ़लाइन मोड बंद करें।",
+  liveInterpret: "अनुवाद सुनें",
+  liveTalk: "लाइव बात",
+  liveFlash: "फ़्लैश लाइव",
+  liveStopped: "लाइव आवाज़ रुक गई। इस डिवाइस का माइक्रोफ़ोन फिर भी चलता है।",
+  liveTalkHelp: "Gemini 3.8 Live बोलता है। स्वास्थ्य जवाब इसी कंप्यूटर पर Sushrut देता है।",
+  liveFlashHelp: "पुराना Gemini 3 Flash Live। Google लाइव बात (3.8) की सलाह देता है।",
+  geminiTranscribe: "Gemini ट्रांसक्राइब लाइव",
+  liveConsent: "Gemini Live आपकी आवाज़ भारत के बाहर Google को भेजता है। Sushrut रिकॉर्डिंग नहीं रखता। अनुमति दें?",
+  scopeChat: "यह चैट",
+  scopeRecord: "मेरा रिकॉर्ड",
+  scopeChatHelp: "सिर्फ़ यह बातचीत। इसमें से कुछ आपके स्वास्थ्य रिकॉर्ड में नहीं जाएगा।",
+  scopeRecordHelp: "जवाब आपके सहेजे रिकॉर्ड का उपयोग कर सकते हैं, और आपकी बात उसमें जुड़ सकती है।",
+  spokenAnswer: "बोला हुआ जवाब",
+  spokenAnswerHelp: "माइक्रोफ़ोन Gemini ट्रांसक्राइब लाइव इस्तेमाल करता है। ऊपर चुना मॉडल अंग्रेज़ी में जवाब लिखता है। आप जिस भाषा में बोले, जवाब उसी में Gemini फ़्लैश टीटीएस सुनाता है।",
+  playbackVoice: "आवाज़ में सुनें",
+  playbackGemini: "Gemini फ़्लैश टीटीएस",
+  playbackDevice: "यह डिवाइस",
+  cloudConsent: "ऑनलाइन जवाब भारत के बाहर Groq को जाते हैं। नाम, फ़ोन और पहचान संख्या पहले हटा दी जाती है। फ़ोटो इसी डिवाइस पर रहती हैं। अनुमति दें?",
+  nearbyPhonesMissing: "अस्पताल का फ़ोन नंबर नहीं मिला। 108 और 112 फिर भी काम करते हैं।",
+  ctxFacts: "स्रोत से जुड़े चिकित्सीय तथ्य (देखने या सुधारने के लिए दबाएँ)",
+  ctxComplaints: "A. अभी की शिकायतें", ctxSymptomDetails: "B. लक्षणों का विवरण", ctxHistory: "C. पुरानी बीमारी",
+  ctxMedications: "D. दवाओं का इतिहास", ctxAllergies: "E. एलर्जी", ctxVitals: "F. माप और जीवन-संकेत",
+  ctxFunctional: "G. रोज़मर्रा पर असर", ctxTimeline: "H. समय-रेखा", ctxUnknown: "I. अज्ञात या छूटी जानकारी",
+  ctxContradictions: "J. विरोधाभास",
+  ctxAssessment: "K. चिकित्सीय आकलन और संभावनाएँ (AI का अनुमान — निदान नहीं)",
+  ctxPending: "L. बाकी अनुवर्ती सवाल", ctxInvestigations: "M. जाँच के सुझाव (डॉक्टर तय करते हैं)",
+  ctxFor: "पक्ष में", ctxAgainst: "विपक्ष में", ctxMissing: "जो पता नहीं", ctxNextCheck: "अगली जाँच",
+  ctxAlreadyInRecords: "आपकी अपलोड की गई लैब रिपोर्ट में पहले से है", ctxSpeaker: "बोलने वाले",
+  ctxClinicalFact: "चिकित्सीय तथ्य", ctxDailyLife: "रोज़मर्रा",
   answeredBy: "जवाब दिया",
   sos: "SOS", sosOpen: "आपातकालीन सहायता", sosTitle: "अभी सहायता लें", call108: "एम्बुलेंस 108 पर कॉल करें",
   call112: "आपातकाल 112 पर कॉल करें", callContact: "मेरे आपातकालीन संपर्क को कॉल करें",
@@ -323,8 +424,8 @@ const hi: Partial<typeof en> = {
               bp: "ब्लड प्रेशर", child: "बच्चा बीमार", women: "महिला स्वास्थ्य" },
   askTitle: "SushrutAI से पूछें", askPlaceholder: "अपने लक्षण बताएँ या किसी दवा के बारे में पूछें…", send: "भेजें",
   speak: "बोलने के लिए दबाएँ", listening: "सुन रहे हैं… रोकने के लिए दबाएँ", thinking: "ध्यान से सोच रहे हैं…",
-  checkingSources: "भरोसेमंद स्रोत देख रहे हैं…", transcribing: "आपकी आवाज़ समझ रहे हैं…", didIHear: "क्या मैंने सही सुना?",
-  edit: "बदलें", readAloud: "सुनें", stop: "रोकें", handsFree: "हैंड्स-फ़्री", handsFreeOn: "हैंड्स-फ़्री चालू",
+  checkingSources: "भरोसेमंद स्रोत देख रहे हैं…", transcribing: "आपकी आवाज़ समझ रहे हैं…", yesGoAhead: "हाँ, आगे बढ़ें", reminderVoiceHint: "कहें ले ली, बाद में याद दिलाना, या रिमाइंडर बंद करो", reminderSnoozed: "ठीक है, 15 मिनट में फिर याद दिलाऊँगा।", reminderCancelled: "ठीक है, आज इस खुराक की याद नहीं दिलाऊँगा।", didItWork: "क्या इससे फ़ायदा हुआ?", workedBetter: "बेहतर", workedSame: "वैसा ही", workedWorse: "बदतर", thanksNoted: "नोट कर लिया — धन्यवाद", voiceCareSetting: "मेरी आवाज़ पर ध्यान दें", voiceCareHelp: "सिर्फ़ इसी डिवाइस पर आपकी सामान्य बोलने की गति और ऊर्जा सीखता है, और अगर आप बहुत ज़्यादा थके लगें तो धीरे से पूछता है।", voiceTired: "आज आप सामान्य से ज़्यादा थके लग रहे हैं — क्या कमज़ोरी बढ़ी है? क्या हम रुकें?", modelGeminiHelp: "इंटरनेट पर Google का Gemini मॉडल: बेहतर तर्क। आपके सवाल, ज़रूरी स्वास्थ्य जानकारी और फ़ोटो Google को भेजे जाते हैं।", geminiConsent: "Gemini भारत के बाहर Google के सर्वर पर चलता है। आपके सवाल, उत्तर के लिए ज़रूरी स्वास्थ्य जानकारी और फ़ोटो Google को भेजी जाएँगी; Google का मुफ़्त स्तर इनका उपयोग अपने उत्पाद सुधारने में कर सकता है। ऑफ़लाइन मोड इसे कभी भी रोक देता है। जारी रखें?", cloudVoiceConsent: "आपकी आवाज़ की रिकॉर्डिंग और पढ़कर सुनाया जाने वाला पाठ इस सेवा को भेजा जाएगा। ऑफ़लाइन मोड इसे कभी भी रोक देता है। जारी रखें?", voiceEngine: "आवाज़ इंजन (सुनना और पढ़कर सुनाना)", voiceEngineLocal: "यह डिवाइस", thisComputer: "यह कंप्यूटर", modelsLoaded: "अभी लोड", nearbyTitle: "आपके पास के अस्पताल", findNearby: "पास में खोजें", refresh: "फिर से खोजें", locationDenied: "लोकेशन बंद है। इस साइट को लोकेशन की अनुमति दें, या 108 / 112 पर कॉल करें।", nearbyFailed: "पास के अस्पताल नहीं मिल सके। 108 / 112 पर कॉल करें।", hasEmergency: "इमरजेंसी", noNumber: "नंबर नहीं", nearbyNone: "पास में कोई अस्पताल नहीं मिला। 108 / 112 पर कॉल करें।", nearbyUnavailable: "नक्शा सेवा अभी जवाब नहीं दे रही। 108 / 112 पर कॉल करें।", playResponderSummary: "जवाब देने वाले को सारांश सुनाएँ", nearbyNote: "OpenStreetMap से; नंबर पुराने हो सकते हैं। आपकी लोकेशन सिर्फ़ इन जगहों को खोजने में इस्तेमाल होती है।", willCall: "मैं {name} को {phone} पर कॉल करूँगा।", playToDoctor: "डॉक्टर को सुनाएँ", visitEpisodes: "स्वास्थ्य प्रसंग (लक्षणों का क्रम)", visitMedsTried: "ली गई दवाएँ और उनका असर", visitDocs: "दस्तावेज़ और फ़ोटो", saltUnverified: "पत्ते पर जाँच लें", sameSaltOptions: "वही साल्ट, सस्ता", yourChoice: "आपकी पसंद", questionNofM: "सवाल {n} / {m}", orJustSay: "या बस अपना जवाब बोलिए।", event_episode: "स्वास्थ्य प्रसंग", event_health: "स्वास्थ्य नोट", savingFacts: "आपके स्वास्थ्य रिकॉर्ड में सहेजा", undoFact: "हटाएँ", feverF: "°F", resumeVoice: "जारी रखें", voicePaused: "रुका हुआ है — तैयार हों तो “चलो” कहें", voiceLoopOn: "सुन रहा हूँ — बस बोलिए", voiceLoopOff: "हैंड्स-फ़्री बंद", handsFreeSetting: "हैंड्स-फ़्री आवाज़", handsFreeHelp: "हर पेज पर जवाबों के बीच सुनता रहे। कभी भी “रुको” या “बस” कहें।", autoLangSetting: "बोली जाने वाली भाषा पहचानें", autoLangHelp: "बंद: ऐप आपकी चुनी भाषा में सुनता है (तेज़, कम मेमोरी)। चालू: हर बार पहचानता है कि आप कौन सी भाषा बोल रहे हैं।", askSimpler: "कृपया इसे और आसान शब्दों में, एक-दो छोटे वाक्यों में समझाइए।", didIHear: "क्या मैंने सही सुना?",
+  edit: "बदलें", readAloud: "सुनें", deleteAllChats: "सभी चैट हटाएँ", confirmDeleteAllChats: "सभी {n} चैट हटाएँ? यह वापस नहीं होगा।", deleteAll: "सब हटाएँ", stop: "रोकें", handsFree: "हैंड्स-फ़्री", handsFreeOn: "हैंड्स-फ़्री चालू",
   attachImage: "रिपोर्ट या फ़ोटो जोड़ें", checkSymptoms: "मेरे लक्षण जाँचें", exampleQuestions: "आप ऐसे पूछ सकते हैं:",
   examples: ["मुझे दो दिन से बुखार और बदन दर्द है", "क्या Dolo 650 BP की दवा के साथ ले सकते हैं?",
              "डायबिटीज़ में नाश्ते में क्या खाएँ?", "मेरे बच्चे को दस्त हो रहे हैं"],
@@ -400,7 +501,7 @@ const hi: Partial<typeof en> = {
   readRx: "पर्चा पढ़ें", cheaperMeds: "सस्ती दवाएँ खोजें", myReports: "मेरी रिपोर्ट",
   readThisRx: "यह पर्चा पढ़ें", readThisReport: "यह रिपोर्ट पढ़ें", describeScan: "यह स्कैन समझाएँ",
   watchFor: "जल्दी डॉक्टर को दिखाएँ अगर", heardIn: "सुनी गई भाषा:", whenToSeeDoctor: "डॉक्टर को कब दिखाएँ", now: "अभी", allTaken: "सब ले लीं", inspector: "विवरण", careCalendar: "देखभाल कैलेंडर", prevMonth: "पिछला महीना", nextMonth: "अगला महीना", nEvents: "{n} चीज़ें",
-  nothingThisDay: "इस दिन कुछ नहीं।", dosesTakenOf: "{m} में से {n} ली गईं", dosesLeftToday: "आज {n} खुराक बाकी", doseLeftToday: "आज 1 खुराक बाकी",
+  jumpToMonth: "महीना चुनें", nextUp: "आगे", addToCalendar: "कैलेंडर में जोड़ें", eventTitle: "अपॉइंटमेंट या रिमाइंडर", eventKind: "प्रकार", eventTime: "समय", kindAppointment: "अपॉइंटमेंट", kindReminder: "रिमाइंडर", kindNote: "नोट", removeEvent: "हटाएँ", nothingThisDay: "इस दिन कुछ नहीं।", dosesTakenOf: "{m} में से {n} ली गईं", dosesLeftToday: "आज {n} खुराक बाकी", doseLeftToday: "आज 1 खुराक बाकी",
   reportsToCheck: "{n} रिपोर्ट जाँचनी हैं", allCaughtUp: "आज सब पूरा है।", notYet: "अभी नहीं", squeezeNote: "छोटी स्क्रीन पर डेस्कटॉप लेआउट।", useMobileLayout: "मोबाइल लेआउट इस्तेमाल करें",
   useDesktopLayout: "डेस्कटॉप लेआउट इस्तेमाल करें", layoutTitle: "लेआउट", layoutAuto: "अपने आप", layoutDesktop: "डेस्कटॉप", layoutMobile: "मोबाइल",
   layoutHelp: "‘अपने आप’ कंप्यूटर पर डेस्कटॉप और फ़ोन पर मोबाइल लेआउट चुनता है। Ctrl+Shift+D से बदलें।",
@@ -533,11 +634,31 @@ const hi: Partial<typeof en> = {
 };
 
 export type Messages = typeof en;
-const merged: Record<string, Partial<Messages>> = {};
-for (const code of Object.keys({ ...EXTRA, ...CORE })) {
-  merged[code] = { ...(EXTRA[code] as Partial<Messages>), ...(CORE[code] as Partial<Messages>) };
+// Per language: machine translation (messages-mt, generated), then the hand-written drafts, then the
+// safety-critical core — later wins. Nested maps (urgency, symptoms, …) are merged key by key.
+const isMap = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
+function layer(...ds: (Record<string, unknown> | undefined)[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const d of ds) for (const [k, v] of Object.entries(d ?? {})) {
+    out[k] = isMap(v) && isMap(out[k]) ? { ...(out[k] as object), ...v }
+      : Array.isArray(v) && Array.isArray(out[k]) ? (out[k] as unknown[]).map((x, i) => v[i] ?? x) : v;
+  }
+  return out;
 }
-const DICTS: Partial<Record<Lang, Partial<Messages>>> = { en, hi, ...merged };
+// Machine translations are large (~50 KB a language), so each one is fetched only when that language is chosen.
+const MT_LANGS = new Set(["bn", "ta", "te", "mr", "gu", "kn", "ml", "or", "pa", "as", "ur"]);
+const mtCache: Record<string, Record<string, unknown>> = {};
+function loadMt(code: string): Promise<Record<string, unknown>> {
+  if (!MT_LANGS.has(code)) return Promise.resolve({});
+  if (mtCache[code]) return Promise.resolve(mtCache[code]);
+  return import(`./mt/${code}.json`).then((m) => (mtCache[code] = (m.default ?? m) as Record<string, unknown>))
+    .catch(() => ({}));  // offline before it was ever loaded: hand-written text, then English
+}
+function dictFor(code: string, mt: Record<string, unknown> | undefined): Partial<Messages> {
+  if (code === "en") return en;
+  if (code === "hi") return hi;
+  return layer(mt, EXTRA[code] as Record<string, unknown>, CORE[code]) as Partial<Messages>;
+}
 
 /** Replace {name} placeholders. */
 export function fill(s: string, vars: Record<string, string | number>): string {
@@ -550,6 +671,13 @@ const Ctx = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: Messages;
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");
+  const [mt, setMt] = useState<Record<string, unknown> | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    setMt(mtCache[lang]);
+    loadMt(lang).then((m) => { if (live) setMt(m); });
+    return () => { live = false; };
+  }, [lang]);
   const [chosen, setChosen] = useState(true);
   useEffect(() => {
     try {
@@ -561,14 +689,17 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       }
     } catch { /* storage unavailable */ }
   }, []);
-  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = RTL_LANGS.includes(lang) ? "rtl" : "ltr";
+  }, [lang]);
   const setLang = (l: Lang) => {
     setLangState(l);
     setChosen(true);
     try { localStorage.setItem("sushrut.lang", l); } catch { /* ignore */ }
   };
   // Per-key fallback to English (and nested maps merged), so partial translations never show blanks.
-  const d = DICTS[lang] ?? {};
+  const d = dictFor(lang, mt);
   const t = { ...en, ...d, urgency: { ...en.urgency, ...(d.urgency ?? {}) }, likelihood: { ...en.likelihood, ...(d.likelihood ?? {}) },
               confidence: { ...en.confidence, ...(d.confidence ?? {}) }, timing: { ...en.timing, ...(d.timing ?? {}) },
               symptoms: { ...en.symptoms, ...(d.symptoms ?? {}) }, findShort: { ...en.findShort, ...(d.findShort ?? {}) } } as Messages;
@@ -576,4 +707,4 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 }
 
 export const useI18n = () => useContext(Ctx);
-export const bcp47 = (l: Lang) => LANGS.find((x) => x.code === l)?.bcp ?? "en-IN";
+export const bcp47 = (l: Lang | string) => LANGS.find((x) => x.code === l)?.bcp ?? "en-IN";

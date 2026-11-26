@@ -119,7 +119,7 @@ export default function Welcome() {
           <div className="grid gap-3">
             {[[User, t.forMe, "/me"], [Users, t.forFamily, "/me"], [Compass, t.forExplore, "/"]].map(([Icon, label, href]: any) => (
               <button key={label} onClick={() => router.replace(href === "/me" ? "/?setup=1" : "/")}
-                className="flex min-h-20 items-center gap-4 rounded-[20px] border border-border bg-surface px-4 py-3 text-left text-[1.1875rem] font-bold shadow-[var(--rim),var(--e1)] hover:border-border-input hover:bg-surface-2">
+                className="flex min-h-20 items-center gap-4 rounded-[20px] border border-border bg-surface px-4 py-3 text-start text-[1.1875rem] font-bold shadow-[var(--rim),var(--e1)] hover:border-border-input hover:bg-surface-2">
                 <span aria-hidden className="well grid h-14 w-14 shrink-0 place-items-center rounded-full text-text"><Icon className="h-7 w-7" /></span>
                 {label}
               </button>
