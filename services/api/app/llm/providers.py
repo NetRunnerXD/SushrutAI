@@ -418,6 +418,7 @@ full_cloud_allowed: ContextVar[bool] = ContextVar("full_cloud_allowed", default=
 _ollama: Ollama | None = None
 _groq: Groq | None = None
 _gemini: Gemini | None = None
+_gemini_cooldown_until: float = 0.0
 
 
 def gemini() -> Gemini:
@@ -440,7 +441,10 @@ def groq() -> Groq:
 
 def gemini_model_for(pref: str) -> str | None:
     """Gemini model id when this request may send the question, health context and photos. None otherwise."""
+    import time as _t
     if pref not in ("gemini", "gemini_fast"):
+        return None
+    if _t.monotonic() < _gemini_cooldown_until:
         return None
     if not full_cloud_allowed.get() or not gemini().available:
         return None
@@ -495,10 +499,14 @@ async def clinical_chat(messages: list[dict], *, schema: dict | None = None,
             return await gemini().chat(g_model, messages, schema=schema, images=images,
                                        num_predict=num_predict, on_token=on_token)
         except ProviderUnavailable as e:
+            global _gemini_cooldown_until
+            if "rate limit" in str(e).lower() or "quota" in str(e).lower() or "429" in str(e):
+                import time as _t
+                _gemini_cooldown_until = _t.monotonic() + 60.0
             log.warning("Gemini unavailable (%s); answering locally", e)
-        model_pref = "balanced"
+        model_pref = "fast" if (model_pref == "gemini_fast" and s.fast_model_enabled) else "balanced"
     elif model_pref in ("gemini", "gemini_fast"):
-        model_pref = "balanced"  # chosen but not allowed / no key: the careful local model answers
+        model_pref = "fast" if (model_pref == "gemini_fast" and s.fast_model_enabled) else "balanced"
     prefer_cloud = prefer_cloud or model_pref == "cloud"
     if images:
         model = s.vlm_model

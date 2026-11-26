@@ -108,7 +108,7 @@ class MessageIn(BaseModel):
     generation_id: str | None = None
     spoken_prefix: str | None = None  # assistant prefix spoken aloud before patient barge-in
     force_english: bool = False  # spoken question: answer in English, then translate back to the heard language
-    context_scope: Literal["chat", "record"] = "chat"  # chat: this thread only. record: read and update the patient record
+    context_scope: Literal["chat", "record"] = "chat"  # chat: isolated session DB only. record: read and update the global patient record
 
 
 @router.post("/sessions", status_code=201)
@@ -231,6 +231,10 @@ async def _persist_clinical_turn(
     body: MessageIn,
     user_text: str,
     result: orchestrator.TurnResult,
+    model_pref: str = "balanced",
+    allow_cloud: bool = False,
+    isolated: bool = True,
+    sos_enabled: bool = True,
 ) -> dict:
     """Validate, refine transcript, extract facts with span highlights, run clinical reasoning,
     select dynamic uncapped interview question, recommend tailored investigations, and update state."""
@@ -248,6 +252,7 @@ async def _persist_clinical_turn(
         record_turn,
     )
     from app.clinical.reasoning import ClinicalReasoningEngine
+    from app.clinical.routing import MedicalCategoryClassifier, SpecialistRoutingEngine
     from app.conversation.state import ConversationState, conversation_orchestrator
     from app.memory.context import PatientContextBuilder
     from app.safety.clinical_safety import evaluate_safety
@@ -307,12 +312,16 @@ async def _persist_clinical_turn(
         language=det_lang,
         raw_transcript=raw_text,
         source="voice_transcript" if body.channel == "voice" else "chat_text",
-        use_llm=not skip_llm and body.model_pref not in ("instant",),
+        use_llm=not skip_llm and model_pref not in ("instant",),
+        model_pref=model_pref,
+        allow_cloud=allow_cloud,
     )
     user_turn.extracted_payload_enc = cu.cipher.enc(json.dumps(extraction.model_dump(), ensure_ascii=False, default=str))
 
-    persist_summary = await persist_extraction(
-        db, cu, extraction, encounter_id=enc.id, turn_id=user_turn.id
+    persist_summary = (
+        {"discrepancies": []}
+        if isolated
+        else await persist_extraction(db, cu, extraction, encounter_id=enc.id, turn_id=user_turn.id)
     )
     await record_clinical_facts(
         db,
@@ -328,6 +337,19 @@ async def _persist_clinical_turn(
     completed_fqs = await record_followup_answer(
         db, cu, encounter_id=enc.id, answer_text=norm_text, extraction=extraction
     )
+    from app.clinical.subject_context import detect_subject_relation, upsert_subject_relation_fact
+    subj = detect_subject_relation(norm_text)
+    if subj.get("is_third_party") and subj.get("relation"):
+        await upsert_subject_relation_fact(
+            db, cu,
+            encounter_id=enc.id,
+            relation=str(subj["relation"]),
+            is_family=bool(subj.get("is_family")),
+            age=subj.get("age"),
+            gender=subj.get("gender"),
+            symptoms=[s.name for s in extraction.symptoms],
+        )
+        await db.commit()
 
     safety = evaluate_safety(nlp_input, lang=body.lang, extraction=extraction)
     if result.red_flag.get("triggered") or safety.escalate_now:
@@ -351,6 +373,7 @@ async def _persist_clinical_turn(
         query_text=nlp_input,
         current_symptoms=[s.name for s in extraction.symptoms],
         encounter_id=enc.id,
+        encounter_only=isolated,
     )
 
     assessment_info = await ClinicalReasoningEngine().evaluate_and_persist(
@@ -364,9 +387,26 @@ async def _persist_clinical_turn(
     )
 
     investigations = []
+    specialty_classification = None
+    specialist_routing = None
     if result.structured is not None and (result.kind or "") not in MEMORY_SKIP_KINDS:
+        diffs = assessment_info.get("differentials") if isinstance(assessment_info, dict) else None
+        specialty_classification = MedicalCategoryClassifier().classify(
+            user_text=nlp_input,
+            extraction=extraction,
+            mem=mem_ctx,
+            safety=safety,
+            differentials=diffs,
+        )
+        specialist_routing = SpecialistRoutingEngine().route(
+            classification=specialty_classification,
+            user_text=nlp_input,
+            safety=safety,
+            mem=mem_ctx,
+        )
+        specialty_classification = {k: v for k, v in specialty_classification.items() if not k.startswith("_")}
         investigations = await InvestigationRecommendationEngine().recommend(
-            db, cu, encounter_id=enc.id, mem=mem_ctx, safety=safety, user_text=nlp_input
+            db, cu, encounter_id=enc.id, mem=mem_ctx, safety=safety, user_text=nlp_input, differentials=diffs
         )
 
     interview_res = {"outcome": "SUFFICIENT_INFORMATION", "question": None, "candidates_remaining": 0}
@@ -380,13 +420,15 @@ async def _persist_clinical_turn(
             mem=mem_ctx,
             safety=safety,
             lang=body.lang,
+            is_symptom_turn=(result.kind == "symptoms"),
+            allow_emergency_interrupt=sos_enabled,
         )
     followup_q = interview_res.get("question")
 
     if isinstance(result.structured, dict) and (result.kind or "") not in MEMORY_SKIP_KINDS:
         pcs = result.structured.get("possible_conditions") or []
         urg = (pcs[0].get("urgency") if pcs else None) or ("emergency" if safety.escalate_now else "see_doctor_week")
-        spec = result.structured.get("specialist")
+        spec = (specialist_routing or {}).get("recommended_title") or result.structured.get("specialist")
         await record_recommendation(
             db,
             cu,
@@ -426,6 +468,12 @@ async def _persist_clinical_turn(
         "transcript_id": transcript_row.id,
         "generation_id": conversation_orchestrator.runtime_for(enc.id, cu.id).generation_id,
         "state": target_state.value,
+        "consultation_stage": (
+            "urgent_care" if (sos_enabled and (result.red_flag.get("triggered") or safety.escalate_now))
+            else "gathering_history" if followup_q
+            else "evaluating" if result.kind == "symptoms"
+            else "care_plan"
+        ),
         "language": det_lang,
         "raw_transcript": raw_text,
         "corrected_transcript": norm_text,
@@ -441,6 +489,8 @@ async def _persist_clinical_turn(
         "extraction": extraction.model_dump(),
         "safety": safety.as_dict(),
         "assessment": assessment_info,
+        "specialty_classification": specialty_classification,
+        "specialist_routing": specialist_routing,
         "investigations": investigations,
         "interview_outcome": interview_res.get("outcome"),
         "followup_question": followup_q,
@@ -575,6 +625,8 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
                     yield _sse("cancelled", {"generation_id": body.generation_id})
                     yield _sse("done", {})
                     return
+            from app.security.settings import get_settings_row
+            sos_on = bool(getattr(await get_settings_row(wdb, cu.account_id), "sos_enabled", True))
             drafts: asyncio.Queue[str] = asyncio.Queue()
             task = asyncio.create_task(orchestrator.answer(wdb, cu, text, lang=body.lang, session_id=sid, history=history,
                                                            images=images or None, allow_cloud=allow_cloud,
@@ -582,7 +634,8 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
                                                            on_delta=drafts.put_nowait, model_pref=model_pref,
                                                            spoken_prefix=body.spoken_prefix,
                                                            force_english=body.force_english,
-                                                           use_record=body.context_scope == "record"))
+                                                           use_record=body.context_scope == "record",
+                                                           sos_enabled=sos_on))
             try:
                 # "delta" carries the whole reply written so far (a draft; "answer" replaces it). Only the newest
                 # draft is sent, at most ~8 times a second; a comment line keeps quiet connections open.
@@ -622,7 +675,7 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
                     yield _sse("cancelled", {"generation_id": body.generation_id})
                     yield _sse("done", {})
                     return
-            if r.red_flag.get("triggered"):
+            if sos_on and r.red_flag.get("triggered"):
                 yield _sse("red_flag", r.red_flag)
             payload = {"reply": r.reply, "structured": r.structured, "citations": r.citations,
                        "disclaimer": r.disclaimer, "provider": r.provider, "model": r.model, "tier": r.tier, "speed": r.speed, "auto": model_pref == "auto",
@@ -639,18 +692,19 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
                 # symptoms, triggers and medicine responses follow from a small model in the background.
                 if body.context_scope == "record" and r.structured is not None and (r.kind or "") not in MEMORY_SKIP_KINDS:
                     payload["saved_facts"] = await remember_turn(wdb, cu, text, r.english, sid)
-                if body.context_scope == "record":
-                    try:
-                        payload["clinical"] = await _persist_clinical_turn(
-                            wdb, cu, sid=sid, body=body, user_text=text, result=r
-                        )
-                        if payload["clinical"].get("followup_question") and isinstance(r.structured, dict):
-                            fq_q = payload["clinical"]["followup_question"]["question"]
-                            existing_fqs = list(r.structured.get("follow_up_questions") or [])
-                            if fq_q and fq_q not in existing_fqs:
-                                r.structured["follow_up_questions"] = [fq_q] + existing_fqs[:2]
-                    except Exception:  # noqa: BLE001 — clinical persistence never breaks delivery of answer
-                        log.exception("clinical turn persistence failed")
+                try:
+                    payload["clinical"] = await _persist_clinical_turn(
+                        wdb, cu, sid=sid, body=body, user_text=text, result=r,
+                        model_pref=model_pref, allow_cloud=allow_cloud,
+                        isolated=(body.context_scope == "chat"),
+                        sos_enabled=sos_on,
+                    )
+                    if payload["clinical"].get("followup_question") and isinstance(r.structured, dict):
+                        fq_q = payload["clinical"]["followup_question"]["question"]
+                        existing_fqs = list(r.structured.get("follow_up_questions") or [])
+                        r.structured["follow_up_questions"] = [q for q in existing_fqs if q != fq_q]
+                except Exception:  # noqa: BLE001 — clinical persistence never breaks delivery of answer
+                    log.exception("clinical turn persistence failed")
             yield _sse("answer", payload)
             yield _sse("done", {})
             if (store and body.context_scope == "record" and r.structured is not None

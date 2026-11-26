@@ -97,24 +97,29 @@ def _phrase_intent(text: str) -> Intent | None:
 SYMPTOM = re.compile(
     r"(?i)fever|temperature (is|of|high)|high temp|\bpain(ful|s)?\b|\baches?\b|\baching\b|\bhurts?\b|\bhurting\b|\bsore(ness)?\b|"
     r"\bcough|(?<!cold )\b(a|the|have|got|caught|with) cold\b|cold and cough|runny nose|blocked nose|sneez|\bvomit|"
-    r"nausea|throwing up|diarrh|loose motion|constipat|headache|migraine|dizz|\bfaint|giddy|breathless|"
-    r"short(ness)? of breath|can'?t breathe|breathing (problem|difficult|trouble)|wheez|chest (pain|tight)|\brash|"
-    r"\bitch|\bswell|\bswollen|\bbleed|blood in|burning (urine|sensation|feet)|\bcramps?\b|fatigue|\btired\b|"
+    r"nausea|throwing up|diarrh|loose motion|constipat|headache|migraine|dizz|vertigo|\bfaint|giddy|breathless|"
+    r"short(ness)? of breath|can'?t breathe|breathing (problem|difficult|trouble)|wheez|chest (pain|tight)|"
+    r"tightness in (my )?chest|\bchill(s|ing)?\b|\brigor(s)?\b|\bshiver(ing)?\b|acidity|acid reflux|heartburn|"
+    r"\bbloat(ed|ing)?\b|indigestion|\bstomach upset\b|phlegm|mucus|congestion|stiff(ness)?|\btremor|\bsweat(ing|s)?\b|"
+    r"\brash|\bitch|\bswell|\bswollen|\bbleed|blood in|burning (urine|sensation|feet)|\bcramps?\b|fatigue|\btired\b|"
     r"weakness|\bweak\b|\bnumb\b|numbness|tingl|palpitat|insomnia|can'?t sleep|period pain|missed (my )?period|"
     r"burning (while|when|during)|passing urine|while urinating|pain (while|when) urinat|frequent urination|"
-    r"irregular period|discharge|\binjur|\bwound|\bcut myself|\bbitten|\bbite\b|\bstung\b|\bsting\b|\blump\b|"
-    r"infection|allerg|jaundice|yellow (eyes|skin)|\bulcer|toothache|ear ?ache|red eye|blurred vision|unwell|"
-    r"\bsick\b|\bill\b|not feeling (well|good)|feeling low|body ache|joint pain|can'?t eat|cannot eat|"
-    r"not able to eat|no appetite|loss of appetite|"
+    r"irregular period|discharge|\binjur|\bwound|\bcut myself|\bsprain|\bbruis|\bbitten|\bbite\b|\bstung\b|\bsting\b|\blump\b|"
+    r"infection|allerg|jaundice|yellow (eyes|skin)|\bulcer|toothache|ear ?ache|ringing in (the |my )?ear|tinnitus|"
+    r"red eye|blurred vision|double vision|unwell|\bsick\b|\bill\b|not feeling (well|good)|feeling low|body ache|"
+    r"(back|neck|shoulder|knee|hip|leg|arm|hand|foot|ankle|wrist|jaw|pelvic|joint|muscle) (pain|ache|stiffness|swelling|spasm)|"
+    r"can'?t eat|cannot eat|not able to eat|no appetite|loss of appetite|"
     r"swallow|\bdysphagia\b|sore throat|"
     r"bukhar|bukhaar|\bdard\b|khansi|khaansi|jukam|zukam|\bulti\b|\bdast\b|chakkar|saans (phool|lene)|\bsujan\b|"
-    r"soojan|khujli|\bjalan\b|kamzori|kamjori|thakan|thakaan|pet (dard|me|mein|kharab)|sir ?dard|sar ?dard|"
+    r"soojan|khujli|\bjalan\b|kamzori|kamjori|thakan|thakaan|pet (dard|me|mein|kharab|phool)|sir ?dard|sar ?dard|"
     r"tabiyat|tabiyet|bhook nahi|kharash|gal(a|e) (me|mein|dukh|kharab|baith|kharash)|badan dard|kamar dard|"
     r"jodo?n? (me|mein) dard|ghutno?n? (me|mein) dard|khasi|zukham|naak beh|aankh (lal|me jalan)|"
+    r"thand lag|kampkampi|seene me jalan|ghabrahat|bechaini|"
     r"बुखार|ज्वर|दर्द|खांसी|खाँसी|जुकाम|ज़ुकाम|सर्दी लग|उल्टी|दस्त|चक्कर|सांस|साँस|सूजन|खुजली|जलन|कमजोरी|"
-    r"कमज़ोरी|थकान|पेट दर्द|पेट में|सिर दर्द|सिरदर्द|तबीयत|भूख नहीं|"
-    r"জ্বর|ব্যথা|কাশি|বমি|মাথা\s*ঘোর|মাথা\s*ভারী|দুর্বল|শরীর\s*খারাপ|শরীর\s*ভালো\s*না|শ্বাসকষ্ট|"
-    r"matha\s*ghur|buke\s*betha|shorir\s*kharap|durbol|jwor|"
+    r"कमज़ोरी|थकान|पेट दर्द|पेट में|सिर दर्द|सिरदर्द|तबीयत|भूख नहीं|ठंड लग|कंपकंपी|घबराहट|"
+    r"জ্বর|ব্যথা|কাশি|বমি|মাথা\s*ঘোর|মাথা\s*ভারী|মাথা\s*ব্যথা|দুর্বল|শরীর\s*খারাপ|শরীর\s*ভালো\s*না|শ্বাসকষ্ট|"
+    r"শীত\s*লাগ|কাঁপুনি|গ্যাস|অম্বল|বুক\s*জ্বালা|পেট\s*ফাঁপা|ঘাড়\s*ব্যথা|কোমর\s*ব্যথা|অবশ|ঝিঁঝিঁ|"
+    r"matha\s*ghur|matha\s*betha|buke\s*betha|shorir\s*kharap|durbol|jwor|kanpuni|ombol|buk\s*jwala|komor\s*betha|"
     r"காய்ச்சல்|வலி|இருமல்|வாந்தி|జ్వరం|నొప్పి|దగ్గు|వాంతి|दुखणे|खोकला|"
     r"તાવ|દુખાવો|ઉધરસ|ઉલટી|ಜ್ವರ|ನೋವು|ಕೆಮ್ಮು|ವಾಂತಿ|പനി|വേദന|ചുമ|ഛർദ്ദി|ଜ୍ୱର|ଯନ୍ତ୍ରଣା|କାଶ|ବାନ୍ତି")
 # looks like a symptom word but is not
@@ -203,6 +208,10 @@ SEEDS: dict[str, list[str]] = {
                        "how to prevent dengue", "what is a normal heart rate", "how often should i get a health checkup",
                        "how to reduce stress", "is smoking harmful", "what is cholesterol",
                        "sehat kaise achhi rakhe", "immunity kaise badhaye", "डायबिटीज क्या है"],
+    "symptoms": ["i am feeling uneasy and off balance since morning", "my legs feel heavy and cramped when walking",
+                 "i have a burning sensation in my throat after meals", "my ears feel blocked and ringing since yesterday",
+                 "i feel shaky and sweaty all of a sudden", "my vision keeps getting foggy on and off",
+                 "mujhe subah se bechaini aur chakkar jaisa lag raha hai", "amar shorir ta kemon jeno korche"],
 }
 _centroids: dict[str, list[float]] | None = None
 
@@ -230,10 +239,12 @@ async def _embedding_intent(text: str) -> Intent | None:
         return None
     sims = {k: _cos(v[0], c) for k, c in _centroids.items()}
     best = max(sims, key=sims.get)
-    other = min(sims, key=sims.get)
-    # off-topic only with a clear margin: when unsure, treat it as a health question (the safer default)
-    if best == "off_topic" and sims["off_topic"] - sims[other] >= 0.04:
+    sorted_vals = sorted(sims.values(), reverse=True)
+    margin = sorted_vals[0] - sorted_vals[1] if len(sorted_vals) > 1 else 0.0
+    if best == "off_topic" and margin >= 0.04:
         return "off_topic"
+    if best == "symptoms" and margin >= 0.04:
+        return "symptoms"
     return None
 
 
@@ -257,10 +268,12 @@ ACTIONS = [{"key": "checkSymptoms", "href": "/ask/check"}, {"key": "readRx", "hr
 
 FIXED: dict[str, dict[str, str]] = {
     "greeting": {
-        "en": "Namaste! I'm SushrutAI, your health assistant. Tell me how you're feeling, ask about a medicine "
-              "or your report, or ask what to eat — by voice or by typing.",
-        "hi": "नमस्ते! मैं SushrutAI हूँ, आपका स्वास्थ्य सहायक। बताइए आप कैसा महसूस कर रहे हैं, किसी दवा या "
-              "रिपोर्ट के बारे में पूछिए, या खाने के बारे में — बोलकर या लिखकर।",
+        "en": "Hello, I'm SushrutAI, your personal health companion. Please take your time and tell me — "
+              "how are you feeling today, or what brings you here?",
+        "hi": "नमस्ते, मैं SushrutAI हूँ, आपका व्यक्तिगत स्वास्थ्य साथी। आराम से बताइए — "
+              "आज आपकी तबीयत कैसी है, या किस परेशानी के बारे में बात करना चाहते हैं?",
+        "bn": "নমস্কার, আমি SushrutAI, আপনার ব্যক্তিগত স্বাস্থ্য সহায়ক। তাড়াহুড়ো নেই, আরাম করে বলুন — "
+              "আজ আপনার শরীর কেমন লাগছে, বা কী সমস্যা নিয়ে কথা বলতে চাইছেন?",
     },
     "thanks_bye": {
         "en": "You're welcome. Take care! If you feel unwell, I'm here — and in an emergency call 108 or 112.",
