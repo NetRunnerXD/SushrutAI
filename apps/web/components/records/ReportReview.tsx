@@ -4,7 +4,7 @@ import { AlertTriangle, Check, FileText, Minus, Plus, RotateCcw, Save, Trash2, X
 import { useEffect, useMemo, useState } from "react";
 import { FlagTag } from "@/components/ui/Medical";
 import { Banner } from "@/components/ui/Trust";
-import { API, api, authHeaders } from "@/lib/api";
+import { API, api, authFetch } from "@/lib/api";
 import { fill, useI18n } from "@/lib/i18n";
 
 export type Row = { test_name: string; loinc_code?: string | null; value: number | null; value_text?: string | null;
@@ -48,7 +48,7 @@ export function ReportReview({ docId, onDone }: { docId: string; onDone: (result
       setTitle(r.title ?? "");
       setMime(r.mime);
     }).catch((e) => setErr(e.message));
-    fetch(`${API}/documents/${docId}/content`, { headers: authHeaders() })
+    authFetch(`${API}/documents/${docId}/content`)
       .then((r) => (r.ok ? r.blob() : null)).then((b) => { if (b) { url = URL.createObjectURL(b); setImg(url); } }).catch(() => {});
     return () => { if (url) URL.revokeObjectURL(url); };
   }, [docId]);
@@ -106,7 +106,7 @@ export function ReportReview({ docId, onDone }: { docId: string; onDone: (result
       {rows === null ? <div className="skeleton h-40" /> : rows.length === 0 ? <p className="text-muted">{t.reviewNothingRead}</p> : (
         <>
           <p aria-live="polite" className="text-[0.9375rem] font-semibold">{fill(t.reviewProgress, { n: checked, m: rows.length })}
-            {abnormal > 0 && <span className="ml-2 text-danger">· {fill(t.abnormalCount, { n: abnormal })}</span>}</p>
+            {abnormal > 0 && <span className="ms-2 text-danger">· {fill(t.abnormalCount, { n: abnormal })}</span>}</p>
           <ul className="space-y-2">
             {rows.map((r, i) => {
               const why = doubt(r, t);
@@ -148,9 +148,9 @@ export function ReportReview({ docId, onDone }: { docId: string; onDone: (result
           <Check aria-hidden className="h-5 w-5" />{t.allLookRight}</button>
         <button type="button" onClick={() => onDone("discarded")} className="btn btn-ghost"><RotateCcw aria-hidden className="h-5 w-5" />{t.decideLater}</button>
         {!confirmDelete ? (
-          <button type="button" onClick={() => setConfirmDelete(true)} className="btn btn-ghost ml-auto text-danger"><Trash2 aria-hidden className="h-5 w-5" />{t.deleteReport}</button>
+          <button type="button" onClick={() => setConfirmDelete(true)} className="btn btn-ghost ms-auto text-danger"><Trash2 aria-hidden className="h-5 w-5" />{t.deleteReport}</button>
         ) : (
-          <span role="alertdialog" aria-label={t.deleteReportQ} className="ml-auto flex flex-wrap items-center gap-2 rounded-[14px] bg-danger-soft px-3 py-1.5 text-danger">
+          <span role="alertdialog" aria-label={t.deleteReportQ} className="ms-auto flex flex-wrap items-center gap-2 rounded-[14px] bg-danger-soft px-3 py-1.5 text-danger">
             <span className="font-semibold">{t.deleteReportQ}</span>
             <button type="button" onClick={del} disabled={busy} className="btn btn-danger min-h-12">{t.delete}</button>
             <button type="button" onClick={() => setConfirmDelete(false)} className="btn btn-ghost min-h-12">{t.cancel}</button>

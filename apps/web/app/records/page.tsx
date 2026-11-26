@@ -1,6 +1,9 @@
 "use client";
 
-import { ChevronDown, ChevronRight, Download, FileText, FlaskConical, FolderOpen, HeartPulse, ImageUp, Pill, Plus, ScanLine, Volume2 } from "lucide-react";
+import { Activity, ChevronDown, ChevronRight, ClipboardCheck, Download, FileText, FlaskConical, FolderOpen, HeartPulse, History, ImageUp, NotebookPen, Pill, Plus, ScanLine, Volume2 } from "lucide-react";
+import { ClinicalStatusPanel } from "@/components/records/ClinicalStatusPanel";
+import { ClinicalTimelinePanel } from "@/components/records/ClinicalTimelinePanel";
+import { EncountersPanel } from "@/components/records/EncountersPanel";
 import { Library } from "@/components/records/Library";
 import { ReportReview } from "@/components/records/ReportReview";
 import { speak } from "@/lib/voice";
@@ -13,19 +16,19 @@ import { FlagTag, RangeBar } from "@/components/ui/Medical";
 import { PANEL_ORDER, Sparkline, StatusTag, TrendChart, TrendWord, VITAL_META, panelOf, statusOf, trendOf, type Series } from "@/components/Trends";
 import { Banner, DisclaimerChip } from "@/components/ui/Trust";
 import { api, downloadFile } from "@/lib/api";
-import { fill, useI18n } from "@/lib/i18n";
+import { fill, useI18n, bcp47 } from "@/lib/i18n";
 import { AskAbout } from "@/components/AskAbout";
 import { ScanViewer } from "@/components/ScanViewer";
 import { ScreeningCard } from "@/components/ScreeningCard";
 import { discardDoc, ImageCheckBanner, KindMismatchBanner, mismatch, READER_HREF, uploadDoc, type ImageIssue, type UploadResult } from "@/components/ImageCheck";
 
-type Tab = "library" | "labs" | "timeline" | "images" | "vitals";
-const TABS: Tab[] = ["library", "labs", "timeline", "images", "vitals"];
-type EvType = "all" | "lab" | "prescription" | "vital";
+type Tab = "status" | "library" | "labs" | "timeline" | "encounters" | "images" | "vitals";
+const TABS: Tab[] = ["status", "library", "labs", "timeline", "encounters", "images", "vitals"];
+type EvType = "all" | "lab" | "prescription" | "vital" | "health";
 const RANGES = [7, 30, 90, 0] as const;
 const VITALS = [["bp_sys", "BP — upper (systolic)", "mmHg"], ["bp_dia", "BP — lower (diastolic)", "mmHg"], ["glucose_f", "Fasting sugar", "mg/dL"],
   ["glucose_pp", "Sugar after meal", "mg/dL"], ["hr", "Pulse", "bpm"], ["spo2", "Oxygen (SpO₂)", "%"], ["weight", "Weight", "kg"], ["temp", "Temperature", "°C"]];
-const EVENT_ICON: Record<string, any> = { prescription: Pill, lab: FlaskConical, vital: HeartPulse };
+const EVENT_ICON: Record<string, any> = { prescription: Pill, lab: FlaskConical, vital: HeartPulse, episode: Activity, health: NotebookPen };
 
 /** A big, obvious file picker: the main action of the Labs and Images tabs. */
 function UploadTile({ icon: Icon, title, help, accept, onFile, busy }: {
@@ -47,7 +50,7 @@ function dayLabel(d: Date, t: any, lang: string): string {
   const today = new Date(); const y = new Date(); y.setDate(today.getDate() - 1);
   if (d.toDateString() === today.toDateString()) return t.today;
   if (d.toDateString() === y.toDateString()) return t.yesterday;
-  return d.toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  return d.toLocaleDateString(bcp47(lang), { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }
 
 function RecordsInner() {
@@ -174,7 +177,7 @@ function RecordsInner() {
 
   // timeline: grouped by day, newest first
   const days: { label: string; items: any[] }[] = [];
-  for (const e of (timeline ?? []).filter((x) => evType === "all" || x.type === evType).slice(0, 120)) {
+  for (const e of (timeline ?? []).filter((x) => evType === "all" || x.type === evType || (evType === "health" && x.type === "episode")).slice(0, 120)) {
     const label = dayLabel(new Date(e.at), t, lang);
     if (days.at(-1)?.label !== label) days.push({ label, items: [] });
     days.at(-1)!.items.push(e);
@@ -186,16 +189,24 @@ function RecordsInner() {
     return `${VITAL_META[code]?.label ?? code} ${rest.join(" ")}`;
   };
   const eventHref = (e: any): string | Tab =>
-    e.type === "prescription" && e.id ? `/medicines/rx?id=${e.id}` : e.type === "lab" ? "labs" : "vitals";
+    e.type === "prescription" && e.id ? `/medicines/rx?id=${e.id}` : e.type === "lab" ? "labs"
+      : e.type === "episode" || e.type === "health" ? "/ask" : "vitals";
 
-  const tabs: [Tab, string, any, number?][] = [["library", t.library, FolderOpen], ["labs", t.labResults, FlaskConical, latestAbn],
-    ["timeline", t.timeline, FileText], ["images", t.images, ScanLine], ["vitals", t.vitals, HeartPulse]];
+  const tabs: [Tab, string, any, number?][] = [
+    ["status", t.clinicalStatusTab, ClipboardCheck],
+    ["library", t.library, FolderOpen],
+    ["labs", t.labResults, FlaskConical, latestAbn],
+    ["timeline", t.timeline, FileText],
+    ["encounters", t.encountersTab, History],
+    ["images", t.images, ScanLine],
+    ["vitals", t.vitals, HeartPulse],
+  ];
   const readTest = (hist: any[]) => {
     const l = hist[hist.length - 1];
     const word = l.flag === "H" ? t.flagHigh : l.flag === "L" ? t.flagLow : l.flag === "N" ? t.flagNormal : "";
     const prev = hist.length > 1 ? hist[hist.length - 2] : null;
     speak(`${l.test_name}: ${l.value ?? l.value_text ?? ""} ${l.unit ?? ""}. ${word}.` +
-      (prev ? ` ${t.history}: ${prev.value ?? prev.value_text} ${new Date(prev.observed_at).toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN")}.` : ""), lang);
+      (prev ? ` ${t.history}: ${prev.value ?? prev.value_text} ${new Date(prev.observed_at).toLocaleDateString(bcp47(lang))}.` : ""), lang);
   };
 
   const vitalsForm = (
@@ -217,14 +228,14 @@ function RecordsInner() {
           <span className="max-sm:sr-only">{t.exportFhir}</span></Button>
       </div>
 
-      <div role="tablist" aria-label={t.recordsTitle} className="well grid grid-cols-5 gap-1 rounded-[20px] p-1.5 lg:max-w-3xl">
+      <div role="tablist" aria-label={t.recordsTitle} className="well grid grid-cols-4 gap-1 rounded-[20px] p-1.5 sm:grid-cols-7 lg:max-w-5xl">
         {tabs.map(([k, label, Icon, count]) => (
           <button key={k} role="tab" aria-selected={tab === k} id={`rt-${k}`} aria-controls={`rp-${k}`} onClick={() => setTab(k)}
             className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[12px] text-[0.8125rem] font-semibold sm:flex-row sm:gap-2 sm:text-[0.9375rem]
               ${tab === k ? "bg-surface font-bold text-text shadow-[var(--rim),var(--e1)]" : "text-muted hover:text-text"}`}>
             <Icon aria-hidden className="h-5 w-5" />{label}
             {!!count && <span aria-label={fill(t.abnormalCount, { n: count })}
-              className="absolute right-1.5 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-danger px-1 text-[0.6875rem] font-bold text-on-tone sm:static">{count}</span>}
+              className="absolute end-1.5 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-danger px-1 text-[0.6875rem] font-bold text-on-tone sm:static">{count}</span>}
           </button>
         ))}
       </div>
@@ -247,6 +258,8 @@ function RecordsInner() {
       )}
 
       <section role="tabpanel" id={`rp-${tab}`} aria-labelledby={`rt-${tab}`} className={`space-y-4 ${review ? "hidden" : ""}`}>
+        {tab === "status" && <ClinicalStatusPanel />}
+        {tab === "encounters" && <EncountersPanel />}
         {tab === "library" && (
           <>
             <UploadTile icon={FlaskConical} title={t.labUpload} help={t.labUploadHelp} accept="image/*,application/pdf" onFile={(f) => onUpload(f, "lab")} busy={busy === "lab"} />
@@ -257,14 +270,16 @@ function RecordsInner() {
         {tab === "timeline" && (
           <div role="group" aria-label={t.filterEvents} className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
             {([["all", t.filterAll], ["lab", t.event_lab ?? t.filterReports], ["prescription", t.event_prescription ?? t.filterRx],
-               ["vital", t.event_vital ?? t.vitals]] as [EvType, string][]).map(([k, l]) => (
+               ["vital", t.event_vital ?? t.vitals], ["health", t.event_health]] as [EvType, string][]).map(([k, l]) => (
               <button key={k} type="button" aria-pressed={evType === k} onClick={() => setEvType(k)}
                 className={`inline-flex min-h-11 shrink-0 items-center rounded-full border-[1.5px] px-3.5 font-semibold ${evType === k ? "border-brand bg-brand-soft" : "border-border-input bg-surface"}`}>{l}</button>
             ))}
           </div>
         )}
         {tab === "timeline" && (
-          timeline === null ? <Skeleton className="h-40" /> : timeline.length === 0
+          <>
+          <ClinicalTimelinePanel />
+          {timeline === null ? <Skeleton className="h-40" /> : timeline.length === 0
             ? <EmptyState icon={FileText} art="records" text={t.timelineEmpty} />
             : (
               <div className="space-y-5 lg:max-w-3xl">
@@ -280,14 +295,14 @@ function RecordsInner() {
                             <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface-2 shadow-[var(--well)]"><Icon className="h-5 w-5" /></span>
                             <span className="min-w-0 flex-1">
                               <span className="block text-[0.8125rem] font-semibold text-muted">
-                                {(t as any)[`event_${e.type}`] ?? e.type} · {new Date(e.at).toLocaleTimeString(lang === "hi" ? "hi-IN" : "en-IN", { hour: "numeric", minute: "2-digit" })}
+                                {(t as any)[`event_${e.type}`] ?? e.type} · {new Date(e.at).toLocaleTimeString(bcp47(lang), { hour: "numeric", minute: "2-digit" })}
                               </span>
                               <span className="block truncate">{eventText(e)}</span>
                             </span>
                             <ChevronRight aria-hidden className="h-5 w-5 shrink-0 text-muted" />
                           </>
                         );
-                        const cls = "flex min-h-16 w-full items-center gap-3 px-3 py-2 text-left hover:bg-surface-2 sm:px-4";
+                        const cls = "flex min-h-16 w-full items-center gap-3 px-3 py-2 text-start hover:bg-surface-2 sm:px-4";
                         return (
                           <li key={i} className="border-b border-border last:border-0">
                             {href.startsWith("/") ? <Link href={href} className={cls}>{body}</Link>
@@ -300,6 +315,8 @@ function RecordsInner() {
                 ))}
               </div>
             )
+          }
+          </>
         )}
 
         {tab === "labs" && (
@@ -340,7 +357,7 @@ function RecordsInner() {
                           <li key={l.id} className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5 py-3">
                             <div className="min-w-0"><p className="font-semibold">{l.test_name}</p>
                               <p className="text-[0.75rem] text-muted">{new Date(l.observed_at).toLocaleDateString()}{l.loinc_code ? ` · LOINC ${l.loinc_code}` : ""}</p></div>
-                            <div className="text-right"><p className="font-mono text-[1.125rem] font-semibold">{l.value ?? l.value_text ?? "—"} <span className="text-[0.8125rem] font-normal text-muted">{l.unit}</span></p><FlagTag flag={l.flag} /></div>
+                            <div className="text-end"><p className="font-mono text-[1.125rem] font-semibold">{l.value ?? l.value_text ?? "—"} <span className="text-[0.8125rem] font-normal text-muted">{l.unit}</span></p><FlagTag flag={l.flag} /></div>
                             <div className="col-span-2"><RangeBar value={l.value} lo={l.ref_low} hi={l.ref_high} unit={l.unit} flag={l.flag} /></div>
                             <div className="col-span-2 flex flex-wrap items-center justify-between gap-2">
                               <button type="button" onClick={() => readTest(hist)} aria-label={`${t.readTrend}: ${l.test_name}`}

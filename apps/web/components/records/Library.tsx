@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { askHref } from "@/components/AskAbout";
 import { EmptyState, Skeleton } from "@/components/ui/Card";
-import { API, api, authHeaders } from "@/lib/api";
-import { fill, useI18n } from "@/lib/i18n";
+import { API, api, authFetch } from "@/lib/api";
+import { fill, useI18n, bcp47 } from "@/lib/i18n";
 import { useUiMode } from "@/lib/ui-mode";
 
 export type Doc = { id: string; kind: string; mime: string; uploaded_at: string; report_date: string | null; title: string | null;
@@ -20,7 +20,7 @@ function Thumb({ d }: { d: Doc }) {
     if (!d.mime.startsWith("image/")) return;
     let u = "";
     const io = new IntersectionObserver(() => {});
-    fetch(`${API}/documents/${d.id}/content`, { headers: authHeaders() }).then((r) => (r.ok ? r.blob() : null))
+    authFetch(`${API}/documents/${d.id}/content`).then((r) => (r.ok ? r.blob() : null))
       .then((b) => { if (b) { u = URL.createObjectURL(b); setUrl(u); } }).catch(() => {});
     return () => { io.disconnect(); if (u) URL.revokeObjectURL(u); };
   }, [d.id, d.mime]);
@@ -68,8 +68,8 @@ export function Library({ onReview, refreshKey }: { onReview: (id: string) => vo
   const search = (
         <label className="relative min-w-[12rem] flex-1">
           <span className="sr-only">{t.searchReports}</span>
-          <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-          <input className="input min-h-12 pl-9" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.searchReports} />
+          <Search aria-hidden className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+          <input className="input min-h-12 ps-9" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.searchReports} />
         </label>);
   const sort = (
         <button type="button" onClick={() => setOldest(!oldest)} aria-pressed={oldest}
@@ -80,7 +80,7 @@ export function Library({ onReview, refreshKey }: { onReview: (id: string) => vo
         {FILTERS.map(([k, label, n]) => (
           <button key={k} type="button" aria-pressed={filter === k} onClick={() => setFilter(k)}
             className={desktop
-              ? `flex h-11 items-center justify-between gap-2 rounded-[12px] px-3 text-left font-semibold transition-colors duration-[120ms] ${filter === k ? "bg-brand-soft text-text" : "text-muted hover:bg-[var(--d-tile-hover)] hover:text-text"}`
+              ? `flex h-11 items-center justify-between gap-2 rounded-[12px] px-3 text-start font-semibold transition-colors duration-[120ms] ${filter === k ? "bg-brand-soft text-text" : "text-muted hover:bg-[var(--d-tile-hover)] hover:text-text"}`
               : `inline-flex min-h-12 shrink-0 items-center gap-1.5 rounded-full border-[1.5px] px-3.5 text-[0.9375rem] font-semibold transition-colors
               ${filter === k ? "border-brand bg-brand-soft" : "border-border-input bg-surface hover:bg-surface-2"}`}>
             {label}{!!n && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-warn px-1 text-[0.6875rem] font-bold text-on-tone">{n}</span>}
@@ -95,7 +95,7 @@ export function Library({ onReview, refreshKey }: { onReview: (id: string) => vo
               <Thumb d={d} />
               <div className="min-w-0 flex-1 space-y-1.5">
                 <p className="text-[0.8125rem] font-semibold text-muted">{kindLabel(d.kind)} · {new Date(d.report_date ?? d.uploaded_at)
-                  .toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                  .toLocaleDateString(bcp47(lang), { day: "numeric", month: "short", year: "numeric" })}</p>
                 <p className="truncate font-semibold">{d.title || kindLabel(d.kind)}</p>
                 <div className="flex flex-wrap items-center gap-1.5 text-[0.8125rem]">
                   {d.kind === "lab_report" && (d.reviewed
@@ -162,7 +162,7 @@ function Preview({ d, onReview, kindLabel }: { d: Doc; onReview: (id: string) =>
   return (
     <aside aria-label={t.openReport} className="d-tile sticky top-28 space-y-3 p-4">
       <div><p className="text-[0.8125rem] font-semibold text-muted">{kindLabel(d.kind)} · {new Date(d.report_date ?? d.uploaded_at)
-        .toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN", { day: "numeric", month: "long", year: "numeric" })}</p>
+        .toLocaleDateString(bcp47(lang), { day: "numeric", month: "long", year: "numeric" })}</p>
         <h2 className="text-[1.25rem] font-bold">{d.title || kindLabel(d.kind)}</h2></div>
       {vals === null ? <Skeleton className="h-32" /> : vals.length > 0 && (
         <ul className="max-h-[50vh] divide-y divide-[var(--d-tile-line)] overflow-y-auto">
