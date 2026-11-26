@@ -480,11 +480,10 @@ def parler_enabled() -> bool:
 def tts(text: str, lang: str) -> tuple[bytes, str]:
     """Synthesise speech -> (WAV bytes, engine). MMS-TTS by default (fast on CPU, CC BY-NC 4.0);
     Indic Parler-TTS (Apache-2.0, gated on Hugging Face) when TTS_ENGINE=parler and the model is accessible."""
-    import soundfile as sf
-    import torch
-
     if lang == "en":
         raise ValueError("English is read by the device's own voice")
+    import soundfile as sf
+    import torch
     if parler_enabled():
         return _tts_parler(text, lang), "indic-parler-tts"
     lang = lang if lang in MMS_CODES else "hi"

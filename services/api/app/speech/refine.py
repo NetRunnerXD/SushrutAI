@@ -16,6 +16,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -251,3 +252,60 @@ async def persist_transcript(
         db.add(v2)
     await db.flush()
     return t_row
+
+
+_NON_CLINICAL_CHATTER = re.compile(
+    r"(?i)^(?:weather\s+is\s+(?:nice|hot|cold)|i\s+watched\s+(?:tv|cricket)|traffic\s+was\s+bad|"
+    r"yesterday\s+i\s+went\s+to\s+market|আজকে\s+আবহাওয়া\s+ভালো|বাজারে\s+গিয়েছিলাম|kal\s+bazaar\s+gaya\s+tha)[.!?।\s]*$"
+)
+
+
+def filter_non_clinical_noise(text: str) -> str:
+    """Filter purely unrelated conversational sentences while NEVER discarding any clinical/safety clause."""
+    sents = [s.strip() for s in re.split(r"(?<=[.!?।])\s+", (text or "").strip()) if s.strip()]
+    if len(sents) <= 1:
+        return (text or "").strip()
+    kept = [s for s in sents if not _NON_CLINICAL_CHATTER.match(s)]
+    return " ".join(kept) if kept else (text or "").strip()
+
+
+def build_structured_clinical_summary(raw_text: str, extraction: Any) -> dict:
+    """Convert long/disorganized patient speech into a clean, patient-confirmable summary."""
+    syms = [s.name for s in getattr(extraction, "symptoms", [])]
+    negs = [n.name for n in getattr(extraction, "negated_symptoms", [])]
+    meds = [
+        getattr(m, "medication_name_reported", None) or getattr(m, "normalized_medication_name", "")
+        for m in getattr(extraction, "medications", [])
+    ]
+    allergies = [a.substance for a in getattr(extraction, "allergies", [])]
+    durs = [s.duration for s in getattr(extraction, "symptoms", []) if getattr(s, "duration", None)]
+    sevs = [s.severity for s in getattr(extraction, "symptoms", []) if getattr(s, "severity", None) not in (None, "unknown", "not_assessed")]
+    fam = [h.description for h in getattr(extraction, "medical_history", []) if h.category == "family_history"]
+
+    parts: list[str] = []
+    if syms:
+        parts.append("Symptoms: " + ", ".join(syms))
+    if durs:
+        parts.append("Duration: " + durs[0])
+    if sevs:
+        parts.append("Severity: " + sevs[0])
+    if meds:
+        parts.append("Medicines mentioned: " + ", ".join(m for m in meds if m))
+    if allergies:
+        parts.append("Allergies: " + ", ".join(allergies))
+    if negs:
+        parts.append("Absent/denied: " + ", ".join(negs))
+
+    return {
+        "raw_transcript": raw_text,
+        "chief_complaint": syms[0] if syms else None,
+        "symptoms": syms,
+        "duration": durs[0] if durs else None,
+        "severity": sevs[0] if sevs else None,
+        "medications": [m for m in meds if m],
+        "allergies": allergies,
+        "negated_symptoms": negs,
+        "family_history": fam,
+        "requires_confirmation": True,
+        "summary_text": "; ".join(parts) if parts else (raw_text or "").strip()[:240],
+    }
