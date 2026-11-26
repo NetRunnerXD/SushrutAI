@@ -241,6 +241,7 @@ class TtsIn(BaseModel):
     text: str = Field(min_length=1, max_length=1500)
     lang: str = "hi"
     engine: Engine = "local"
+    gender: Literal["female", "male"] | None = None
 
 
 def _pcm_wav(pcm: bytes, rate: int) -> bytes:
@@ -255,17 +256,18 @@ def _pcm_wav(pcm: bytes, rate: int) -> bytes:
     return buf.getvalue()
 
 
-async def _gemini_tts(text: str, lang: str) -> dict | None:
+async def _gemini_tts(text: str, lang: str, gender: str = "female") -> dict | None:
     """Speak a finished answer with Gemini Flash TTS. The text is already in the person's language."""
     s = get_settings()
     if not s.gemini_api_key or not text.strip():
         return None
     note = "" if lang in ("en", "auto") else f" Say this in {lang}. "
+    voice_name = "Charon" if gender == "male" else (s.gemini_tts_voice or "Kore")
     body = {
         "contents": [{"parts": [{"text": note + text.strip()[:1500]}]}],
         "generationConfig": {
             "responseModalities": ["AUDIO"],
-            "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": s.gemini_tts_voice}}},
+            "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice_name}}},
         },
     }
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{s.gemini_tts_model}:generateContent"
@@ -297,8 +299,12 @@ async def _gemini_tts(text: str, lang: str) -> dict | None:
 
 @router.post("/tts")
 async def tts(body: TtsIn, cu: CurrentUser = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    from app.security.settings import get_settings_row
+
+    s_row = await get_settings_row(db, cu.account_id)
+    gender = body.gender or getattr(s_row, "tts_voice_gender", None) or "female"
     if body.engine == "gemini" and await cloud_allowed(db, cu.account_id, "cloud_llm_live"):
-        if out := await _gemini_tts(body.text, body.lang):
+        if out := await _gemini_tts(body.text, body.lang, gender):
             return out
     if body.engine in ("sarvam", "elevenlabs") and await cloud_allowed(db, cu.account_id, "cloud_voice"):
         out = await (_sarvam_tts(body.text, body.lang) if body.engine == "sarvam" else _eleven_tts(body.text))
@@ -306,9 +312,11 @@ async def tts(body: TtsIn, cu: CurrentUser = Depends(current_user), db: AsyncSes
             out = await (_eleven_tts(body.text) if body.engine == "sarvam" else _sarvam_tts(body.text, body.lang))
         if out:
             return out
-    if _local_ok["tts"] and body.lang != "en":
+    local_engine = getattr(s_row, "tts_engine", None) or "auto"
+    allow_en_local = (local_engine in ("auto", "kokoro") and M.kokoro_available()) or local_engine == "parler"
+    if _local_ok["tts"] and (body.lang != "en" or allow_en_local):
         try:
-            wav, engine = await asyncio.to_thread(M.tts, body.text, body.lang)
+            wav, engine = await asyncio.to_thread(M.tts, body.text, body.lang, gender=gender, engine=local_engine)
             return {"audio_base64": base64.b64encode(wav).decode(), "format": "wav", "engine": engine, "tier": "L"}
         except Exception as e:  # noqa: BLE001 — fall through to cloud / browser
             log.warning("local TTS failed: %s", e)
@@ -326,7 +334,11 @@ async def engines():
     return {"stt_local": {"indic_conformer": _local_ok["conformer"], "faster_whisper": _local_ok["whisper"],
                           "sherpa_onnx": _local_ok["sherpa_onnx"], "vad_segmentation": True,
                           "transcript_normalization": True, "streaming_ws": True, "two_stage_refinement": True},
-            "tts_local": {"engine": "indic-parler-tts" if M.parler_enabled() else "mms-tts", "available": _local_ok["tts"], "languages": sorted(INDIC), "english": "device voice"},
+            "tts_local": {"engine": "kokoro-82m" if M.kokoro_available() else ("indic-parler-tts" if M.parler_enabled() else "mms-tts"),
+                          "kokoro_available": M.kokoro_available(),
+                          "indic_tiny_bn_available": M.indic_tiny_bn_available(),
+                          "parler_enabled": M.parler_enabled(),
+                          "available": _local_ok["tts"], "languages": sorted(INDIC), "english": "device voice"},
             "languages": sorted(INDIC | {"en"}),
             "cloud_voices": [e for e, k in (("sarvam", get_settings().sarvam_api_key),
                                             ("elevenlabs", get_settings().elevenlabs_api_key)) if k],

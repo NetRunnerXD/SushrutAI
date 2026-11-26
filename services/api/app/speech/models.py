@@ -28,7 +28,8 @@ def _mark(name: str) -> None:
 
 
 def _caches() -> dict[str, object]:
-    return {"it2": _it2, "conformer": _conformer, "whisper": _whisper, "lid": _lid, "mms": _mms, "parler": _parler}
+    return {"it2": _it2, "conformer": _conformer, "whisper": _whisper, "lid": _lid,
+            "mms": _mms, "parler": _parler, "kokoro": _kokoro, "indic_tiny_bn": _indic_tiny_bn}
 
 
 def release_idle(idle_s: float, now: float | None = None) -> list[str]:
@@ -58,13 +59,21 @@ def loaded() -> dict[str, float]:
             if hasattr(fn, "cache_info") and fn.cache_info().currsize}
 TTS_CACHE = os.getenv("SUSHRUT_HF_CACHE", "D:/hf/hub")  # Parler / Whisper-turbo were downloaded here
 
-# SushrutAI language code -> IndicTrans2 / FLORES code, IndicConformer code, Parler-TTS speaker
+# SushrutAI language code -> (IndicTrans2 code, IndicConformer code, Parler-TTS female speaker, Parler-TTS male speaker)
 LANGS = {
-    "hi": ("hin_Deva", "hi", "Rohit"), "bn": ("ben_Beng", "bn", "Arjun"), "ta": ("tam_Taml", "ta", "Jaya"),
-    "te": ("tel_Telu", "te", "Prakash"), "mr": ("mar_Deva", "mr", "Sanjay"), "gu": ("guj_Gujr", "gu", "Yash"),
-    "kn": ("kan_Knda", "kn", "Suresh"), "ml": ("mal_Mlym", "ml", "Anjali"), "or": ("ory_Orya", "or", "Manas"),
-    "pa": ("pan_Guru", "pa", "Divjot"), "as": ("asm_Beng", "as", "Amit"), "ur": ("urd_Arab", "ur", "Rohit"),
-    "en": ("eng_Latn", None, "Thoma"),
+    "hi": ("hin_Deva", "hi", "Divya", "Rohit"),
+    "bn": ("ben_Beng", "bn", "Aditi", "Arjun"),
+    "ta": ("tam_Taml", "ta", "Jaya", "Kavitha"),
+    "te": ("tel_Telu", "te", "Lalitha", "Prakash"),
+    "mr": ("mar_Deva", "mr", "Sunita", "Sanjay"),
+    "gu": ("guj_Gujr", "gu", "Neha", "Yash"),
+    "kn": ("kan_Knda", "kn", "Anu", "Suresh"),
+    "ml": ("mal_Mlym", "ml", "Anjali", "Harish"),
+    "or": ("ory_Orya", "or", "Manas", "Manas"),
+    "pa": ("pan_Guru", "pa", "Divjot", "Divjot"),
+    "as": ("asm_Beng", "as", "Amit", "Amit"),
+    "ur": ("urd_Arab", "ur", "Divya", "Rohit"),
+    "en": ("eng_Latn", None, "Mary", "Thoma"),
 }
 
 
@@ -473,20 +482,157 @@ def _mms(lang: str):
     return model, tok
 
 
+KOKORO_VOICES = {
+    ("hi", "female"): ("hf_alpha", "hi"),
+    ("hi", "male"): ("hm_omega", "hi"),
+    ("en", "female"): ("af_heart", "en-us"),
+    ("en", "male"): ("am_adam", "en-us"),
+}
+
+
+def kokoro_paths() -> tuple[str, str]:
+    base = os.getenv("KOKORO_DIR", os.path.join(TTS_CACHE, "kokoro-onnx"))
+    return (
+        os.getenv("KOKORO_MODEL_PATH", os.path.join(base, "kokoro-v1.0.onnx")),
+        os.getenv("KOKORO_VOICES_PATH", os.path.join(base, "voices-v1.0.bin")),
+    )
+
+
+def kokoro_available() -> bool:
+    model_p, voices_p = kokoro_paths()
+    return available("kokoro_onnx") and os.path.isfile(model_p) and os.path.isfile(voices_p)
+
+
+@lru_cache(maxsize=1)
+def _kokoro():
+    from kokoro_onnx import Kokoro
+
+    model_p, voices_p = kokoro_paths()
+    t0 = time.time()
+    k = Kokoro(model_p, voices_p)
+    log.info("Kokoro-82M ONNX loaded in %.1fs", time.time() - t0)
+    return k
+
+
+def _tts_kokoro(text: str, lang: str, gender: str = "female") -> bytes:
+    import soundfile as sf
+
+    voice, klang = KOKORO_VOICES.get((lang, gender), KOKORO_VOICES[("en", gender if gender in ("female", "male") else "female")])
+    with _lock:
+        _mark("kokoro")
+        samples, sr = _kokoro().create(text[:1000], voice=voice, speed=1.0, lang=klang)
+    buf = io.BytesIO()
+    sf.write(buf, samples, sr, format="WAV")
+    return buf.getvalue()
+
+
+def indic_tiny_bn_dir() -> str | None:
+    env_dir = os.getenv("INDIC_TINY_BN_DIR")
+    if env_dir and os.path.isfile(os.path.join(env_dir, "onnx", "onnx_manifest.json")):
+        return env_dir
+    snaps = os.path.join(TTS_CACHE, "models--sulabhkatiyar--indic-tiny-tts-bengali", "snapshots")
+    if not os.path.isdir(snaps):
+        return None
+    for d in sorted(os.listdir(snaps), reverse=True):
+        cand = os.path.join(snaps, d)
+        if os.path.isfile(os.path.join(cand, "onnx", "onnx_manifest.json")):
+            return cand
+    return None
+
+
+def indic_tiny_bn_available() -> bool:
+    return available("onnxruntime") and indic_tiny_bn_dir() is not None
+
+
+@lru_cache(maxsize=1)
+def _indic_tiny_bn():
+    import sys
+
+    folder = indic_tiny_bn_dir()
+    if folder is None:
+        from huggingface_hub import snapshot_download
+        folder = snapshot_download(
+            "sulabhkatiyar/indic-tiny-tts-bengali",
+            cache_dir=TTS_CACHE,
+            ignore_patterns=["*.safetensors", "samples/*", "assets/*"],
+        )
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
+    from indic_tiny_tts import TinyTTSOnnx
+
+    t0 = time.time()
+    model = TinyTTSOnnx.from_pretrained(folder)
+    log.info("Indic Tiny TTS Bengali ONNX loaded in %.1fs", time.time() - t0)
+    return model
+
+
+def _tts_indic_tiny_bn(text: str, gender: str = "female") -> bytes:
+    import soundfile as sf
+
+    voice = "male" if gender == "male" else "female"
+    clean = re.sub(r"\s+", " ", text).strip()[:1000]
+    if not clean:
+        raise ValueError("Nothing speakable")
+    with _lock:
+        _mark("indic_tiny_bn")
+        model = _indic_tiny_bn()
+        samples = model.synthesize(clean, voice=voice)
+        sr = getattr(model, "sample_rate", 24000)
+    buf = io.BytesIO()
+    sf.write(buf, samples, sr, format="WAV")
+    return buf.getvalue()
+
+
 def parler_enabled() -> bool:
     return os.getenv("TTS_ENGINE", "mms") == "parler"
 
 
-def tts(text: str, lang: str) -> tuple[bytes, str]:
-    """Synthesise speech -> (WAV bytes, engine). MMS-TTS by default (fast on CPU, CC BY-NC 4.0);
-    Indic Parler-TTS (Apache-2.0, gated on Hugging Face) when TTS_ENGINE=parler and the model is accessible."""
+def parler_available() -> bool:
+    if not available("parler_tts"):
+        return False
+    snaps = os.path.join(TTS_CACHE, "models--ai4bharat--indic-parler-tts", "snapshots")
+    if not os.path.isdir(snaps):
+        return False
+    return any(os.path.isfile(os.path.join(snaps, d, "config.json")) for d in os.listdir(snaps))
+
+
+def tts(text: str, lang: str, *, gender: str = "female", engine: str | None = None) -> tuple[bytes, str]:
+    """Synthesise speech -> (WAV bytes, engine).
+    Supports gender ('female' | 'male') and engine ('auto' | 'kokoro' | 'indic_tiny' | 'parler' | 'mms').
+    In 'auto' mode: uses Kokoro-82M ONNX for Hindi/English, Indic Tiny TTS ONNX for Bengali when installed,
+    Indic Parler-TTS if enabled or cached locally, and falls back to fast CPU MMS-TTS for Indic languages."""
     import soundfile as sf
     import torch
 
+    g = "male" if gender == "male" else "female"
+    eng = engine or ("parler" if parler_enabled() else os.getenv("TTS_ENGINE", "auto"))
+
+    if eng in ("auto", "kokoro") and lang in ("hi", "en") and kokoro_available():
+        try:
+            return _tts_kokoro(text, lang, g), f"kokoro-82m-{g}"
+        except Exception as e:  # noqa: BLE001
+            if eng == "kokoro":
+                raise
+            log.warning("Kokoro TTS failed (%s); falling back", e)
+
+    if eng in ("auto", "indic_tiny") and lang == "bn" and indic_tiny_bn_available():
+        try:
+            return _tts_indic_tiny_bn(text, g), f"indic-tiny-tts-bn-{g}"
+        except Exception as e:  # noqa: BLE001
+            if eng == "indic_tiny":
+                raise
+            log.warning("Indic Tiny Bengali TTS failed (%s); falling back", e)
+
+    if eng == "parler" or (eng == "auto" and (parler_enabled() or parler_available())):
+        try:
+            return _tts_parler(text, lang, g), f"indic-parler-tts-{g}"
+        except Exception as e:  # noqa: BLE001
+            if eng == "parler" or lang == "en":
+                raise
+            log.warning("Indic Parler-TTS failed (%s); falling back to MMS", e)
+
     if lang == "en":
         raise ValueError("English is read by the device's own voice")
-    if parler_enabled():
-        return _tts_parler(text, lang), "indic-parler-tts"
     lang = lang if lang in MMS_CODES else "hi"
     clean = normalise_for_tts(text, lang)[:800]
     if not clean:
@@ -504,12 +650,14 @@ def tts(text: str, lang: str) -> tuple[bytes, str]:
     return buf.getvalue(), f"mms-tts-{MMS_CODES[lang]}"
 
 
-def _tts_parler(text: str, lang: str) -> bytes:
+def _tts_parler(text: str, lang: str, gender: str = "female") -> bytes:
     import soundfile as sf
     import torch
 
-    speaker = LANGS.get(lang, LANGS["hi"])[2]
-    description = (f"{speaker} speaks at a moderate pace with a calm, clear and warm voice. "
+    entry = LANGS.get(lang, LANGS["hi"])
+    speaker = entry[3] if gender == "male" and len(entry) > 3 else entry[2]
+    tone = "warm, calm, clear female voice" if gender != "male" else "calm, clear male voice"
+    description = (f"{speaker} speaks at a moderate pace with a {tone}. "
                    "The recording is of very high quality with no background noise.")
     with _lock:
         _mark("parler")
