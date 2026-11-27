@@ -57,10 +57,11 @@ export default function Me() {
 
   const open = (s: Section) => { setDraft({ ...p }); setEdit(s); };
   async function save() {
-    const keys = ["dob", "sex", "blood_group", "height_cm", "state_code", "diet", "smoking_status", "tobacco_chewing", "alcohol_units_wk",
+    const keys = ["name", "age", "dob", "sex", "blood_group", "height_cm", "state_code", "diet", "smoking_status", "tobacco_chewing", "alcohol_units_wk",
       "activity_level", "pregnancy_status", "lactating", "emergency_contact", "occupation", "sleep", "hydration", "healthcare_access", "literacy_level"];
     const body: any = {};
     for (const k of keys) if (draft[k] !== undefined && draft[k] !== "" && draft[k] !== p[k]) body[k] = draft[k];
+    if (body.age !== undefined) body.age = Number(body.age);
     if (body.height_cm) body.height_cm = Number(body.height_cm);
     if (body.alcohol_units_wk) body.alcohol_units_wk = Number(body.alcohol_units_wk);
     try {
@@ -75,8 +76,8 @@ export default function Me() {
 
   const filled = (ks: string[]) => ks.filter((k) => p[k] != null && p[k] !== "").length;
   const sections: { key: Section; icon: any; title: string; keys: string[]; summary: string; show?: boolean }[] = [
-    { key: "basics", icon: User, title: t.basics, keys: ["dob", "sex", "state_code", "healthcare_access", "literacy_level"],
-      summary: [p.dob && `${new Date().getFullYear() - Number(p.dob.slice(0, 4))} yrs`, p.sex, STATES.find((s) => s[0] === p.state_code)?.[1], p.healthcare_access].filter(Boolean).join(" · ") },
+    { key: "basics", icon: User, title: t.basics, keys: ["name", "age", "dob", "sex", "state_code", "healthcare_access", "literacy_level"],
+      summary: [p.name, p.age != null ? `${p.age} yrs` : (p.dob && `${new Date().getFullYear() - Number(p.dob.slice(0, 4))} yrs`), p.sex, STATES.find((s) => s[0] === p.state_code)?.[1], p.healthcare_access].filter(Boolean).join(" · ") },
     { key: "body", icon: Ruler, title: t.body, keys: ["blood_group", "height_cm"],
       summary: [p.blood_group && `${t.bloodGroup} ${p.blood_group}`, p.height_cm && `${p.height_cm} cm`, p.bmi && `BMI ${p.bmi.value} (${p.bmi.category})`].filter(Boolean).join(" · ") },
     { key: "lifestyle", icon: Activity, title: t.lifestyle, keys: ["diet", "smoking_status", "activity_level", "occupation", "sleep", "hydration"],
@@ -176,6 +177,8 @@ export default function Me() {
       <Sheet open={!!edit} onClose={() => setEdit(null)} title={sections.find((s) => s.key === edit)?.title ?? ""}>
         <div className="space-y-4">
           {edit === "basics" && (<>
+            <Field label="Name"><input type="text" className="input" value={draft.name ?? ""} onChange={(e) => set("name", e.target.value)} placeholder="Patient full name" autoComplete="name" /></Field>
+            <Field label="Age (years)"><input type="text" inputMode="numeric" className="input font-mono" value={draft.age ?? ""} onChange={(e) => set("age", e.target.value.replace(/\D/g, ""))} placeholder="e.g. 38" /></Field>
             <Field label="Date of birth"><input type="date" className="input" value={draft.dob ?? ""} onChange={(e) => set("dob", e.target.value)} autoComplete="bday" /></Field>
             <Field label="Sex"><Seg label="Sex" value={draft.sex} onChange={(v) => set("sex", v)} options={[["female", "Female"], ["male", "Male"], ["intersex", "Intersex"]]} /></Field>
             <Field label="State"><select className="input" value={draft.state_code ?? ""} onChange={(e) => set("state_code", e.target.value || null)}>

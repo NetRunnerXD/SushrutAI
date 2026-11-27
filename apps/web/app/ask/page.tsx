@@ -1,14 +1,15 @@
 "use client";
 
 import {
-  ArrowDown, Check, Copy, Headphones, History, PanelRight, Paperclip, Pencil, Plus, RotateCcw,
-  SendHorizonal, Square, Stethoscope, X,
+  ArrowDown, Check, Copy, Headphones, History, Mic, PanelRight, Paperclip, Pause, Pencil, Play, Plus, RotateCcw,
+  SendHorizonal, Square, Stethoscope, Volume2, X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { AnswerCard, RedFlagBanner, summaryOf } from "@/components/AnswerCard";
 import { ChatHistory } from "@/components/ChatHistory";
+import { CompactSummaryCard, type CompactPatientSummary } from "@/components/CompactSummaryCard";
 import { ModelSwitch, useChatModel } from "@/components/ModelSwitch";
 import { ProfileStrip } from "@/components/ProfileStrip";
 import { Inspector } from "@/components/desktop/Inspector";
@@ -25,7 +26,10 @@ import { api, postSSE } from "@/lib/api";
 import { bcp47, fill, useI18n } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs";
 import { SYMPTOM_CHIPS } from "@/lib/symptoms";
-import { clearHeardMeta, heard, langOfText, speak, spokenRoute, stopSpeaking } from "@/lib/voice";
+import {
+  clearHeardMeta, heard, isSpeechPaused, langOfText, pauseSpeaking, repeatLast, resumeSpeaking,
+  setVoicePrefs, speak, speakSegments, spokenRoute, stopSpeaking, subscribeSpeaking, voicePrefs,
+} from "@/lib/voice";
 import { FrontendConversationOrchestrator } from "@/lib/orchestrator";
 import { useVoiceLoop, VOICE_INTENT_EVENT } from "@/components/VoiceLoop";
 import { discardDoc, ImageCheckBanner, uploadDoc, type ImageIssue } from "@/components/ImageCheck";
@@ -73,6 +77,23 @@ function AskInner() {
   const loop = useVoiceLoop();  // the app-wide hands-free conversation (components/VoiceLoop.tsx)
   const handsFree = !!loop?.on;
   const hfState = loop?.state ?? "idle";
+  const [liveMode, setLiveMode] = useState(false);
+  const [liveInitializing, setLiveInitializing] = useState(false);
+  const [aiSpeaking, setAiSpeaking] = useState(false);
+  const [speechPaused, setSpeechPaused] = useState(false);
+  const [lockedLang, setLockedLang] = useState<string>(lang);
+  const [silencePreset, setSilencePreset] = useState<"patient" | "elderly" | "standard">(
+    () => voicePrefs().silencePreset ?? "patient",
+  );
+  const [compactSummary, setCompactSummary] = useState<CompactPatientSummary | null>(null);
+  const greetedSessionRef = useRef<string | null>(null);
+  useEffect(() => {
+    setLockedLang(lang);
+  }, [lang]);
+  useEffect(() => subscribeSpeaking((sp) => {
+    setAiSpeaking(sp);
+    setSpeechPaused(isSpeechPaused());
+  }), []);
   const orch = useRef(new FrontendConversationOrchestrator());
   useEffect(() => { orch.current.bindSession(sessionId); }, [sessionId]);
   useEffect(() => {
@@ -175,9 +196,22 @@ function AskInner() {
     return () => clearInterval(id);
   }, [busy]);
 
+  const queuedVoiceRef = useRef<string | null>(null);
+  const lastSubmittedRef = useRef<{ text: string; at: number } | null>(null);
   // prior: the conversation to send with (for Retry / Answer again / Edit, the turns before the replaced question)
   const send = useCallback(async (msg: string, spoken = false, prior?: Turn[], withFiles: Attached[] = files) => {
-    if ((!msg.trim() && !withFiles.length) || !sessionId || busy || uploading || withFiles.some((f) => f.issue)) return;
+    if ((!msg.trim() && !withFiles.length) || !sessionId || uploading || withFiles.some((f) => f.issue)) return;
+    if (busy) {
+      if (spoken && msg.trim()) queuedVoiceRef.current = msg.trim();
+      return;
+    }
+    const trimmed = msg.trim();
+    const nowMs = Date.now();
+    if (!prior && !withFiles.length && trimmed && lastSubmittedRef.current
+        && lastSubmittedRef.current.text === trimmed && nowMs - lastSubmittedRef.current.at < 1500) {
+      return;
+    }
+    if (!prior && trimmed) lastSubmittedRef.current = { text: trimmed, at: nowMs };
     const base = prior ?? turns;
     // answer in the language actually used: what the voice was heard in, or the script typed (Hindi typed in the
     // English app gets a Hindi answer)
@@ -230,11 +264,24 @@ function AskInner() {
           if (ev === "answer") {
             settled = true;
             setDraft(null);
+            if (data.language) setLockedLang(data.language);
+            if (data.recommendation_ready !== false && data.compact_summary) {
+              setCompactSummary(data.compact_summary as CompactPatientSummary);
+            } else if (data.recommendation_ready === false) {
+              setCompactSummary(null);
+            }
             setTurns((p) => [...p, { role: "assistant", text: data.reply, answer: data, redFlag }]);
-            if (spoken) {  // a question is read whole; an answer starts with its summary, its tone following confidence
+            if (spoken || liveMode) {
               const top = data.structured?.possible_conditions?.[0]?.likelihood;
               const confidence = !top ? undefined : top === "high" ? "high" : top === "moderate" ? "medium" : "low";
-              speak(data.structured?.kind === "clarify" ? data.reply : summaryOf(data.reply), L, undefined, { confidence });
+              const speakLang = (data.language as any) || L;
+              const segs = data.structured?.spoken_segments;
+              if (Array.isArray(segs) && segs.length > 0) {
+                speakSegments(segs, speakLang, undefined, { confidence });
+              } else {
+                const toSpeak = data.structured?.spoken_response || data.reply;
+                speak(toSpeak, speakLang, undefined, { confidence });
+              }
             }
           }
           if (ev === "error") {
@@ -250,8 +297,15 @@ function AskInner() {
       } else {
         setTurns((p) => [...p, { role: "assistant", text: "", error: e.message }]);
       }
-    } finally { setBusy(false); setDraft(null); abort.current = null; setListKey((k) => k + 1); }
-  }, [sessionId, busy, uploading, turns, lang, files, about, openSOS, t, model, scope]);
+    } finally {
+      setBusy(false); setDraft(null); abort.current = null; setListKey((k) => k + 1);
+      const qNext = queuedVoiceRef.current;
+      if (qNext) {
+        queuedVoiceRef.current = null;
+        setTimeout(() => sendRef.current(qNext, true), 50);
+      }
+    }
+  }, [sessionId, busy, uploading, turns, lang, files, about, openSOS, t, model, scope, liveMode]);
   const stop = () => abort.current?.abort();
   useEffect(() => () => abort.current?.abort(), []);
 
@@ -303,6 +357,71 @@ function AskInner() {
   actionsRef.current = voice.actions;
 
   async function toggleHandsFree() { await loop?.toggle(); }
+  const startLiveConversation = useCallback(async () => {
+    const active = liveMode || handsFree;
+    if (active) {
+      stopSpeaking();
+      setLiveMode(false);
+      if (handsFree) await loop?.toggle();
+      return;
+    }
+    setLiveMode(true);
+    setLiveInitializing(true);
+    try {
+      const res = await api<{
+        language: string;
+        greeting: string;
+        prompt: string;
+      }>("/clinical/live-greeting", {
+        method: "POST",
+        body: JSON.stringify({ lang, session_id: sessionId }),
+      }).catch(() => ({
+        language: lang,
+        greeting: lang === "bn"
+          ? "আমি Sushrut AI, কীভাবে আপনাকে সাহায্য করতে পারি?"
+          : lang === "hi"
+            ? "नमस्ते, मैं SushrutAI हूँ। मैं आपकी कैसे मदद कर सकता हूँ?"
+            : "Hello, I am SUSHRUT AI. How can I help you today?",
+        prompt: lang === "bn"
+          ? "আমি Sushrut AI, কীভাবে আপনাকে সাহায্য করতে পারি?"
+          : lang === "hi"
+            ? "नमस्ते, मैं SushrutAI हूँ। मैं आपकी कैसे मदद कर सकता हूँ?"
+            : "Hello, I am SUSHRUT AI. How can I help you today?",
+      }));
+
+      setLockedLang(res.language || lang);
+      const sessKey = sessionId || "default";
+      if (greetedSessionRef.current !== sessKey) {
+        greetedSessionRef.current = sessKey;
+        const greetMsg = res.prompt || res.greeting;
+        setTurns((p) => (p.length === 0 ? [{ role: "assistant", text: greetMsg, answer: { reply: greetMsg, structured: { kind: "greeting" } } }] : p));
+        setLiveInitializing(false);
+        await speak(greetMsg, res.language || lang, bcp47(res.language || lang));
+      } else {
+        setLiveInitializing(false);
+      }
+      if (!loop?.on) {
+        await loop?.toggle();
+      }
+    } finally {
+      setLiveInitializing(false);
+    }
+  }, [liveMode, handsFree, lang, sessionId, loop]);
+
+  const liveStatusText = (() => {
+    const l = lockedLang || lang;
+    if (liveInitializing) return l === "bn" ? "শুরু হচ্ছে…" : l === "hi" ? "शुरू हो रहा है…" : "Initializing";
+    if (aiSpeaking) return l === "bn" ? "SushrutAI কথা বলছে" : l === "hi" ? "SushrutAI बोल रहा है" : "Speaking";
+    if (busy && draft) return l === "bn" ? "উত্তর তৈরি হচ্ছে…" : l === "hi" ? "उत्तर तैयार हो रहा है…" : "Generating response";
+    if (busy || hfState === "transcribing" || voice.state === "transcribing") return l === "bn" ? "বিশ্লেষণ করছে" : l === "hi" ? "प्रोसेसिंग" : "Processing";
+    if (hfState === "waiting_for_continuation") {
+      return l === "bn" ? "আপনার উত্তরের জন্য অপেক্ষা করছি…" : l === "hi" ? "आपके उत्तर की प्रतीक्षा है…" : "Waiting for your answer…";
+    }
+    if (liveMode || handsFree || voice.state === "listening" || hfState === "listening" || hfState === "speech") {
+      return l === "bn" ? "মন দিয়ে শুনছি…" : l === "hi" ? "ध्यान से सुन रहा हूँ…" : "Listening";
+    }
+    return l === "bn" ? "প্রস্তুত" : "Ready";
+  })();
   // While Ask is open, spoken questions and barge-in interruptions are orchestrated in place
   useEffect(() => {
     loop?.setQuestionHandler((said) => sendRef.current(said, true));
@@ -363,6 +482,11 @@ function AskInner() {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <PageTitle>{t.askTitle}</PageTitle>
         <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={startLiveConversation} aria-pressed={liveMode || handsFree}
+            className={`inline-flex min-h-12 items-center gap-2 rounded-[14px] px-4 font-bold shadow-[var(--rim)] transition-colors ${liveMode || handsFree ? "bg-brand text-brand-ink" : "border-[1.5px] border-brand bg-brand-soft/40 text-text hover:bg-brand-soft"}`}>
+            <Mic aria-hidden className={`h-5 w-5 ${(liveMode || handsFree) && !aiSpeaking ? "animate-pulse" : ""}`} />
+            <span>{liveMode || handsFree ? (lang === "bn" ? "লাইভ কথোপকথন চালু" : "Live Conversation On") : (lang === "bn" ? "লাইভ কথোপকথন শুরু করুন" : "Live Conversation")}</span>
+          </button>
           {/* chats live in a floating window (no side column), so the conversation always has the full width */}
           <button type="button" onClick={() => setHistoryOpen(true)} aria-haspopup="dialog"
             className="inline-flex min-h-12 items-center gap-2 rounded-[14px] border-[1.5px] border-border-input bg-surface px-3 font-semibold hover:bg-surface-2">
@@ -384,6 +508,62 @@ function AskInner() {
         </div>
       </div>
       {!desktop && <ProfileStrip />}
+      {(liveMode || handsFree || aiSpeaking) && (
+        <section aria-live="polite" aria-label="Live Voice Status"
+          className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[16px] border border-brand/40 bg-surface p-3 shadow-[var(--e1)]">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className={`inline-flex h-3 w-3 rounded-full ${aiSpeaking ? "bg-brand animate-ping" : busy ? "bg-warn animate-pulse" : "bg-ok animate-pulse"}`} />
+            <span className="font-bold">{liveStatusText}</span>
+            <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-[0.75rem] font-semibold text-muted">
+              {lang === "bn" ? "সেশন ভাষা:" : "Language Lock:"} {lockedLang.toUpperCase()}
+            </span>
+            <label className="inline-flex items-center gap-1 text-[0.75rem] font-semibold text-muted">
+              <span>{lang === "bn" ? "শোনার ধৈর্য:" : "Listening:"}</span>
+              <select
+                value={silencePreset}
+                onChange={(e) => {
+                  const val = e.target.value as "patient" | "elderly" | "standard";
+                  setSilencePreset(val);
+                  setVoicePrefs({ silencePreset: val });
+                }}
+                className="rounded-full border border-border bg-surface-2 px-2 py-0.5 text-[0.75rem] text-text"
+              >
+                <option value="patient">{lang === "bn" ? "ধৈর্যশীল (৪ সে.)" : "Patient (4s)"}</option>
+                <option value="elderly">{lang === "bn" ? "বয়স্ক / ধীর (৫ সে.)" : "Elderly (5s)"}</option>
+                <option value="standard">{lang === "bn" ? "সাধারণ (২.৪ সে.)" : "Standard (2.4s)"}</option>
+              </select>
+            </label>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {aiSpeaking && (
+              <button type="button" onClick={() => (speechPaused ? resumeSpeaking() : pauseSpeaking())}
+                className="inline-flex min-h-9 items-center gap-1 rounded-full bg-surface-2 px-3 text-[0.8125rem] font-semibold">
+                {speechPaused ? <Play aria-hidden className="h-3.5 w-3.5" /> : <Pause aria-hidden className="h-3.5 w-3.5" />}
+                {speechPaused ? (t.resumeVoice || "Resume") : (t.pause || "Pause")}
+              </button>
+            )}
+            <button type="button" onClick={() => repeatLast()}
+              className="inline-flex min-h-9 items-center gap-1 rounded-full bg-surface-2 px-3 text-[0.8125rem] font-semibold">
+              <Volume2 aria-hidden className="h-3.5 w-3.5" />{t.repeat || "Repeat"}
+            </button>
+            {aiSpeaking && (
+              <button type="button" onClick={() => stopSpeaking()}
+                className="inline-flex min-h-9 items-center gap-1 rounded-full bg-danger-soft px-3 text-[0.8125rem] font-semibold text-danger">
+                <Square aria-hidden className="h-3.5 w-3.5" />{t.stop || "Stop"}
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+      {compactSummary && (
+        <div className="mt-3">
+          <CompactSummaryCard
+            summary={compactSummary}
+            onUpdate={(next) => setCompactSummary(next)}
+            onDelete={() => setCompactSummary(null)}
+          />
+        </div>
+      )}
       <Inspector open={desktop && inspector} onClose={() => setInspector(false)} profile={<ProfileStrip />}
         questions={turns.flatMap((x, i) => (x.role === "user" ? [{ i, text: x.text }] : []))}
         onJump={(i) => { setShowAll(true); requestAnimationFrame(() => document.querySelector(`[data-turn="${i}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" })); }}
@@ -568,13 +748,44 @@ function AskInner() {
                 onRetake={(f) => { discardDoc(flagged.id); unattach(flagged.id); attach([f]); }} />
             </div>
           )}
-          <GeminiLiveBar lang={lang} onEmergency={openSOS}
-            onAnswer={(reply) => setTurns((p) => [...p, { role: "assistant", text: reply, answer: { reply } }])} />
+          <GeminiLiveBar lang={lang} sessionId={sessionId} onEmergency={openSOS}
+            onGreeting={(greetText) => {
+              const sessKey = sessionId || "default";
+              if (greetedSessionRef.current !== sessKey) {
+                greetedSessionRef.current = sessKey;
+                setTurns((p) => (p.length === 0 ? [{ role: "assistant", text: greetText, answer: { reply: greetText, structured: { kind: "greeting" } } }] : p));
+              }
+            }}
+            onAnswer={(reply, question, detail) => {
+              const d = detail ?? {};
+              if (typeof d.language === "string") setLockedLang(d.language);
+              if (d.compact_summary) setCompactSummary(d.compact_summary as CompactPatientSummary);
+              setTurns((p) => [
+                ...p,
+                ...(question ? [{ role: "user" as const, text: question }] : []),
+                {
+                  role: "assistant" as const,
+                  text: reply,
+                  answer: {
+                    reply,
+                    structured: d.structured,
+                    language: d.language,
+                    language_meta: d.language_meta,
+                    family_context: d.family_context,
+                    assessment_panel: d.assessment_panel,
+                  },
+                },
+              ]);
+            }} />
           <ActionCard a={voice.actions} className="mb-2" />
           <HeardConfirm v={voice} className="mb-2" />
-          {voice.state === "listening" && (
-            <div className="flex items-center gap-2 px-2 pb-1"><Waveform levels={voice.levels} className="w-28" />
-              <span aria-live="polite" className="text-[0.9375rem] text-muted">{voice.interim || t.listening}</span></div>)}
+          {(voice.state === "listening" || voice.state === "transcribing") && (
+            <div className="flex items-center gap-2 px-2 pb-1">
+              {voice.state === "listening" && <Waveform levels={voice.levels} className="w-28" />}
+              <span aria-live="polite" className="text-[0.9375rem] text-muted">
+                {voice.state === "transcribing" ? (voice.interim || t.transcribing || "Transcribing…") : (voice.interim || t.listening)}
+              </span>
+            </div>)}
           {(voice.notice || commands.notice) && <p aria-live="polite" className="px-2 pb-1 text-[0.9375rem] font-semibold text-text">{voice.notice || commands.notice}</p>}
           {voice.error && <div className="flex justify-center pb-1"><VoiceError v={voice} /></div>}
           <div className="flex flex-wrap items-end gap-1.5 sm:flex-nowrap">

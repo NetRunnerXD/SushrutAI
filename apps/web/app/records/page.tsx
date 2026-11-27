@@ -1,9 +1,10 @@
 "use client";
 
-import { Activity, ChevronDown, ChevronRight, ClipboardCheck, Download, FileText, FlaskConical, FolderOpen, HeartPulse, History, ImageUp, NotebookPen, Pill, Plus, ScanLine, Volume2 } from "lucide-react";
+import { Activity, ChevronDown, ChevronRight, ClipboardCheck, Download, FileText, FlaskConical, FolderOpen, HeartPulse, History, ImageUp, NotebookPen, Pill, Plus, ScanLine, Sparkles, Users, Volume2 } from "lucide-react";
 import { ClinicalStatusPanel } from "@/components/records/ClinicalStatusPanel";
 import { ClinicalTimelinePanel } from "@/components/records/ClinicalTimelinePanel";
 import { EncountersPanel } from "@/components/records/EncountersPanel";
+import { FamilyNetworkPanel, InsightsAndSummariesPanel } from "@/components/records/IntelligenceHub";
 import { Library } from "@/components/records/Library";
 import { ReportReview } from "@/components/records/ReportReview";
 import { speak } from "@/lib/voice";
@@ -22,8 +23,8 @@ import { ScanViewer } from "@/components/ScanViewer";
 import { ScreeningCard } from "@/components/ScreeningCard";
 import { discardDoc, ImageCheckBanner, KindMismatchBanner, mismatch, READER_HREF, uploadDoc, type ImageIssue, type UploadResult } from "@/components/ImageCheck";
 
-type Tab = "status" | "library" | "labs" | "timeline" | "encounters" | "images" | "vitals";
-const TABS: Tab[] = ["status", "library", "labs", "timeline", "encounters", "images", "vitals"];
+type Tab = "status" | "library" | "labs" | "timeline" | "encounters" | "images" | "vitals" | "family" | "insights";
+const TABS: Tab[] = ["status", "library", "labs", "timeline", "encounters", "images", "vitals", "family", "insights"];
 type EvType = "all" | "lab" | "prescription" | "vital" | "health";
 const RANGES = [7, 30, 90, 0] as const;
 const VITALS = [["bp_sys", "BP — upper (systolic)", "mmHg"], ["bp_dia", "BP — lower (diastolic)", "mmHg"], ["glucose_f", "Fasting sugar", "mg/dL"],
@@ -200,6 +201,8 @@ function RecordsInner() {
     ["encounters", t.encountersTab, History],
     ["images", t.images, ScanLine],
     ["vitals", t.vitals, HeartPulse],
+    ["family", "Family", Users],
+    ["insights", "Insights", Sparkles],
   ];
   const readTest = (hist: any[]) => {
     const l = hist[hist.length - 1];
@@ -224,11 +227,15 @@ function RecordsInner() {
     <div className="mx-auto max-w-6xl space-y-4 desk:max-w-none">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <PageTitle sub={t.recordsHelp}>{t.recordsTitle}</PageTitle>
-        <Button variant="secondary" icon={Download} onClick={() => downloadFile("/me/export/fhir", "sushrutai-health-record.json")}>
-          <span className="max-sm:sr-only">{t.exportFhir}</span></Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" icon={Download} onClick={() => downloadFile("/records/report.pdf", "sushrutai-medical-report.pdf")}>
+            <span className="max-sm:sr-only">PDF Report</span></Button>
+          <Button variant="secondary" icon={Download} onClick={() => downloadFile("/me/export/fhir", "sushrutai-health-record.json")}>
+            <span className="max-sm:sr-only">{t.exportFhir}</span></Button>
+        </div>
       </div>
 
-      <div role="tablist" aria-label={t.recordsTitle} className="well grid grid-cols-4 gap-1 rounded-[20px] p-1.5 sm:grid-cols-7 lg:max-w-5xl">
+      <div role="tablist" aria-label={t.recordsTitle} className="well grid grid-cols-5 gap-1 rounded-[20px] p-1.5 sm:grid-cols-9 lg:max-w-6xl">
         {tabs.map(([k, label, Icon, count]) => (
           <button key={k} role="tab" aria-selected={tab === k} id={`rt-${k}`} aria-controls={`rp-${k}`} onClick={() => setTab(k)}
             className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[12px] text-[0.8125rem] font-semibold sm:flex-row sm:gap-2 sm:text-[0.9375rem]
@@ -260,6 +267,8 @@ function RecordsInner() {
       <section role="tabpanel" id={`rp-${tab}`} aria-labelledby={`rt-${tab}`} className={`space-y-4 ${review ? "hidden" : ""}`}>
         {tab === "status" && <ClinicalStatusPanel />}
         {tab === "encounters" && <EncountersPanel />}
+        {tab === "family" && <FamilyNetworkPanel />}
+        {tab === "insights" && <InsightsAndSummariesPanel />}
         {tab === "library" && (
           <>
             <UploadTile icon={FlaskConical} title={t.labUpload} help={t.labUploadHelp} accept="image/*,application/pdf" onFile={(f) => onUpload(f, "lab")} busy={busy === "lab"} />

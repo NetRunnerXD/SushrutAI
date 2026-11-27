@@ -131,6 +131,7 @@ export default function PatientContextPage() {
   const assessment = ctx.clinical_assessment;
   const pendingQs: any[] = ctx.pending_questions ?? [];
   const investigations: any[] = ctx.recommended_next_steps?.investigations ?? [];
+  const summary4 = ctx.consultation_summary;
 
   const linkedTranscript = selectedFact?.transcript_id ? transcripts[selectedFact.transcript_id] : null;
 
@@ -148,6 +149,46 @@ export default function PatientContextPage() {
         <Banner tone="success" title={t.returningPatientNote}>{ctx.prior_encounter_summary}</Banner>
       )}
       {msg && <Banner tone={msg === t.saved ? "success" : "warning"}>{msg}</Banner>}
+
+      {summary4 && (
+        <Card>
+          <CardHeader icon={ClipboardList} title={(t as any).consultationSummary || "Consultation Summary"} />
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-[12px] border border-border bg-surface-2 p-3">
+              <h3 className="font-bold text-text">1. Patient-Reported Information</h3>
+              <p className="mt-1 text-[0.875rem] text-muted">
+                Chief complaint: {summary4.patient_reported_information?.chief_complaint || t.none}
+              </p>
+              {summary4.patient_reported_information?.symptoms?.length > 0 && (
+                <ul className="mt-1.5 list-disc ps-5 text-[0.875rem]">
+                  {summary4.patient_reported_information.symptoms.slice(0, 4).map((s: any, i: number) => (
+                    <li key={i}>{s.name}{s.duration ? ` · ${s.duration}` : ""}{s.severity && s.severity !== "unknown" ? ` (${s.severity})` : ""}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="rounded-[12px] border border-warn/40 bg-warn-soft/30 p-3">
+              <h3 className="font-bold text-text">2. AI-Generated Clinical Observations</h3>
+              <p className="mt-1 text-[0.75rem] font-semibold text-warn">{summary4.ai_generated_clinical_observations?.note}</p>
+              {summary4.ai_generated_clinical_observations?.summary && (
+                <p className="mt-1 text-[0.875rem]">{summary4.ai_generated_clinical_observations.summary}</p>
+              )}
+            </div>
+            <div className="rounded-[12px] border border-border bg-surface-2 p-3">
+              <h3 className="font-bold text-text">3. Missing Information</h3>
+              {summary4.missing_information?.length ? (
+                <ul className="mt-1 list-disc ps-5 text-[0.875rem]">
+                  {summary4.missing_information.slice(0, 4).map((m: string, i: number) => <li key={i}>{m}</li>)}
+                </ul>
+              ) : <p className="mt-1 text-[0.875rem] text-muted">{t.none}</p>}
+            </div>
+            <div className="rounded-[12px] border border-border bg-surface-2 p-3">
+              <h3 className="font-bold text-text">4. Next Steps</h3>
+              <p className="mt-1 text-[0.875rem]">{summary4.next_steps?.recommended_action}</p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Extracted Facts with Clickable Source Transcript Highlighting */}
       {facts.length > 0 && (
