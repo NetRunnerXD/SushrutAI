@@ -4,8 +4,19 @@
 // "localhost" on this PC, "192.168.x.y" on a phone over the home network. NEXT_PUBLIC_API_URL overrides it.
 const API_PORT = process.env.NEXT_PUBLIC_API_PORT || "8787";
 export const API = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined"
-  ? `${window.location.protocol}//${window.location.hostname}:${API_PORT}/api/v1`
+  ? (window.location.protocol === "https:"
+      ? "/api/v1"
+      : `${window.location.protocol}//${window.location.hostname}:${API_PORT}/api/v1`)
   : `http://localhost:${API_PORT}/api/v1`);
+
+/** Build a ws:// or wss:// URL for API WebSocket paths (works over both localhost HTTP and LAN HTTPS proxy). */
+export function wsUrl(path: string): string {
+  if (typeof window !== "undefined" && API.startsWith("/")) {
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${proto}//${window.location.host}${API}${path}`;
+  }
+  return `${API.replace(/^http/, "ws")}${path}`;
+}
 
 type Tokens = { access_token: string; refresh_token: string; user_id: string; is_guest: boolean };
 const KEY = "sushrut.auth";
@@ -109,7 +120,19 @@ export async function api<T = unknown>(path: string, init: RequestInit = {}, ret
   const headers = new Headers(init.headers);
   for (const [k, v] of Object.entries(authHeaders())) headers.set(k, v);
   if (init.body && !(init.body instanceof FormData)) headers.set("Content-Type", "application/json");
-  const r = await fetch(`${API}${path}`, { ...init, headers });
+  const isGet = !init.method || init.method.toUpperCase() === "GET";
+  const timeoutCtrl = !init.signal && typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = timeoutCtrl ? setTimeout(() => timeoutCtrl.abort(), 30_000) : null;
+  let r: Response;
+  try {
+    r = await fetch(`${API}${path}`, { ...init, headers, signal: init.signal ?? timeoutCtrl?.signal });
+  } catch (err) {
+    if (timer) clearTimeout(timer);
+    if (isGet && retry) return api<T>(path, init, false);
+    throw err;
+  }
+  if (timer) clearTimeout(timer);
+  if (r.status === 503 && isGet && retry) return api<T>(path, init, false);
   if (r.status === 401 && retry && (await refresh())) return api<T>(path, init, false);
   if (r.status === 403 && retry && getProfile()) {
     // the family profile was removed (or belongs to an old guest session): fall back to the account holder

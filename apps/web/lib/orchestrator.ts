@@ -24,12 +24,28 @@ export type SilenceConfig = {
   sessionPauseMs: number;       // 45000-60000ms long quiet pause -> SESSION_PAUSED
 };
 
-export const DEFAULT_SILENCE_CONFIG: SilenceConfig = {
-  pauseDetectMs: 1000,
-  continuationGraceMs: 4500,
-  gentleAckMs: 12000,
-  sessionPauseMs: 50000,
+export const SILENCE_PRESETS: Record<"patient" | "elderly" | "standard", SilenceConfig> = {
+  patient: {
+    pauseDetectMs: 4000,
+    continuationGraceMs: 25000,
+    gentleAckMs: 25000,
+    sessionPauseMs: 60000,
+  },
+  elderly: {
+    pauseDetectMs: 5000,
+    continuationGraceMs: 30000,
+    gentleAckMs: 30000,
+    sessionPauseMs: 75000,
+  },
+  standard: {
+    pauseDetectMs: 2400,
+    continuationGraceMs: 12000,
+    gentleAckMs: 12000,
+    sessionPauseMs: 45000,
+  },
 };
+
+export const DEFAULT_SILENCE_CONFIG: SilenceConfig = SILENCE_PRESETS.patient;
 
 /**
  * Coordinates frontend conversation state, multi-fragment turn merging,

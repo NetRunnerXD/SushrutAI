@@ -1,7 +1,7 @@
 "use client";
 
-import { API, api, ApiError, getProfile, getTokens } from "./api";
-import { DEFAULT_SILENCE_CONFIG, type SilenceConfig } from "./orchestrator";
+import { api, ApiError, getProfile, getTokens, wsUrl } from "./api";
+import { DEFAULT_SILENCE_CONFIG, SILENCE_PRESETS, type SilenceConfig } from "./orchestrator";
 
 /**
  * Voice input, local-first:
@@ -55,32 +55,82 @@ export function clearHeardMeta() {
   heard.detectedLanguages = undefined; heard.segments = undefined; heard.engine = undefined;
 }
 
+export function isValidTranscript(text: string): boolean {
+  const clean = (text || "").replace(/[.,!?।॥:;…\-'"()\[\]\s]+/g, "").trim();
+  if (!clean) return false;
+  if (/^(uh+|um+|hmm+|ah+|er+)$/i.test(clean)) return false;
+  return clean.length >= 1;
+}
+
+const _speakingListeners = new Set<(speaking: boolean) => void>();
+let _speakingAbort: (() => void) | null = null;
+
+export function subscribeSpeaking(cb: (speaking: boolean) => void): () => void {
+  _speakingListeners.add(cb);
+  return () => { _speakingListeners.delete(cb); };
+}
+
+function notifySpeaking(speaking: boolean) {
+  for (const cb of _speakingListeners) {
+    try { cb(speaking); } catch { /* ignore */ }
+  }
+}
+/** Voice capabilities reported by /voice/engines. */
+export type VoiceCapabilities = {
+  stt_local?: { indic_conformer?: boolean; faster_whisper?: boolean };
+  tts_local?: { available?: boolean };
+  cloud_voices?: string[];
+  gemini_stt?: boolean;
+  gemini_tts?: boolean;
+  live_voices?: string[];
+};
+
+let _capCache: VoiceCapabilities | null = null;
+export async function getVoiceCapabilities(): Promise<VoiceCapabilities> {
+  if (_capCache) return _capCache;
+  try {
+    _capCache = await api<VoiceCapabilities>("/voice/engines");
+    return _capCache;
+  } catch {
+    return {};
+  }
+}
+
 async function startGeminiRecording(lang: string): Promise<Recorder> {
   const { startGeminiLive } = await import("./geminiLive");
   let latest = "";
+  let settled = false;
+  let stopping = false;
   let finish: (s: string) => void = () => {};
-  const done = new Promise<string>((res) => { finish = res; });
-  const listenAs = spokenRoute() ? "auto" : lang;
+  const done = new Promise<string>((res) => {
+    finish = (s: string) => {
+      if (settled) return;
+      settled = true;
+      res(s);
+    };
+  });
+  const listenAs = spokenRoute() || voicePrefs().autoLang ? "auto" : lang;
   const handle = await startGeminiLive({
     mode: "transcribe", lang: listenAs,
     onEvent: (ev) => {
       if (ev.lang) setHeardLang(ev.lang.split("-")[0]);
-      if ((ev.type === "interim" || ev.type === "final") && ev.text) {
+      if ((ev.type === "interim" || ev.type === "final" || ev.type === "input_transcript") && ev.text) {
         latest = ev.text;
-        heard.onPartial?.(ev.text);
+        heard.rawTranscript = latest;
+        heard.normalizedTranscript = latest;
+        heard.onPartial?.(latest);
       }
       if (ev.type === "final" && stopping) finish(latest.trim());
       if (ev.type === "error") finish(latest.trim());
     },
   });
-  let stopping = false;
   heard.engine = "Gemini 3.5 Transcribe Live";
   return {
     level: handle.level,
     stop: () => {
       stopping = true;
       handle.endAudio();
-      const timer = setTimeout(() => finish(latest.trim()), 2500);
+      const timer = setTimeout(() => finish(latest.trim()), 2800);
       return done.finally(() => { clearTimeout(timer); handle.stop(); });
     },
   };
@@ -95,30 +145,104 @@ async function startGeminiHandsFree(lang: string, opts: {
 }): Promise<HandsFree> {
   const { startGeminiLive } = await import("./geminiLive");
   opts.onState("listening");
-  const listenAs = spokenRoute() ? "auto" : lang;
+  const listenAs = spokenRoute() || voicePrefs().autoLang ? "auto" : lang;
+  let fragments: string[] = [];
+  let activeLang = lang === "auto" || lang === "app" ? "en" : lang;
+  let langLocked = lang !== "auto" && lang !== "app";
+  let flushTimer: ReturnType<typeof setTimeout> | null = null;
+  let stopped = false;
+
+  const explicitSwitchLang = (txt: string): string | null => {
+    const t = (txt || "").toLowerCase();
+    if (/(amake\s+banglay|banglay\s+(?:bojhan|bolun|bolo)|in\s+bengali|bengali\s+please|বাংলায়\s*(?:বলুন|বোঝান))/.test(t)) return "bn";
+    if (/(in\s+english|english\s+(?:e|te|mein)\s+(?:bolun|bataiye)|ইংরেজিতে)/.test(t)) return "en";
+    if (/(hindi\s+(?:mein|me)\s+(?:bataiye|bolo)|in\s+hindi|हिंदी\s*में|हिन्दी\s*में)/.test(t)) return "hi";
+    return null;
+  };
+
+  const flush = () => {
+    if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+    const merged = fragments.join(" ").replace(/\s+/g, " ").trim();
+    fragments = [];
+    if (merged) {
+      opts.onUtterance(merged, activeLang);
+    }
+    if (!stopped) opts.onState("listening");
+  };
+
   const handle = await startGeminiLive({
     mode: "transcribe", lang: listenAs,
     onEvent: (ev) => {
-      const heardLang = (ev.lang || lang).split("-")[0];
+      if (stopped || isSpeaking()) return;
+      const heardLang = (ev.lang || activeLang).split("-")[0];
       if (ev.type === "interim" && ev.text) {
-        if (isSpeaking()) { stopSpeaking(); opts.onBargeIn?.(lastSpoken?.text ?? ""); }
-        opts.onPartial?.(ev.text, ev.text);
+        if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+        const merged = [...fragments, ev.text.trim()].filter(Boolean).join(" ").trim();
+        opts.onPartial?.(ev.text, merged);
         opts.onState("speech");
       }
       if (ev.type === "final" && ev.text?.trim()) {
-        if (ev.lang) setHeardLang(heardLang);
-        opts.onUtterance(ev.text.trim(), heardLang);
-        opts.onState("listening");
+        const sw = explicitSwitchLang(ev.text);
+        if (sw) {
+          activeLang = sw;
+          langLocked = true;
+          setHeardLang(sw);
+        } else if (!langLocked && ev.lang) {
+          activeLang = heardLang;
+          langLocked = true;
+          setHeardLang(heardLang);
+        }
+        fragments.push(ev.text.trim());
+        const merged = fragments.join(" ").replace(/\s+/g, " ").trim();
+        opts.onPartial?.(ev.text.trim(), merged);
+        opts.onState("waiting_for_continuation");
+        if (flushTimer) clearTimeout(flushTimer);
+        // Elderly-friendly 25s continuation grace window (explicit "finished speaking" flushes immediately)
+        if (/(আমি\s*বলা\s*শেষ\s*করেছি|i'?m\s+finished\s+speaking|i\s+am\s+done\s+speaking)/i.test(ev.text)) {
+          flush();
+        } else {
+          flushTimer = setTimeout(flush, 25000);
+        }
       }
-      if (ev.type === "error") opts.onError(new Error(ev.message || "Gemini Live stopped"));
+      if (ev.type === "error") {
+        if (flushTimer) clearTimeout(flushTimer);
+        opts.onError(new Error(ev.message || "Gemini Live stopped"));
+      }
     },
   });
-  return { stop: () => { handle.stop(); opts.onState("idle"); } };
+  const unsubSpeak = subscribeSpeaking((speaking) => {
+    if (stopped) return;
+    handle.setMuted(speaking);
+    if (!speaking) opts.onState("listening");
+  });
+  if (isSpeaking()) handle.setMuted(true);
+  return {
+    finishNow: flush,
+    stop: () => {
+      stopped = true;
+      unsubSpeak();
+      if (flushTimer) clearTimeout(flushTimer);
+      handle.stop();
+      opts.onState("idle");
+    },
+  };
 }
 
 export async function startServerRecording(lang: string): Promise<Recorder> {
   if (spokenRoute() || voicePrefs().engine === "gemini_transcribe") {
-    try { return await startGeminiRecording(lang); } catch { /* local recording still works */ }
+    try { return await startGeminiRecording(lang); } catch { /* fall through to /stt or browser */ }
+  }
+  const caps = await getVoiceCapabilities();
+  const hasLocalStt = !!(caps.stt_local?.indic_conformer || caps.stt_local?.faster_whisper);
+  const chosenEngine = voicePrefs().engine ?? "local";
+  const hasCloudEngine = chosenEngine !== "local" && (caps.cloud_voices?.includes(chosenEngine) || caps.gemini_stt);
+  if (!hasLocalStt && !hasCloudEngine) {
+    // If Gemini STT is available & consented, try /stt?engine=gemini; otherwise use browser recognition directly
+    const c = await api<{ active: string[] }>("/consents").catch(() => ({ active: [] as string[] }));
+    const geminiAllowed = caps.gemini_stt && (c.active.includes("cloud_llm_live") || c.active.includes("cloud_speech"));
+    if (!geminiAllowed && browserRecognitionAvailable()) {
+      return startBrowserRecognition(BCP[lang] ?? lang, (txt) => heard.onPartial?.(txt));
+    }
   }
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
   const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "";
@@ -137,7 +261,7 @@ export async function startServerRecording(lang: string): Promise<Recorder> {
           const fd = new FormData();
           fd.append("file", new Blob(chunks, { type: rec.mimeType || "audio/webm" }), "speech.webm");
           fd.append("lang", sttLang() === "auto" ? "auto" : lang);
-          fd.append("engine", voicePrefs().engine ?? "local");
+          fd.append("engine", voicePrefs().engine ?? (caps.gemini_stt && !hasLocalStt ? "gemini" : "local"));
           fd.append("ui", lang);
           try {
             const r = await api<{
@@ -206,7 +330,7 @@ export const isNoServerSpeech = (e: unknown) => e instanceof ApiError && e.statu
  * speech starts -> record; ~0.9 s silence -> stop, transcribe on the server, call onUtterance.
  * If the user starts talking while the assistant is speaking, playback stops (barge-in).
  */
-export type HandsFree = { stop: () => void };
+export type HandsFree = { stop: () => void; finishNow?: () => void };
 
 /** How an utterance sounded (measured on this device; nothing leaves it): speaking time, loudness, words. */
 export type VoiceFeatures = { ms: number; rms: number; words: number };
@@ -230,11 +354,10 @@ export function openVoiceWebSocket(lang: string, onPartial: (res: any) => void):
   try {
     const t = getTokens();
     if (!t || typeof WebSocket === "undefined") return null;
-    const wsBase = API.replace(/^http/, "ws");
     const prof = getProfile()?.id;
     const qs = new URLSearchParams({ token: t.access_token, lang: sttLang() === "auto" ? "auto" : lang, ui: lang });
     if (prof) qs.set("profile_id", prof);
-    const ws = new WebSocket(`${wsBase}/voice/stream?${qs.toString()}`);
+    const ws = new WebSocket(wsUrl(`/voice/stream?${qs.toString()}`));
     let open = false;
     ws.onopen = () => {
       open = true;
@@ -264,7 +387,61 @@ export async function startHandsFree(lang: string, opts: {
   silence?: SilenceConfig;
 }): Promise<HandsFree> {
   if (spokenRoute() || voicePrefs().engine === "gemini_transcribe") return startGeminiHandsFree(lang, opts);
-  const cfg = opts.silence ?? DEFAULT_SILENCE_CONFIG;
+  const caps = await getVoiceCapabilities();
+  const hasLocalStt = !!(caps.stt_local?.indic_conformer || caps.stt_local?.faster_whisper);
+  const chosenEngine = voicePrefs().engine ?? "local";
+  const hasCloudEngine = chosenEngine !== "local" && (caps.cloud_voices?.includes(chosenEngine) || caps.gemini_stt);
+  let effectiveEngine: string = chosenEngine;
+  if (!hasLocalStt && !hasCloudEngine) {
+    const c = await api<{ active: string[] }>("/consents").catch(() => ({ active: [] as string[] }));
+    const geminiAllowed = !!caps.gemini_stt && (c.active.includes("cloud_llm_live") || c.active.includes("cloud_speech"));
+    if (geminiAllowed) {
+      return startGeminiHandsFree(lang, opts);
+    }
+    if (browserRecognitionAvailable()) {
+      // Continuous browser SpeechRecognition fallback when no local or consented cloud STT exists
+      const Ctor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const sr: SR = new Ctor();
+      sr.lang = BCP[lang] ?? lang;
+      sr.interimResults = true;
+      sr.continuous = true;
+      let stopped = false;
+      opts.onState("listening");
+      sr.onresult = (e: any) => {
+        if (stopped) return;
+        let interim = "";
+        let finalSeg = "";
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const r = e.results[i];
+          if (r.isFinal) finalSeg += r[0].transcript + " ";
+          else interim += r[0].transcript;
+        }
+        if (isSpeaking() && (interim || finalSeg).trim()) {
+          const spokenBefore = lastSpoken?.text ?? "";
+          stopSpeaking();
+          opts.onBargeIn?.(spokenBefore);
+        }
+        if (interim.trim()) opts.onPartial?.(interim.trim(), interim.trim());
+        const clean = finalSeg.trim();
+        if (clean) opts.onUtterance(clean, lang);
+      };
+      sr.onerror = (e: any) => {
+        if (!stopped && e?.error !== "no-speech" && e?.error !== "aborted") opts.onError(e);
+      };
+      sr.onend = () => {
+        if (!stopped) { try { sr.start(); } catch { /* ignore */ } }
+      };
+      sr.start();
+      return {
+        stop: () => {
+          stopped = true;
+          try { sr.stop(); } catch { /* ignore */ }
+          opts.onState("idle");
+        },
+      };
+    }
+  }
+  const cfg = opts.silence ?? getSilenceConfig();
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
   const ctx = new AudioContext();
   const wake = () => { if (ctx.state === "suspended") ctx.resume().catch(() => {}); };
@@ -320,7 +497,7 @@ export async function startHandsFree(lang: string, opts: {
       const fd = new FormData();
       fd.append("file", blob, "speech.webm");
       fd.append("lang", sttLang() === "auto" ? "auto" : lang);
-      fd.append("engine", voicePrefs().engine ?? "local");
+      fd.append("engine", effectiveEngine === "local" && caps.gemini_stt && !hasLocalStt ? "gemini" : effectiveEngine);
       fd.append("ui", lang);
       try {
         const res = await api<{
@@ -422,6 +599,7 @@ export async function startHandsFree(lang: string, opts: {
   opts.onState("listening");
   requestAnimationFrame(tick);
   return {
+    finishNow: flushTurn,
     stop: () => {
       stopped = true;
       if (rec) rec.stop();
@@ -452,13 +630,53 @@ export function readPage(lang: string) {
 }
 
 export function isSpeaking(): boolean {
-  return (!!audio && !audio.paused) || (typeof speechSynthesis !== "undefined" && speechSynthesis.speaking);
+  return (!!audio && !audio.paused) || (typeof speechSynthesis !== "undefined" && speechSynthesis.speaking && !speechSynthesis.paused);
+}
+
+export function isSpeechPaused(): boolean {
+  return (!!audio && audio.paused && audio.currentTime > 0 && !audio.ended) ||
+    (typeof speechSynthesis !== "undefined" && speechSynthesis.paused);
+}
+
+export function pauseSpeaking() {
+  if (audio && !audio.paused) audio.pause();
+  if (typeof speechSynthesis !== "undefined" && speechSynthesis.speaking && !speechSynthesis.paused) {
+    speechSynthesis.pause();
+  }
+}
+
+export function resumeSpeaking() {
+  if (audio && audio.paused && !audio.ended) audio.play().catch(() => {});
+  if (typeof speechSynthesis !== "undefined" && speechSynthesis.paused) {
+    speechSynthesis.resume();
+  }
+}
+
+let _segmentEpoch = 0;
+let _activeSection: string | null = null;
+const _sectionListeners = new Set<(sectionId: string | null) => void>();
+function notifyActiveSection(id: string | null) {
+  _activeSection = id;
+  for (const fn of _sectionListeners) fn(id);
+}
+export function subscribeActiveSection(fn: (sectionId: string | null) => void): () => void {
+  _sectionListeners.add(fn);
+  fn(_activeSection);
+  return () => { _sectionListeners.delete(fn); };
 }
 
 export function stopSpeaking() {
-  audio?.pause();
+  _segmentEpoch += 1;
+  notifyActiveSection(null);
+  if (audio) {
+    audio.pause();
+    audio.currentTime = 0;
+  }
   audio = null;
   if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
+  _speakingAbort?.();
+  _speakingAbort = null;
+  notifySpeaking(false);
 }
 
 let lastSpoken: { text: string; lang: string; bcp: string } | null = null;
@@ -473,8 +691,10 @@ export function repeatLast(): boolean {
 /** Speech speed from Settings (Display prefs, stored per device). */
 function speechRate(): number {
   try {
-    const r = JSON.parse(localStorage.getItem("sushrut.prefs") || "{}").rate;
-    return r === "slow" ? 0.8 : r === "fast" ? 1.2 : 1;
+    const prefs = JSON.parse(localStorage.getItem("sushrut.prefs") || "{}");
+    const base = prefs.rate === "slow" ? 0.8 : prefs.rate === "fast" ? 1.2 : 1;
+    const preset = voicePrefs().silencePreset;
+    return preset === "elderly" ? Math.min(base, 0.86) : base;
   } catch { return 1; }
 }
 
@@ -519,9 +739,14 @@ type VoicePrefs = {
   spoken?: boolean;  // mic → Transcribe Live → English answer → speak back in the heard language
   playback?: "device" | "gemini_tts";
   voiceCare?: boolean;  // opt-in: learn the usual speaking pace / energy on this device and notice tiredness  // listening / read-aloud engine (cloud ones need the cloud_voice consent)
+  silencePreset?: "patient" | "elderly" | "standard";
 };
 export function voicePrefs(): VoicePrefs {
   try { return JSON.parse(localStorage.getItem("sushrut.voice") || "{}"); } catch { return {}; }
+}
+export function getSilenceConfig(): SilenceConfig {
+  const preset = voicePrefs().silencePreset ?? "patient";
+  return SILENCE_PRESETS[preset] ?? DEFAULT_SILENCE_CONFIG;
 }
 /** Spoken questions use Transcribe Live, the Settings answer model in English, then playback in the heard language. */
 export function spokenRoute(): boolean {
@@ -537,8 +762,10 @@ export function sttLang(): string {
 
 /** Best device voice for a language: the person's choice, else Indian English / the language's Indian voice,
  *  else any voice of that language (English: anything but en-GB when another exists). */
+const _sessionVoiceCache = new Map<string, string>();
+
 export function pickVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechSynthesisVoice | null {
-  const chosen = voicePrefs().voices?.[lang];
+  const chosen = voicePrefs().voices?.[lang] ?? _sessionVoiceCache.get(lang);
   const byUri = chosen && voices.find((v) => v.voiceURI === chosen);
   if (byUri) return byUri;
   const bcp = BCP[lang] ?? lang;
@@ -546,12 +773,16 @@ export function pickVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechS
   const same = voices.filter((v) => v.lang.replace("_", "-").toLowerCase().startsWith(base));
   const exact = same.filter((v) => v.lang.replace("_", "-").toLowerCase() === bcp.toLowerCase());
   const local = (l: SpeechSynthesisVoice[]) => l.find((v) => v.localService) ?? l[0];
-  if (exact.length) return local(exact);
-  if (lang === "en") {
+  let picked: SpeechSynthesisVoice | null = null;
+  if (exact.length) picked = local(exact) ?? null;
+  else if (lang === "en") {
     const notGb = same.filter((v) => !/en[-_]gb/i.test(v.lang));
-    return local(notGb.length ? notGb : same) ?? null;
+    picked = local(notGb.length ? notGb : same) ?? null;
+  } else {
+    picked = local(same) ?? null;
   }
-  return local(same) ?? null;
+  if (picked) _sessionVoiceCache.set(lang, picked.voiceURI);
+  return picked;
 }
 
 export type SpeakOpts = { confidence?: "high" | "medium" | "low" };
@@ -561,13 +792,26 @@ function confidenceTone(o?: SpeakOpts): { rate: number; pitch: number } {
   return o?.confidence === "low" ? { rate: 0.9, pitch: 0.95 } : o?.confidence === "medium" ? { rate: 0.96, pitch: 0.98 } : { rate: 1, pitch: 1 };
 }
 
-export async function speak(text: string, lang: string, _bcp?: string, opts?: SpeakOpts) {
+async function playAudioAndWait(el: HTMLAudioElement): Promise<void> {
+  notifySpeaking(true);
+  await new Promise<void>((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      _speakingAbort = null;
+      notifySpeaking(false);
+      resolve();
+    };
+    _speakingAbort = finish;
+    el.onended = finish;
+    el.onerror = finish;
+    el.play().catch(finish);
+  });
+}
+
+async function _speakOne(clean: string, l: string, opts?: SpeakOpts) {
   const tone = confidenceTone(opts);
-  stopSpeaking();
-  const clean = text.replace(/[*_#>`]/g, "").slice(0, 1400);
-  const l = langOfText(clean, lang);
-  lastSpoken = { text, lang: l, bcp: BCP[l] ?? l };
-  // 0. a cloud voice the person chose (Sarvam / ElevenLabs): falls back to the device voice when unavailable
   const prefs = voicePrefs();
   const playback = prefs.playback ?? (spokenRoute() ? "gemini_tts" : "device");
   if (playback === "gemini_tts") {
@@ -576,7 +820,7 @@ export async function speak(text: string, lang: string, _bcp?: string, opts?: Sp
       audio = new Audio(`data:audio/${r.format === "mp3" ? "mpeg" : "wav"};base64,${r.audio_base64}`);
       audio.playbackRate = speechRate() * tone.rate;
       (audio as any).preservesPitch = true;
-      await audio.play();
+      await playAudioAndWait(audio);
       return;
     } catch { /* the device voice speaks instead */ }
   }
@@ -587,28 +831,95 @@ export async function speak(text: string, lang: string, _bcp?: string, opts?: Sp
       audio = new Audio(`data:audio/${r.format === "mp3" ? "mpeg" : "wav"};base64,${r.audio_base64}`);
       audio.playbackRate = speechRate() * tone.rate;
       (audio as any).preservesPitch = true;
-      await audio.play();
+      await playAudioAndWait(audio);
       return;
     } catch { /* fall through to the device voice */ }
   }
   // 1. the device's own voice (on-device, instant, no data leaves the phone)
   const voice = pickVoice(await deviceVoices(), l);
   if (voice) {
-    const u = new SpeechSynthesisUtterance(clean);
-    u.voice = voice;
-    u.lang = voice.lang;
-    u.rate = 0.95 * speechRate() * tone.rate;
-    u.pitch = (voicePrefs().pitch ?? 1) * tone.pitch;
-    speechSynthesis.speak(u);
+    notifySpeaking(true);
+    await new Promise<void>((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        _speakingAbort = null;
+        notifySpeaking(false);
+        resolve();
+      };
+      _speakingAbort = finish;
+      const u = new SpeechSynthesisUtterance(clean);
+      u.voice = voice;
+      u.lang = voice.lang;
+      u.rate = 0.95 * speechRate() * tone.rate;
+      u.pitch = (voicePrefs().pitch ?? 1) * tone.pitch;
+      u.onend = finish;
+      u.onerror = finish;
+      // Safety timeout if browser speechSynthesis never fires onend
+      setTimeout(finish, Math.max(8000, clean.length * 140));
+      speechSynthesis.speak(u);
+    });
     return;
   }
-  // 2. no device voice for this Indian language: the local server voice (MMS); English is never sent there
-  if (l === "en") return;
-  try {
-    const r = await api<{ audio_base64: string }>("/tts", { method: "POST", body: JSON.stringify({ text: clean, lang: l }) });
-    audio = new Audio(`data:audio/wav;base64,${r.audio_base64}`);
-    audio.playbackRate = speechRate() * tone.rate;
-    (audio as any).preservesPitch = true;
-    await audio.play();
-  } catch { /* nothing can read this language aloud on this device */ }
+  // 2. no device voice for this Indian language: local server MMS or Gemini TTS (English is never sent to MMS)
+  const caps = await getVoiceCapabilities();
+  if (l !== "en" || caps.gemini_tts) {
+    const useEngine = l === "en" ? "gemini" : (caps.tts_local?.available ? undefined : (caps.gemini_tts ? "gemini" : undefined));
+    if (l === "en" && !useEngine) return;
+    try {
+      const r = await api<{ audio_base64: string; format?: string }>("/tts", {
+        method: "POST",
+        body: JSON.stringify(useEngine ? { text: clean, lang: l, engine: useEngine } : { text: clean, lang: l }),
+      });
+      audio = new Audio(`data:audio/${r.format === "mp3" ? "mpeg" : "wav"};base64,${r.audio_base64}`);
+      audio.playbackRate = speechRate() * tone.rate;
+      (audio as any).preservesPitch = true;
+      await playAudioAndWait(audio);
+    } catch { notifySpeaking(false); }
+  }
+}
+
+export async function speak(text: string, lang: string, _bcp?: string, opts?: SpeakOpts) {
+  stopSpeaking();
+  const clean = text.replace(/[*_#>`]/g, "").slice(0, 1400);
+  if (!clean.trim()) return;
+  // Respect locked conversation language; only auto-detect from text if lang is auto/app or empty.
+  const l = !lang || lang === "auto" || lang === "app" ? langOfText(clean, "en") : lang.split("-")[0];
+  lastSpoken = { text, lang: l, bcp: BCP[l] ?? l };
+  await _speakOne(clean, l, opts);
+}
+
+export type SpokenSegment = { section_id: string; text: string };
+
+/** Speak synchronized segments sequentially and notify listeners which screen section is currently spoken. */
+export async function speakSegments(
+  segments: SpokenSegment[],
+  lang: string,
+  _bcp?: string,
+  opts?: SpeakOpts & { onSectionChange?: (sectionId: string | null) => void },
+) {
+  stopSpeaking();
+  const epoch = _segmentEpoch;
+  const cleanSegs = segments
+    .map((s) => ({ section_id: s.section_id, text: (s.text || "").replace(/[*_#>`]/g, "").trim() }))
+    .filter((s) => s.text.length > 0);
+  if (!cleanSegs.length) return;
+  const joined = cleanSegs.map((s) => s.text).join(" ");
+  const l = !lang || lang === "auto" || lang === "app" ? langOfText(joined, "en") : lang.split("-")[0];
+  lastSpoken = { text: joined, lang: l, bcp: BCP[l] ?? l };
+  for (let i = 0; i < cleanSegs.length; i++) {
+    const seg = cleanSegs[i];
+    if (_segmentEpoch !== epoch) break;
+    notifyActiveSection(seg.section_id);
+    opts?.onSectionChange?.(seg.section_id);
+    await _speakOne(seg.text.slice(0, 1200), l, opts);
+    if (i < cleanSegs.length - 1 && _segmentEpoch === epoch) {
+      await new Promise((r) => setTimeout(r, voicePrefs().silencePreset === "elderly" ? 280 : 140));
+    }
+  }
+  if (_segmentEpoch === epoch) {
+    notifyActiveSection(null);
+    opts?.onSectionChange?.(null);
+  }
 }
