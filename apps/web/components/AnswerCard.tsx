@@ -12,7 +12,9 @@ import { Storylines } from "./answer/Storylines";
 import Link from "next/link";
 import { useState } from "react";
 import { bcp47, useI18n, fill } from "@/lib/i18n";
+import { usePrefs } from "@/lib/prefs";
 import { speak } from "@/lib/voice";
+import { AnswerCardV2 } from "./AnswerCardV2";
 import { useSOS } from "./Emergency";
 import { ListenButton } from "./Voice";
 import { api } from "@/lib/api";
@@ -101,9 +103,18 @@ function SaveForDoctor({ text }: { text: string }) {
   );
 }
 
-export function AnswerCard({ a, onFollowUp, onAsk, question, answered }: {
+export function AnswerCard(props: {
   a: any; onFollowUp?: (text: string) => void; onAsk?: (text: string) => void; question?: string;
   answered?: boolean;  // a later turn exists: an old question's buttons would answer the current one, so hide them
+}) {
+  const { prefs } = usePrefs();
+  if ((prefs.chatUi ?? "v2") === "v2") return <AnswerCardV2 {...props} />;
+  return <AnswerCardV1 {...props} />;
+}
+
+function AnswerCardV1({ a, onFollowUp, onAsk, question, answered }: {
+  a: any; onFollowUp?: (text: string) => void; onAsk?: (text: string) => void; question?: string;
+  answered?: boolean;
 }) {
   const { t, lang } = useI18n();
   const [vote, setVote] = useState<"up" | "down" | null>(null);
@@ -120,20 +131,34 @@ export function AnswerCard({ a, onFollowUp, onAsk, question, answered }: {
   const kind: string = s?.kind ?? (conditions.length ? "symptoms" : "general_health");
 
   if (kind === "clarify" && s?.clarify) {
-    // The chat is narrowing things down: one question with large answer buttons (or just say the answer)
+    // Dynamic doctor-patient consultation: ask one focused question at a time until narrowed down
     const c = s.clarify;
+    const stepLabel = c.mode === "negotiate"
+      ? t.yourChoice
+      : lang === "hi"
+        ? `परामर्श · सवाल ${c.step}`
+        : `Consultation · Question ${c.step}`;
     return (
       <article className="space-y-3" aria-label="SushrutAI question">
-        <p className="text-[0.8125rem] font-semibold uppercase tracking-wide text-muted">
-          {c.mode === "negotiate" ? t.yourChoice : fill(t.questionNofM, { n: Math.min(c.step, c.of), m: c.of })}</p>
-        <p className="display max-w-[60ch] text-[1.3125rem] font-bold leading-snug whitespace-pre-line">{c.question.replace(/ • /g, "\n• ")}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand-soft/45 px-2.5 py-0.5 text-[0.75rem] font-semibold text-brand">
+            <Stethoscope aria-hidden className="h-3.5 w-3.5" />
+            {stepLabel}
+          </span>
+          {typeof c.plausible_count === "number" && c.plausible_count > 3 && (
+            <span className="text-[0.75rem] font-medium text-muted">
+              {lang === "hi" ? "संभावित कारण सीमित कर रहे हैं" : "Narrowing possibilities"}
+            </span>
+          )}
+        </div>
+        <p className="display max-w-[60ch] text-[1.25rem] font-bold leading-snug whitespace-pre-line">{c.question.replace(/ • /g, "\n• ")}</p>
         <SavedFacts facts={a.saved_facts} />
         {!answered && (
           <>
             <div className="flex flex-wrap gap-2">
               {c.options.map((o: any) => (
                 <button key={o.value} type="button" onClick={() => onAsk?.(o.label)}
-                  className={`btn min-h-14 px-5 text-[1.0625rem] ${o.value === "yes" || o.value === "more" ? "btn-primary" : "btn-outline"}`}>{o.label}</button>
+                  className={`btn min-h-12 px-4 text-[0.95rem] ${o.value === "yes" || o.value === "more" ? "btn-primary" : "btn-outline"}`}>{o.label}</button>
               ))}
             </div>
             <p className="text-[0.875rem] text-muted">{t.orJustSay}</p>
@@ -155,13 +180,35 @@ export function AnswerCard({ a, onFollowUp, onAsk, question, answered }: {
     );
   }
 
+  const stage = a.clinical?.consultation_stage as string | undefined;
+  const stageLabel =
+    stage === "urgent_care" ? (lang === "hi" ? "तुरंत देखभाल सलाह" : "Urgent Care Guidance")
+    : stage === "gathering_history" ? (lang === "hi" ? "परामर्श · लक्षण समझ रहे हैं" : "Consultation · Understanding Symptoms")
+    : stage === "evaluating" ? (lang === "hi" ? "आकलन और संभावित कारण" : "Assessment & Possibilities")
+    : stage === "care_plan" ? (lang === "hi" ? "देखभाल और अगले कदम" : "Care Plan & Next Steps")
+    : null;
+
   return (
     <article className="space-y-4" aria-label="SushrutAI answer">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {stageLabel && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand-soft/45 px-2.5 py-0.5 text-[0.75rem] font-semibold text-brand">
+            <Stethoscope aria-hidden className="h-3.5 w-3.5" />
+            {stageLabel}
+          </span>
+        )}
+      </div>
       {top && <UrgencyBanner urgency={top} specialist={s?.specialist} />}
       {a.clinical?.returning_patient && (
         <Banner tone="info" title={t.returningPatientNote}>
           {a.clinical.prior_encounter_summary && <p>{a.clinical.prior_encounter_summary}</p>}
         </Banner>
+      )}
+      {s?.clinical_recap && (
+        <p className="rounded-[12px] border border-border/70 bg-surface-2/70 px-3 py-2 text-[0.875rem] text-muted">
+          <span className="font-semibold text-text">{lang === "hi" ? "अभी तक समझा: " : "What I've understood: "}</span>
+          {s.clinical_recap}
+        </p>
       )}
 
       <ReplyText text={rich} terms={terms} label={t.whenToSeeDoctor} />
@@ -175,7 +222,8 @@ export function AnswerCard({ a, onFollowUp, onAsk, question, answered }: {
         ) : (
           <DoNow care={s?.tips} watch={s?.watch_for} question={question} symptomatic={false} defaultOpen />
         )}
-        <NextSteps specialist={s?.specialist} tests={s?.suggested_tests} urgent={!!top && top !== "self_care"} />
+        <NextSteps specialist={s?.specialist} tests={s?.suggested_tests} urgent={!!top && top !== "self_care"}
+          routing={a.clinical?.specialist_routing} investigations={a.clinical?.investigations} />
         {s?.nutrition?.length > 0 && (
           <AnswerSection id="food" icon={Utensils} title={t.nutrition} defaultOpen={false} summary={s.nutrition.length}>
             <ul className="list-disc space-y-0.5 ps-6">{s.nutrition.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul>
@@ -192,25 +240,75 @@ export function AnswerCard({ a, onFollowUp, onAsk, question, answered }: {
         </div>
       )}
 
-      {!answered && a.clinical?.followup_question && (
-        <section className="rounded-[16px] border-2 border-brand/40 bg-brand-soft/30 p-3.5">
-          <h3 className="mb-1 flex items-center gap-1.5 font-bold text-brand">
-            <ClipboardList aria-hidden className="h-5 w-5" />{t.prioritizedQuestion}
-          </h3>
-          <p className="text-[1.0625rem] font-semibold leading-snug">{a.clinical.followup_question.question}</p>
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            <button type="button" onClick={() => onFollowUp?.(a.clinical.followup_question.question)}
-              className="btn btn-primary min-h-12">{t.replyToQuestion}</button>
-          </div>
+      {a.clinical?.followup_question && (() => {
+        const fq = a.clinical.followup_question;
+        const qStr = String(fq.question || "");
+        const ansType = fq.answer_type as string | undefined;
+        const isYesNo = ansType === "yes_no" || (
+          /^(?:are|is|do|does|did|have|has|was|were|will|would|could|can|with\b|when it starts|since |क्या|আপনার কি|এর সাথে কি)/i.test(qStr.trim()) &&
+          !/\b(?:roughly when|when did|how much|how long|where exactly|which timeline)\b/i.test(qStr)
+        );
+        const isDuration = ansType === "duration";
+        const isSeverity = ansType === "severity";
+        const durationChips = lang === "hi"
+          ? ["आज से", "2–3 दिन से", "1 हफ़्ते से ज़्यादा"]
+          : ["Since today", "2–3 days", "More than a week"];
+        const severityChips = lang === "hi"
+          ? ["हल्का", "मध्यम", "तेज़ / गंभीर"]
+          : ["Mild", "Moderate", "Severe"];
+        return (
+          <section className={`rounded-[16px] p-3.5 ${answered ? "border border-border bg-surface-2/60" : "border-2 border-brand/40 bg-brand-soft/30"}`}>
+            <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+              <h3 className={`flex items-center gap-1.5 font-bold ${answered ? "text-muted" : "text-brand"}`}>
+                <ClipboardList aria-hidden className="h-5 w-5" />{t.prioritizedQuestion}
+              </h3>
+              {answered && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-ok-soft px-2.5 py-0.5 text-[0.75rem] font-semibold text-ok">
+                  <Check aria-hidden className="h-3.5 w-3.5" />Answered
+                </span>
+              )}
+            </div>
+            <p className="text-[1.0625rem] font-semibold leading-snug">{qStr}</p>
+            {fq.why_asking && (
+              <p className="mt-1 text-[0.8125rem] text-muted">{fq.why_asking}</p>
+            )}
+            {!answered && (
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {isYesNo && (
+                  <>
+                    <button type="button" onClick={() => onAsk?.(t.yes)} className="btn btn-primary min-h-12 px-4">{t.yes}</button>
+                    <button type="button" onClick={() => onAsk?.(t.no)} className="btn btn-outline min-h-12 px-4">{t.no}</button>
+                    <button type="button" onClick={() => onAsk?.(t.unsure)} className="btn btn-outline min-h-12 px-4">{t.unsure}</button>
+                  </>
+                )}
+                {isDuration && durationChips.map((lbl) => (
+                  <button key={lbl} type="button" onClick={() => onAsk?.(lbl)} className="btn btn-outline min-h-12 px-4">{lbl}</button>
+                ))}
+                {isSeverity && severityChips.map((lbl) => (
+                  <button key={lbl} type="button" onClick={() => onAsk?.(lbl)} className="btn btn-outline min-h-12 px-4">{lbl}</button>
+                ))}
+                <button type="button" onClick={() => onFollowUp?.("")}
+                  className="btn btn-outline min-h-12">{t.replyToQuestion}</button>
+              </div>
+            )}
+          </section>
+        );
+      })()}
+
+      {s?.doctor_note && (
+        <section className="rounded-[14px] border border-info/30 bg-info-soft/40 p-3 text-[0.875rem]">
+          <p className="font-semibold text-info">{lang === "hi" ? "डॉक्टर को दिखाते समय यह बताएं" : "What to mention to your doctor"}</p>
+          <p className="mt-0.5 text-text">{s.doctor_note}</p>
         </section>
       )}
 
-      {s?.follow_up_questions?.length > 0 && (!a.clinical?.followup_question || s.follow_up_questions.length > 1) && (
+      {s?.follow_up_questions?.length > 0 && (answered || !a.clinical?.followup_question) && (
         <section>
           <h3 className="mb-1.5 flex items-center gap-1.5 font-semibold"><ClipboardList aria-hidden className="h-5 w-5" />{t.followUps}</h3>
           <ul className="space-y-1.5">
             {s.follow_up_questions
               .filter((q: string) => q !== a.clinical?.followup_question?.question)
+              .slice(0, 1)
               .map((q: string, i: number) => (
               <li key={i}>
                 <button onClick={() => onFollowUp?.(q)} className="min-h-12 w-full rounded-[12px] border-[1.5px] border-border-input bg-surface px-3 py-2 text-start">

@@ -17,10 +17,10 @@ export function AnswerSection({ id, icon: Icon, title, summary, defaultOpen = tr
       <h3>
         <button type="button" aria-expanded={open} aria-controls={body}
           onClick={() => setPrefs({ sections: { ...(prefs.sections ?? {}), [id]: !open } })}
-          className="flex min-h-12 w-full items-center gap-2.5 rounded-[18px] px-3.5 py-2 text-start hover:bg-surface-2">
+          className="flex min-h-12 w-full flex-wrap items-center gap-x-2.5 gap-y-1 rounded-[18px] px-3 py-2 text-start hover:bg-surface-2">
           <span aria-hidden className="well grid h-8 w-8 shrink-0 place-items-center rounded-full"><Icon className="h-[18px] w-[18px]" /></span>
-          <span className="flex-1 font-semibold">{title}</span>
-          {summary != null && <span className="text-[0.875rem] font-normal text-muted">{summary}</span>}
+          <span className="min-w-[120px] flex-1 font-semibold leading-snug">{title}</span>
+          {summary != null && <span className="shrink-0 whitespace-nowrap text-[0.75rem] font-normal text-muted">{summary}</span>}
           <ChevronDown aria-hidden className={`h-5 w-5 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
       </h3>

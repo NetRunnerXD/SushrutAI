@@ -57,7 +57,7 @@ export function ReplyText({ text, terms = [], label }: { text: string; terms?: s
   }
   let pi = 0, li = 0;
   return (
-    <div className="max-w-[68ch] space-y-3">
+    <div className="w-full space-y-3">
       <p className="display text-[1.375rem] font-bold leading-snug"><Inline text={lead} terms={terms} /></p>
       {order.map((k, i) => k === "p" ? (
         <p key={i} className="text-[1.0625rem] leading-[1.7]"><Inline text={paras[pi++].join(" ")} terms={terms} /></p>

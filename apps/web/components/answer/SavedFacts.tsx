@@ -1,6 +1,6 @@
 "use client";
 
-import { BookmarkCheck, X } from "lucide-react";
+import { Database, X } from "lucide-react";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -20,14 +20,15 @@ export function SavedFacts({ facts }: { facts?: Saved[] }) {
     window.dispatchEvent(new Event("sushrut:data-changed"));
   };
   return (
-    <div role="status" aria-label={t.savingFacts} className="flex flex-wrap items-center gap-2">
-      <span className="inline-flex items-center gap-1.5 text-[0.8125rem] font-semibold text-muted">
-        <BookmarkCheck aria-hidden className="h-4 w-4 text-ok" />{t.savingFacts}:</span>
+    <div role="status" aria-label={t.savingFacts} className="flex flex-wrap items-center gap-2 rounded-[12px] border border-ok/35 bg-ok-soft/30 px-3 py-2">
+      <span className="inline-flex items-center gap-1.5 text-[0.8125rem] font-bold text-ok">
+        <Database aria-hidden className="h-3.5 w-3.5" />{t.savingFacts}:</span>
       {shown.map((f) => (
-        <span key={f.id} className="inline-flex items-center gap-1 rounded-full border border-ok/40 bg-ok-soft py-0.5 ps-3 pe-1 text-[0.875rem] font-semibold text-text">
-          {display(f, t)}
+        <span key={f.id} className="inline-flex items-center gap-1.5 rounded-full border border-ok/45 bg-surface py-0.5 ps-2.5 pe-1 text-[0.8125rem] font-semibold text-text shadow-[var(--rim)]">
+          <span className="rounded-full bg-ok-soft px-1.5 py-0.5 text-[0.68rem] font-bold uppercase text-ok">{f.kind}</span>
+          <span>{display(f, t)}</span>
           <button type="button" onClick={() => undo(f.id)} aria-label={`${t.undoFact}: ${display(f, t)}`}
-            className="grid h-7 w-7 place-items-center rounded-full text-muted hover:bg-surface hover:text-danger"><X aria-hidden className="h-3.5 w-3.5" /></button>
+            className="grid h-6 w-6 place-items-center rounded-full text-muted hover:bg-danger-soft hover:text-danger"><X aria-hidden className="h-3.5 w-3.5" /></button>
         </span>
       ))}
     </div>
