@@ -1,6 +1,6 @@
 "use client";
 
-import { API, api, ApiError, getProfile, getTokens } from "./api";
+import { API, api, ApiError, getProfile, getTokens, reportServiceFailure } from "./api";
 import { DEFAULT_SILENCE_CONFIG, type SilenceConfig } from "./orchestrator";
 
 /**
@@ -60,11 +60,11 @@ async function startGeminiRecording(lang: string): Promise<Recorder> {
   let latest = "";
   let finish: (s: string) => void = () => {};
   const done = new Promise<string>((res) => { finish = res; });
-  const listenAs = spokenRoute() ? "auto" : lang;
+  const listenAs = lang && lang !== "auto" && lang !== "app" ? lang : (spokenRoute() ? "auto" : lang);
   const handle = await startGeminiLive({
     mode: "transcribe", lang: listenAs,
     onEvent: (ev) => {
-      if (ev.lang) setHeardLang(ev.lang.split("-")[0]);
+      if (ev.lang && (!lang || lang === "auto" || lang === "app")) setHeardLang(ev.lang.split("-")[0]);
       if ((ev.type === "interim" || ev.type === "final") && ev.text) {
         latest = ev.text;
         heard.onPartial?.(ev.text);
@@ -95,11 +95,12 @@ async function startGeminiHandsFree(lang: string, opts: {
 }): Promise<HandsFree> {
   const { startGeminiLive } = await import("./geminiLive");
   opts.onState("listening");
-  const listenAs = spokenRoute() ? "auto" : lang;
+  const specificLang = !!lang && lang !== "auto" && lang !== "app";
+  const listenAs = specificLang ? lang : (spokenRoute() ? "auto" : lang);
   const handle = await startGeminiLive({
     mode: "transcribe", lang: listenAs,
     onEvent: (ev) => {
-      const heardLang = (ev.lang || lang).split("-")[0];
+      const heardLang = specificLang ? lang : (ev.lang || lang).split("-")[0];
       if (ev.type === "interim" && ev.text) {
         if (isSpeaking()) { stopSpeaking(); opts.onBargeIn?.(lastSpoken?.text ?? ""); }
         opts.onPartial?.(ev.text, ev.text);
@@ -435,6 +436,102 @@ export async function startHandsFree(lang: string, opts: {
 // ---------------------------------------------------------------- TTS
 let audio: HTMLAudioElement | null = null;
 
+export const SPEECH_STATE_EVENT = "sushrut:speech";
+export type SpeechStatus = {
+  speaking: boolean;
+  lang?: string;
+  gender?: "female" | "male";
+  engine?: string;
+  caption?: string;
+  progress?: number;
+};
+
+export type AudioCueKind =
+  | "listen_start"
+  | "listen_stop"
+  | "speak_start"
+  | "send"
+  | "receive"
+  | "thinking_pause"
+  | "gentle_prompt"
+  | "barge_in_ack"
+  | "emergency"
+  | "error";
+
+let cueCtx: AudioContext | null = null;
+/** Gentle synthesized Web Audio cues for accessibility & Elderly Mode speaking states. */
+export function playAudioCue(kind: AudioCueKind, opts?: { elderly?: boolean }) {
+  if (typeof window === "undefined") return;
+  if (voicePrefs().audioCues === false) return;
+  try {
+    const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!Ctx) return;
+    cueCtx = cueCtx ?? new Ctx();
+    if (cueCtx.state === "suspended") cueCtx.resume().catch(() => {});
+    const now = cueCtx.currentTime;
+    const elderly = opts?.elderly ?? isElderlySpeechMode();
+    const pitchScale = elderly ? 0.78 : 1.0;
+    const durScale = elderly ? 1.25 : 1.0;
+    const attack = elderly ? 0.03 : 0.015;
+    const tone = (freq: number, offset: number, dur: number, vol = 0.055) => {
+      if (!cueCtx) return;
+      const start = now + offset * durScale;
+      const d = dur * durScale;
+      const osc = cueCtx.createOscillator();
+      const gain = cueCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq * pitchScale, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(vol, start + Math.min(attack, d * 0.45));
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + d);
+      osc.connect(gain);
+      gain.connect(cueCtx.destination);
+      osc.start(start);
+      osc.stop(start + d + 0.015);
+    };
+    if (kind === "listen_start") { tone(523.25, 0, 0.075); tone(659.25, 0.065, 0.095); }
+    else if (kind === "listen_stop") { tone(587.33, 0, 0.065); tone(440.0, 0.055, 0.085); }
+    else if (kind === "speak_start") { tone(698.46, 0, 0.08, 0.04); }
+    else if (kind === "send") { tone(587.33, 0, 0.055, 0.035); tone(783.99, 0.05, 0.075, 0.035); }
+    else if (kind === "receive") { tone(659.25, 0, 0.06, 0.032); tone(880.0, 0.055, 0.09, 0.03); }
+    else if (kind === "thinking_pause") { tone(440.0, 0, 0.14, 0.028); }
+    else if (kind === "gentle_prompt") { tone(440.0, 0, 0.09, 0.04); tone(523.25, 0.09, 0.12, 0.04); }
+    else if (kind === "barge_in_ack") { tone(392.0, 0, 0.06, 0.042); tone(493.88, 0.055, 0.08, 0.04); }
+    else if (kind === "emergency") {
+      tone(587.33, 0, 0.1, 0.07); tone(783.99, 0.11, 0.12, 0.07);
+      tone(587.33, 0.28, 0.1, 0.07); tone(783.99, 0.39, 0.14, 0.07);
+    }
+    else if (kind === "error") { tone(329.63, 0, 0.08, 0.05); tone(261.63, 0.09, 0.1, 0.05); }
+  } catch { /* audio cues are best-effort */ }
+}
+
+/** Clean user/voice text before sending: collapse extra spaces/blank lines while keeping Indic punctuation intact. */
+export function normalizeChatText(raw: string): string {
+  return raw
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function splitCaptionSentences(text: string): { text: string; start: number; end: number }[] {
+  const out: { text: string; start: number; end: number }[] = [];
+  const re = /[^.!?।\n]+(?:[.!?।\n]+|$)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const s = m[0].trim();
+    if (s) out.push({ text: s, start: m.index, end: m.index + m[0].length });
+  }
+  return out.length ? out : [{ text: text.trim(), start: 0, end: text.length }];
+}
+
+function emitSpeechState(detail: SpeechStatus) {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent<SpeechStatus>(SPEECH_STATE_EVENT, { detail }));
+  }
+}
+
 /** Read the page's main content: [data-speak] regions if the page marks them, else headings, paragraphs and list
  *  items of <main> (not navigation, buttons, forms or anything marked data-speak-skip). */
 export function readPage(lang: string) {
@@ -459,6 +556,7 @@ export function stopSpeaking() {
   audio?.pause();
   audio = null;
   if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
+  emitSpeechState({ speaking: false });
 }
 
 let lastSpoken: { text: string; lang: string; bcp: string } | null = null;
@@ -512,6 +610,10 @@ export function deviceVoices(): Promise<SpeechSynthesisVoice[]> {
 
 type VoicePrefs = {
   voices?: Record<string, string>; pitch?: number;
+  gender?: "female" | "male";
+  localTts?: "auto" | "kokoro" | "parler" | "mms";
+  audioCues?: boolean;  // gentle audio chimes on listen start/stop & playback (default on)
+  captions?: boolean;   // live closed captions while speaking aloud (default on)
   autoLang?: boolean;   // detect the spoken language each time (off: the app language is used, faster and lighter)
   handsFree?: boolean;  // keep listening between answers on every page (on by default)
   engine?: "local" | "sarvam" | "elevenlabs" | "gemini_transcribe";
@@ -535,9 +637,12 @@ export function sttLang(): string {
   return voicePrefs().autoLang ? "auto" : "app";
 }
 
-/** Best device voice for a language: the person's choice, else Indian English / the language's Indian voice,
- *  else any voice of that language (English: anything but en-GB when another exists). */
-export function pickVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechSynthesisVoice | null {
+const _FEMALE_VOICE_RE = /\b(female|woman|zira|aria|jenny|neerja|heera|kalpana|swara|aditi|raveena|samantha|victoria|karen|veena|lekha|susan|hazel|libby|sonia|natasha|tessa|moira|kanya|google us english)\b/i;
+const _MALE_VOICE_RE = /\b(male|man|david|mark|george|ravi|prabhat|hemant|madhur|daniel|alex|ryan|guy|oliver|thomas|rishi|aaron|james)\b/i;
+
+/** Best device voice for a language: the person's choice, else Indian English / the language's Indian voice
+ *  matching the preferred gender (female/male), else any voice of that language. */
+export function pickVoice(voices: SpeechSynthesisVoice[], lang: string, gender: "female" | "male" = voicePrefs().gender ?? "female"): SpeechSynthesisVoice | null {
   const chosen = voicePrefs().voices?.[lang];
   const byUri = chosen && voices.find((v) => v.voiceURI === chosen);
   if (byUri) return byUri;
@@ -545,7 +650,15 @@ export function pickVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechS
   const base = bcp.slice(0, 2).toLowerCase();
   const same = voices.filter((v) => v.lang.replace("_", "-").toLowerCase().startsWith(base));
   const exact = same.filter((v) => v.lang.replace("_", "-").toLowerCase() === bcp.toLowerCase());
-  const local = (l: SpeechSynthesisVoice[]) => l.find((v) => v.localService) ?? l[0];
+  const genderRe = gender === "male" ? _MALE_VOICE_RE : _FEMALE_VOICE_RE;
+  const oppRe = gender === "male" ? _FEMALE_VOICE_RE : _MALE_VOICE_RE;
+  const local = (l: SpeechSynthesisVoice[]) =>
+    l.find((v) => v.localService && genderRe.test(v.name))
+    ?? l.find((v) => genderRe.test(v.name))
+    ?? l.find((v) => v.localService && !oppRe.test(v.name))
+    ?? l.find((v) => !oppRe.test(v.name))
+    ?? l.find((v) => v.localService)
+    ?? l[0];
   if (exact.length) return local(exact);
   if (lang === "en") {
     const notGb = same.filter((v) => !/en[-_]gb/i.test(v.lang));
@@ -554,11 +667,47 @@ export function pickVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechS
   return local(same) ?? null;
 }
 
+async function playAudioPayload(r: { audio_base64: string; format?: string; engine?: string }, lang: string, gender: "female" | "male", rate: number, sourceText = "") {
+  const sentences = splitCaptionSentences(sourceText);
+  audio = new Audio(`data:audio/${r.format === "mp3" ? "mpeg" : "wav"};base64,${r.audio_base64}`);
+  audio.playbackRate = rate;
+  (audio as any).preservesPitch = true;
+  audio.onplay = () => {
+    playAudioCue("speak_start");
+    emitSpeechState({ speaking: true, lang, gender, engine: r.engine, caption: sentences[0]?.text, progress: 0 });
+  };
+  audio.ontimeupdate = () => {
+    if (!audio || !audio.duration || !Number.isFinite(audio.duration)) return;
+    const progress = Math.min(1, Math.max(0, audio.currentTime / audio.duration));
+    const idx = Math.min(sentences.length - 1, Math.floor(progress * sentences.length));
+    emitSpeechState({ speaking: true, lang, gender, engine: r.engine, caption: sentences[idx]?.text, progress });
+  };
+  audio.onended = () => emitSpeechState({ speaking: false });
+  audio.onerror = () => {
+    playAudioCue("error");
+    emitSpeechState({ speaking: false });
+    reportServiceFailure({ service: "Speech Playback", reason: "Audio playback failed", hint: "Try another voice engine in Settings." });
+  };
+  try {
+    await audio.play();
+  } catch (e: any) {
+    playAudioCue("error");
+    emitSpeechState({ speaking: false });
+    reportServiceFailure({ service: "Speech Playback", reason: e?.message || "Browser blocked audio playback" });
+  }
+}
+
 export type SpeakOpts = { confidence?: "high" | "medium" | "low" };
 /** Confidence in the voice: a steady pace for a confident answer; slightly slower and softer when unsure (the
  *  written "not a diagnosis" line always stays). */
+function isElderlySpeechMode(): boolean {
+  try { return typeof window !== "undefined" && window.localStorage.getItem("sushrut.speechMode") === "elderly"; }
+  catch { return false; }
+}
+
 function confidenceTone(o?: SpeakOpts): { rate: number; pitch: number } {
-  return o?.confidence === "low" ? { rate: 0.9, pitch: 0.95 } : o?.confidence === "medium" ? { rate: 0.96, pitch: 0.98 } : { rate: 1, pitch: 1 };
+  const base = o?.confidence === "low" ? { rate: 0.9, pitch: 0.95 } : o?.confidence === "medium" ? { rate: 0.96, pitch: 0.98 } : { rate: 1, pitch: 1 };
+  return isElderlySpeechMode() ? { rate: +(base.rate * 0.88).toFixed(2), pitch: base.pitch } : base;
 }
 
 export async function speak(text: string, lang: string, _bcp?: string, opts?: SpeakOpts) {
@@ -568,47 +717,84 @@ export async function speak(text: string, lang: string, _bcp?: string, opts?: Sp
   const l = langOfText(clean, lang);
   lastSpoken = { text, lang: l, bcp: BCP[l] ?? l };
   // 0. a cloud voice the person chose (Sarvam / ElevenLabs): falls back to the device voice when unavailable
-  const prefs = voicePrefs();
+  let prefs = voicePrefs();
+  if (!prefs.gender) {
+    try {
+      const s = await api<{ tts_voice_gender?: "female" | "male"; tts_engine?: "auto" | "kokoro" | "parler" | "mms" }>("/me/settings");
+      prefs = { ...prefs, gender: s.tts_voice_gender ?? "female", localTts: s.tts_engine ?? "auto" };
+      setVoicePrefs({ gender: prefs.gender, localTts: prefs.localTts });
+    } catch { /* offline or unauthenticated */ }
+  }
+  const gender = prefs.gender ?? "female";
   const playback = prefs.playback ?? (spokenRoute() ? "gemini_tts" : "device");
   if (playback === "gemini_tts") {
     try {
-      const r = await api<{ audio_base64: string; format?: string }>("/tts", { method: "POST", body: JSON.stringify({ text: clean, lang: l, engine: "gemini" }) });
-      audio = new Audio(`data:audio/${r.format === "mp3" ? "mpeg" : "wav"};base64,${r.audio_base64}`);
-      audio.playbackRate = speechRate() * tone.rate;
-      (audio as any).preservesPitch = true;
-      await audio.play();
+      const r = await api<{ audio_base64: string; format?: string; engine?: string }>("/tts", { method: "POST", body: JSON.stringify({ text: clean, lang: l, engine: "gemini", gender }) });
+      await playAudioPayload(r, l, gender, speechRate() * tone.rate, clean);
       return;
     } catch { /* the device voice speaks instead */ }
   }
   const engine = prefs.engine ?? "local";
   if (engine === "sarvam" || engine === "elevenlabs") {
     try {
-      const r = await api<{ audio_base64: string; format?: string }>("/tts", { method: "POST", body: JSON.stringify({ text: clean, lang: l, engine }) });
-      audio = new Audio(`data:audio/${r.format === "mp3" ? "mpeg" : "wav"};base64,${r.audio_base64}`);
-      audio.playbackRate = speechRate() * tone.rate;
-      (audio as any).preservesPitch = true;
-      await audio.play();
+      const r = await api<{ audio_base64: string; format?: string; engine?: string }>("/tts", { method: "POST", body: JSON.stringify({ text: clean, lang: l, engine, gender }) });
+      await playAudioPayload(r, l, gender, speechRate() * tone.rate, clean);
       return;
     } catch { /* fall through to the device voice */ }
   }
+  // 0.5 premium local Kokoro / Parler when explicitly selected for English or Hindi too
+  if ((l === "en" || l === "hi") && (prefs.localTts === "kokoro" || prefs.localTts === "parler")) {
+    try {
+      const r = await api<{ audio_base64: string; engine?: string }>("/tts", { method: "POST", body: JSON.stringify({ text: clean, lang: l, gender }) });
+      await playAudioPayload(r, l, gender, speechRate() * tone.rate, clean);
+      return;
+    } catch { /* fall through to device voice */ }
+  }
   // 1. the device's own voice (on-device, instant, no data leaves the phone)
-  const voice = pickVoice(await deviceVoices(), l);
+  const voice = pickVoice(await deviceVoices(), l, gender);
   if (voice) {
+    const sentences = splitCaptionSentences(clean);
     const u = new SpeechSynthesisUtterance(clean);
     u.voice = voice;
     u.lang = voice.lang;
     u.rate = 0.95 * speechRate() * tone.rate;
     u.pitch = (voicePrefs().pitch ?? 1) * tone.pitch;
+    u.onstart = () => {
+      playAudioCue("speak_start");
+      emitSpeechState({ speaking: true, lang: l, gender, engine: voice.name, caption: sentences[0]?.text, progress: 0 });
+    };
+    u.onboundary = (ev) => {
+      const ci = ev.charIndex ?? 0;
+      const hit = sentences.find((s) => ci >= s.start && ci < s.end) ?? sentences[sentences.length - 1];
+      const progress = clean.length ? Math.min(1, ci / clean.length) : 0;
+      emitSpeechState({ speaking: true, lang: l, gender, engine: voice.name, caption: hit?.text, progress });
+    };
+    u.onend = () => emitSpeechState({ speaking: false });
+    u.onerror = (ev) => {
+      playAudioCue("error");
+      emitSpeechState({ speaking: false });
+      if (ev.error !== "interrupted" && ev.error !== "canceled") {
+        reportServiceFailure({ service: "Device Speech", reason: `Speech synthesis failed (${ev.error || "unavailable"})` });
+      }
+    };
     speechSynthesis.speak(u);
     return;
   }
-  // 2. no device voice for this Indian language: the local server voice (MMS); English is never sent there
-  if (l === "en") return;
+  // 2. no device voice for this language: the local server voice (Kokoro / Parler / MMS)
+  if (l === "en") {
+    playAudioCue("error");
+    emitSpeechState({ speaking: false });
+    reportServiceFailure({ service: "Device Speech", reason: "No English voice is available on this device." });
+    return;
+  }
   try {
-    const r = await api<{ audio_base64: string }>("/tts", { method: "POST", body: JSON.stringify({ text: clean, lang: l }) });
-    audio = new Audio(`data:audio/wav;base64,${r.audio_base64}`);
-    audio.playbackRate = speechRate() * tone.rate;
-    (audio as any).preservesPitch = true;
-    await audio.play();
-  } catch { /* nothing can read this language aloud on this device */ }
+    const r = await api<{ audio_base64: string; engine?: string }>("/tts", { method: "POST", body: JSON.stringify({ text: clean, lang: l, gender }) });
+    await playAudioPayload(r, l, gender, speechRate() * tone.rate, clean);
+  } catch (e: any) {
+    playAudioCue("error");
+    emitSpeechState({ speaking: false });
+    if (e instanceof ApiError && e.status === 501) {
+      reportServiceFailure({ service: "Speech Service", reason: e.message || "No voice available for this language", status: 501 });
+    }
+  }
 }

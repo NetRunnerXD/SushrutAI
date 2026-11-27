@@ -78,7 +78,8 @@ export function VoiceLoopProvider({ children }: { children: ReactNode }) {
       else if (intent === "emergency") control("emergency");
       return;
     }
-    if (intent && !(actionsRef.current.pending && (intent === "yes" || intent === "no"))) { control(intent); return; }
+    if (intent && !(question.current && !actionsRef.current.pending && (intent === "yes" || intent === "no"))
+        && !(actionsRef.current.pending && (intent === "yes" || intent === "no"))) { control(intent); return; }
     if (await actionsRef.current.handle(text)) return;  // yes / no for a pending action, readings, navigation, …
     if (question.current) { question.current(text); return; }
     try { sessionStorage.setItem("sushrut.pendingAsk", text); } catch { /* ignore */ }

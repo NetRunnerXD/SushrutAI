@@ -7,7 +7,7 @@ import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 
 import { bcp47, fill, useI18n } from "@/lib/i18n";
 import { api, switchProfile } from "@/lib/api";
 import {
-  browserRecognitionAvailable, heard as heardMeta, isNoServerSpeech, isSpeaking, readPage, setHeardLang, repeatLast, speak, startBrowserRecognition, startServerRecording,
+  browserRecognitionAvailable, heard as heardMeta, isNoServerSpeech, isSpeaking, playAudioCue, readPage, setHeardLang, repeatLast, speak, startBrowserRecognition, startServerRecording,
   stopSpeaking, type Recorder,
 } from "@/lib/voice";
 import { matchCommand } from "@/lib/voiceCommands";
@@ -192,6 +192,7 @@ export function useVoiceCapture(onText: (text: string) => void, { confirm = true
   const [interim, setInterim] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [levels, setLevels] = useState<number[]>([]);
+  const [quietMic, setQuietMic] = useState(false);
   const [heard, setHeard] = useState("");
   const [left, setLeft] = useState<number | null>(null); // countdown seconds; null = paused / not counting
   const rec = useRef<Recorder | null>(null);
@@ -199,22 +200,30 @@ export function useVoiceCapture(onText: (text: string) => void, { confirm = true
   const onTextRef = useRef(onText);
   onTextRef.current = onText;
 
-  // live waveform while listening
+  // live waveform while listening + quiet-mic audio signal cue
   useEffect(() => {
-    if (state !== "listening" || !rec.current?.level || prefersReducedMotion()) { setLevels([]); return; }
-    let raf = 0, last = 0;
+    if (state !== "listening" || !rec.current?.level || prefersReducedMotion()) { setLevels([]); setQuietMic(false); return; }
+    let raf = 0, last = 0, quietFrames = 0;
     const ring: number[] = Array(BARS).fill(0);
     const tick = (now: number) => {
       if (now - last > 70) {
-        ring.push(rec.current?.level?.() ?? 0);
+        const lvl = rec.current?.level?.() ?? 0;
+        ring.push(lvl);
         ring.shift();
         setLevels([...ring]);
+        if (lvl < 0.018) {
+          quietFrames++;
+          if (quietFrames === 28) setQuietMic(true);
+        } else {
+          if (quietFrames >= 28) setQuietMic(false);
+          quietFrames = 0;
+        }
         last = now;
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => { cancelAnimationFrame(raf); setQuietMic(false); };
   }, [state]);
 
   const reset = useCallback(() => { setHeard(""); setLeft(null); setState("idle"); }, []);
@@ -244,8 +253,10 @@ export function useVoiceCapture(onText: (text: string) => void, { confirm = true
       else if (browserRecognitionAvailable()) rec.current = startBrowserRecognition(bcp47(lang), setInterim);
       else throw new Error("unsupported");
       setState("listening");
+      playAudioCue("listen_start");
     } catch (e: any) {
       setState("error");
+      playAudioCue("error");
       setError(e?.name === "NotAllowedError" ? "permission" : "failed");
     }
   }, [lang]);
@@ -253,6 +264,7 @@ export function useVoiceCapture(onText: (text: string) => void, { confirm = true
   const toggle = useCallback(async () => {
     if (state !== "listening") return start();
     setState("transcribing");
+    playAudioCue("listen_stop");
     try {
       const text = (await rec.current!.stop())?.trim();
       setInterim("");
@@ -271,7 +283,7 @@ export function useVoiceCapture(onText: (text: string) => void, { confirm = true
   }, [state, start, cmds, actions, confirm]);
 
   return {
-    state, interim, error, levels, heard, left, notice: cmds.notice, toggle, actions,
+    state, interim, error, levels, quietMic, heard, left, notice: cmds.notice, toggle, actions,
     edit: (s: string) => { setHeard(s); setLeft(null); },
     pause: () => setLeft(null),
     accept, retry: () => { reset(); start(); }, cancel: reset,
@@ -517,8 +529,15 @@ export function ListenButton({ onClick, label }: { onClick: () => void; label: s
   const stop = () => { stopSpeaking(); setBusy(false); };
   return (
     <button onClick={() => (busy ? stop() : (setBusy(true), onClick()))} aria-pressed={busy}
-      className={`inline-flex min-h-12 items-center gap-1.5 rounded-full border-[1.5px] px-3.5 text-[0.9375rem] font-semibold shadow-[var(--rim)] ${busy ? "border-brand bg-brand-soft" : "border-border-input bg-surface hover:bg-surface-2"}`}>
-      {busy ? <Square aria-hidden className="h-4 w-4" fill="currentColor" /> : <Volume2 aria-hidden className="h-4 w-4" />}
+      className={`inline-flex min-h-12 items-center gap-2 rounded-full border-[1.5px] px-3.5 text-[0.9375rem] font-semibold shadow-[var(--rim)] transition-all ${busy ? "voice-active-ring border-brand bg-brand-soft text-brand" : "border-border-input bg-surface hover:bg-surface-2"}`}>
+      {busy ? (
+        <>
+          <span aria-hidden className="eq-bars text-brand">
+            <span /><span /><span /><span />
+          </span>
+          <Square aria-hidden className="h-3.5 w-3.5 fill-current" />
+        </>
+      ) : <Volume2 aria-hidden className="h-4 w-4" />}
       {busy ? t.stop : label}
     </button>
   );
