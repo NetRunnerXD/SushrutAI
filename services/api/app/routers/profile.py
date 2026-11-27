@@ -34,7 +34,9 @@ VITAL_RANGES = {"bp_sys": (50, 260), "bp_dia": (30, 160), "hr": (25, 250), "spo2
 
 
 class ProfileIn(BaseModel):
+    name: str | None = Field(None, max_length=120)
     dob: date | None = None
+    age: int | None = Field(None, ge=0, le=125)
     sex: Literal["male", "female", "intersex"] | None = None
     gender: str | None = Field(None, max_length=40)
     blood_group: BloodGroup | None = None
@@ -61,6 +63,7 @@ class ProfileIn(BaseModel):
 
 
 _ENC_FIELDS = {
+    "name": "name_enc",
     "dob": "dob_enc",
     "gender": "gender_enc",
     "emergency_contact": "emergency_contact_enc",
@@ -69,6 +72,17 @@ _ENC_FIELDS = {
     "hydration": "hydration_enc",
 }
 _ENC_JSON = {"surgeries": "surgeries_enc", "family_history": "family_history_enc"}
+
+
+def _age_from_dob(dob_raw: str | None) -> int | None:
+    if not dob_raw:
+        return None
+    try:
+        d = date.fromisoformat(dob_raw[:10])
+    except ValueError:
+        return None
+    today = date.today()
+    return max(0, today.year - d.year - ((today.month, today.day) < (d.month, d.day)))
 
 
 async def _profile_out(db: AsyncSession, cu: CurrentUser) -> dict:
@@ -84,6 +98,15 @@ async def _profile_out(db: AsyncSession, cu: CurrentUser) -> dict:
         for f, col in _ENC_JSON.items():
             v = cu.cipher.dec(getattr(p, col))
             out[f] = json.loads(v) if v else []
+        age = _age_from_dob(out.get("dob"))
+        if age is None and p.age_years is not None:
+            age = int(p.age_years)
+        out["age"] = age
+        out["minor_patient"] = age is not None and age < 18
+    else:
+        out["name"] = None
+        out["age"] = None
+        out["minor_patient"] = False
     w = (await db.scalars(select(Vital).where(Vital.user_id == cu.id, Vital.type == "weight")
                           .order_by(Vital.measured_at.desc()))).first()
     if w and p and p.height_cm:
@@ -103,9 +126,18 @@ async def put_profile(body: ProfileIn, cu: CurrentUser = Depends(current_user), 
     data = body.model_dump(exclude_unset=True)
     if "preferred_lang" in data:
         cu.user.preferred_lang = data.pop("preferred_lang")
+    if "age" in data:
+        age_val = data.pop("age")
+        p.age_years = age_val
+        if age_val is not None and "dob" not in data and p.dob_enc is not None:
+            # Keep age accurate if the user explicitly corrected their age when DOB was previously set.
+            p.dob_enc = None
     for k, v in data.items():
         if k in _ENC_FIELDS:
-            setattr(p, _ENC_FIELDS[k], cu.cipher.enc(v.isoformat() if isinstance(v, date) else v))
+            clean_v = v.strip() if isinstance(v, str) and k == "name" else v
+            setattr(p, _ENC_FIELDS[k], cu.cipher.enc(clean_v.isoformat() if isinstance(clean_v, date) else clean_v))
+            if k == "dob" and isinstance(v, date):
+                p.age_years = _age_from_dob(v.isoformat())
         elif k in _ENC_JSON:
             setattr(p, _ENC_JSON[k], cu.cipher.enc(json.dumps(v or [], ensure_ascii=False)))
         else:

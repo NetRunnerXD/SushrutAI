@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import json
+import logging
+import re
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -108,6 +109,7 @@ class MessageIn(BaseModel):
     generation_id: str | None = None
     spoken_prefix: str | None = None  # assistant prefix spoken aloud before patient barge-in
     force_english: bool = False  # spoken question: answer in English, then translate back to the heard language
+    preferred_response_language: Lang | None = None  # explicit response language preference when set
     context_scope: Literal["chat", "record"] = "chat"  # chat: this thread only. record: read and update the patient record
 
 
@@ -515,6 +517,10 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
     images = [b for _, b in attachments]
     context, hint_kind = await resolve_refs(db, cu, body.context_refs) if body.context_refs else ("", None)
     text = body.text.strip() or {"hi": "इस तस्वीर में क्या दिख रहा है?"}.get(body.lang, "What does this show?")
+    from app.speech.normalize import normalize_banglish_hinglish, resolve_conversation_language
+    vm = body.voice_meta or {}
+    raw_asr_conf = vm.get("asr_confidence")
+    asr_conf = float(raw_asr_conf) if isinstance(raw_asr_conf, (int, float)) else None
 
     client_history = [h.model_dump() for h in body.history]
     if store:
@@ -530,9 +536,29 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
                 await db.commit()
             history = stored[:len(client_history)]
         else:
-            history = stored
+            history = stored or client_history
     else:
         history = client_history
+
+    # Conversation Language Lock: enforce session language lock across text & voice (persists even when store=False).
+    from app.services.language_consistency import LanguageConsistencyService
+
+    lang_svc = LanguageConsistencyService()
+    prior_locked_lang = s.lang if history else lang_svc.get_locked(sid)
+    lang_decision = lang_svc.resolve(
+        text,
+        session_id=sid,
+        db_locked_lang=prior_locked_lang,
+        ui_lang=body.lang,
+        explicit_preferred_lang=("en" if body.force_english else body.preferred_response_language),
+        asr_confidence=asr_conf,
+    )
+    lang_res = lang_decision.resolution
+    effective_lang = lang_decision.active_language
+    if store and (not history or lang_decision.switched) and s.lang != effective_lang:
+        s.lang = effective_lang
+        await db.commit()
+    clinical_text = lang_svc.normalize_for_clinical(text, lang_decision)
 
     async def gen():
         full_cloud_allowed.set(allow_full)
@@ -542,20 +568,20 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
                 # A medicine strip / bottle: "what is this?", "is this what the doctor gave?" → salt + story
                 structured = None
                 if MED_PHOTO_Q.search(text):
-                    structured = await medicine_photo_reply(wdb, cu, attachments[0][1], text, body.lang, model_pref)
+                    structured = await medicine_photo_reply(wdb, cu, attachments[0][1], text, effective_lang, model_pref)
                 if structured is None:
                     att_kind = await detect_attachment(attachments[0][1])
                     if att_kind == "photo":
-                        structured = await medicine_photo_reply(wdb, cu, attachments[0][1], text, body.lang, model_pref)
+                        structured = await medicine_photo_reply(wdb, cu, attachments[0][1], text, effective_lang, model_pref)
                     if structured is None:
-                        structured = attachment_reply(att_kind, attachments[0][0], body.lang)
+                        structured = attachment_reply(att_kind, attachments[0][0], effective_lang)
                 if structured is not None:
                     reply = structured["reply"]
                     payload = {"reply": reply, "structured": structured, "citations": [], "disclaimer": "",
-                               "stored": store}
+                               "stored": store, "language": effective_lang, "language_meta": lang_decision.as_dict()}
                     if store:
-                        wdb.add(Message(session_id=sid, role="user", content_enc=cu.cipher.enc(text), lang=body.lang))
-                        m = Message(session_id=sid, role="assistant", content_enc=cu.cipher.enc(reply), lang=body.lang,
+                        wdb.add(Message(session_id=sid, role="user", content_enc=cu.cipher.enc(text), lang=effective_lang))
+                        m = Message(session_id=sid, role="assistant", content_enc=cu.cipher.enc(reply), lang=effective_lang,
                                     structured=structured, citations=[], safety={})
                         wdb.add(m)
                         await wdb.commit()
@@ -575,14 +601,183 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
                     yield _sse("cancelled", {"generation_id": body.generation_id})
                     yield _sse("done", {})
                     return
+            # Family Health Memory: resolve mentioned relative (e.g. 'Amar baba') and isolate their profile
+            from app.clinical.family_memory import (
+                get_member_current_user,
+                get_member_memory_summary,
+                resolve_family_member,
+                update_member_health_from_text,
+            )
+            from app.clinical.pipeline_12layer import run_12layer_clinical_pipeline
+            from app.db import scope_to
+
+            active_cu = cu
+            family_ctx: dict | None = None
+            try:
+                fam_res = await resolve_family_member(
+                    wdb, cu, text, lang=effective_lang, auto_create_if_missing=store
+                )
+                if fam_res.matched and fam_res.member_id:
+                    mcu = await get_member_current_user(wdb, cu, fam_res.member_id)
+                    if mcu is not None:
+                        active_cu = mcu
+                        if store:
+                            await update_member_health_from_text(wdb, active_cu, text, source=body.channel)
+                        family_ctx = await get_member_memory_summary(
+                            wdb, active_cu, name=fam_res.member_name or "", relation=fam_res.relation or ""
+                        )
+                        await scope_to(wdb, cu.id, cu.account_id)
+                elif store and body.context_scope == "record":
+                    await update_member_health_from_text(wdb, cu, text, source=body.channel)
+            except Exception:  # noqa: BLE001 — family memory enrichment must never block chat
+                log.exception("family memory resolution failed")
+
+            # Patient Identification & Correction (name/age extraction with consent-safe storage)
+            from app.services.adaptive_questions import AdaptiveQuestionService
+            from app.services.consultation_state_machine import ConsultationStage, consultation_state_machine
+            from app.services.emergency_triage import EmergencyTriageService
+            from app.services.patient_profile import PatientProfileService, PatientSnapshot
+            from app.services.patient_summary import PatientSummaryService, build_7_sections
+            from app.services.voice_text_sync import VoiceTextSynchronizationService
+
+            prof_svc = PatientProfileService()
+            c_state = consultation_state_machine.get_or_create(sid)
+            was_unlocked = c_state.recommendations_unlocked
+            patient_snap = PatientSnapshot(user_id=active_cu.id, preferred_lang=effective_lang)
+            id_meta: dict = {"updated": [], "is_correction": False, "pure_identity_turn": False}
+            try:
+                await scope_to(wdb, active_cu.id, active_cu.account_id)
+                patient_snap, id_meta = await prof_svc.apply_identity_from_turn(
+                    wdb, active_cu, text, session_id=sid, allow_persist=store,
+                    pending_field=c_state.pending_profile_field,
+                )
+                await scope_to(wdb, cu.id, cu.account_id)
+            except Exception:  # noqa: BLE001
+                log.exception("patient identity extraction failed")
+                await scope_to(wdb, cu.id, cu.account_id)
+
+            from app.llm import intent as intent_mod
+            from app.safety.red_flags import check as check_red_flag
+            recent_u = [h["content"] for h in history if h.get("role") == "user"][-2:]
+            em_pre = EmergencyTriageService().assess(
+                text, lang=effective_lang, age_years=patient_snap.age,
+                recent_turns=recent_u,
+            )
+            rf_pre = check_red_flag(" ".join(recent_u + [text]), effective_lang, patient_snap.age)
+            any_emergency_pre = bool(em_pre.triggered or (rf_pre.triggered and rf_pre.kind in ("emergency", "mental_health")))
+            missing_prof = prof_svc.missing_profile_fields(patient_snap)
+            is_fixed_conv = bool(intent_mod._phrase_intent(text))
+            is_symptom_like = bool(
+                c_state.pending_profile_field
+                or re.search(
+                    r"(?i)\b(?:pain|ache|fever|cough|cold|headache|throat|sore|dizzy|vomit|nausea|rash|itch|bleed|weak|tired|swell|diarrhea|constipation|acidity|burn|infection)\b|"
+                    r"ব্যথা|জ্বর|কাশি|গলা|সর্দি|মাথা|বমি|শ্বাস|ফোলা|দুর্বল|পায়খানা|পায়খানা|চুলকানি|র‍্যাশ|दर्द|बुखार|खांसी|सिर|उल्टी|पेट",
+                    text or "",
+                )
+            )
+            need_profile_gate = (
+                orchestrator.CHAT_DIFFERENTIAL
+                and not any_emergency_pre
+                and not images
+                and not context
+                and not was_unlocked
+                and not is_fixed_conv
+                and not body.generation_id
+                and is_symptom_like
+                and bool(missing_prof)
+            )
+            if (id_meta.get("pure_identity_turn") or need_profile_gate) and not any_emergency_pre and not images:
+                next_field, q_text = prof_svc.next_missing_profile_question(patient_snap, lang=effective_lang)
+                c_state.pending_profile_field = next_field
+                if next_field and q_text:
+                    if effective_lang == "bn":
+                        ack_prefix = "ধন্যবাদ। " if id_meta.get("updated") else ""
+                    elif effective_lang == "hi":
+                        ack_prefix = "धन्यवाद। " if id_meta.get("updated") else ""
+                    else:
+                        ack_prefix = "Thank you. " if id_meta.get("updated") else ""
+                    id_reply = f"{ack_prefix}{q_text}".strip()
+                    stage_after = consultation_state_machine.transition_turn(sid, is_identity_only=True, has_missing_profile=True)
+                else:
+                    c_state.pending_profile_field = None
+                    if effective_lang == "bn":
+                        id_reply = f"ধন্যবাদ, {patient_snap.name or ''}—আপনার প্রাথমিক তথ্য সংরক্ষিত হয়েছে। {prof_svc.ready_prompt_for('bn')}".strip()
+                    elif effective_lang == "hi":
+                        id_reply = f"धन्यवाद, {patient_snap.name or ''}—आपकी जानकारी सहेज ली गई है। {prof_svc.ready_prompt_for('hi')}".strip()
+                    else:
+                        id_reply = f"Thank you, {patient_snap.name or ''} — I have noted your details. {prof_svc.ready_prompt_for('en')}".strip()
+                    c_state.advance_to(ConsultationStage.ACTIVE_CONSULTATION)
+                    stage_after = c_state.as_dict()
+
+                id_structured: dict = {
+                    "kind": "general_health",
+                    "reply": id_reply,
+                    "tips": [],
+                    "follow_up_questions": [q_text] if q_text else [],
+                    "recommendation_ready": False,
+                    "spoken_response": id_reply,
+                    "spoken_segments": [{"section_id": "acknowledgement", "text": id_reply}],
+                    "sync_sections": [{"id": "acknowledgement", "title": "Patient Identification", "screen_text": id_reply, "spoken_text": id_reply, "items": []}],
+                    "language": effective_lang,
+                    "language_meta": lang_decision.as_dict(),
+                }
+                id_payload: dict = {
+                    "reply": id_reply, "structured": id_structured, "citations": [], "disclaimer": "",
+                    "provider": "sushrut_profile", "model": "deterministic", "tier": "L", "speed": "instant",
+                    "auto": model_pref == "auto", "latency_ms": 1, "stored": store,
+                    "language": effective_lang, "language_meta": lang_decision.as_dict(),
+                    "patient_profile": patient_snap.as_dict(),
+                    "compact_summary": None,
+                    "assessment_panel": None,
+                    "recommendation_ready": False,
+                    "consultation_stage": stage_after,
+                }
+                if store:
+                    wdb.add(Message(session_id=sid, role="user", content_enc=cu.cipher.enc(text), lang=effective_lang))
+                    m = Message(session_id=sid, role="assistant", content_enc=cu.cipher.enc(id_reply), lang=effective_lang,
+                                structured=id_structured, citations=[], safety={})
+                    wdb.add(m)
+                    await wdb.commit()
+                    id_payload["message_id"] = m.id
+                yield _sse("answer", id_payload)
+                yield _sse("done", {})
+                return
+
+            c_state.pending_profile_field = None
+            if orchestrator.CHAT_DIFFERENTIAL and not em_pre.triggered and c_state.followups_asked > c_state.followups_answered:
+                consultation_state_machine.record_followup_answer(sid)
+
+            member_context = ""
+            if family_ctx:
+                known_bits = []
+                if family_ctx.get("age") is not None:
+                    known_bits.append(f"Age {family_ctx['age']}")
+                if family_ctx.get("conditions"):
+                    known_bits.append("Conditions: " + ", ".join(family_ctx["conditions"]))
+                if family_ctx.get("latest_bp"):
+                    known_bits.append(f"Latest BP: {family_ctx['latest_bp']}")
+                if family_ctx.get("medications"):
+                    known_bits.append("Meds: " + ", ".join(family_ctx["medications"]))
+                if family_ctx.get("allergies"):
+                    known_bits.append("Allergies: " + ", ".join(family_ctx["allergies"]))
+                member_context = (
+                    f"[Selected Patient: {family_ctx.get('name')} ({family_ctx.get('relation')}). "
+                    + "; ".join(known_bits)
+                    + ". Do NOT re-ask already known age/conditions/allergies unless confirming a change.]"
+                )
+            combined_context = "\n".join(x for x in (member_context, context) if x).strip()
+
             drafts: asyncio.Queue[str] = asyncio.Queue()
-            task = asyncio.create_task(orchestrator.answer(wdb, cu, text, lang=body.lang, session_id=sid, history=history,
+            await scope_to(wdb, active_cu.id, active_cu.account_id)
+            task = asyncio.create_task(orchestrator.answer(wdb, active_cu, clinical_text, lang=effective_lang, session_id=sid, history=history,
                                                            images=images or None, allow_cloud=allow_cloud,
-                                                           context=context, hint_kind=hint_kind,
+                                                           context=combined_context, hint_kind=hint_kind,
                                                            on_delta=drafts.put_nowait, model_pref=model_pref,
                                                            spoken_prefix=body.spoken_prefix,
                                                            force_english=body.force_english,
-                                                           use_record=body.context_scope == "record"))
+                                                           use_record=body.context_scope == "record",
+                                                           channel=body.channel,
+                                                           patient_snapshot=patient_snap))
             try:
                 # "delta" carries the whole reply written so far (a draft; "answer" replaces it). Only the newest
                 # draft is sent, at most ~8 times a second; a comment line keeps quiet connections open.
@@ -622,40 +817,135 @@ async def post_message(sid: str, body: MessageIn, cu: CurrentUser = Depends(curr
                     yield _sse("cancelled", {"generation_id": body.generation_id})
                     yield _sse("done", {})
                     return
+            await scope_to(wdb, cu.id, cu.account_id)
             if r.red_flag.get("triggered"):
                 yield _sse("red_flag", r.red_flag)
+            cum_ctx = AdaptiveQuestionService().build_context(history, clinical_text, lang=effective_lang)
+            st_dict = r.structured if isinstance(r.structured, dict) else {}
+            is_emergency = bool(r.red_flag.get("triggered") and r.red_flag.get("kind") in ("emergency", "mental_health"))
+            rec_ready = bool(
+                is_emergency
+                or not orchestrator.CHAT_DIFFERENTIAL
+                or (r.kind != "clarify" and st_dict.get("recommendation_ready", True))
+            )
+            assessment_panel = None
+            compact_summary = None
+            sum_svc = PatientSummaryService()
+            if rec_ready:
+                assessment_panel = run_12layer_clinical_pipeline(
+                    cum_ctx.merged_clinical_text or clinical_text,
+                    lang=effective_lang,
+                    patient_id=active_cu.id,
+                    encounter_id=sid,
+                    age_years=family_ctx.get("age") if family_ctx else patient_snap.age,
+                    comorbidities=family_ctx.get("conditions", []) if family_ctx else patient_snap.conditions,
+                    allergies=family_ctx.get("allergies", []) if family_ctx else patient_snap.allergies,
+                )
+            if isinstance(r.structured, dict):
+                r.structured["language_meta"] = lang_decision.as_dict()
+                r.structured["recommendation_ready"] = rec_ready
+                if family_ctx:
+                    r.structured["family_context"] = family_ctx
+            if rec_ready:
+                await scope_to(wdb, active_cu.id, active_cu.account_id)
+                compact_summary = await sum_svc.build_compact_summary(
+                    wdb,
+                    active_cu,
+                    session_id=sid,
+                    latest_user_text=text,
+                    latest_structured=r.structured if isinstance(r.structured, dict) else None,
+                    latest_panel=assessment_panel,
+                    lang=effective_lang,
+                )
+                await scope_to(wdb, cu.id, cu.account_id)
+                if isinstance(r.structured, dict):
+                    r.structured["sections_7"] = build_7_sections(
+                        patient=patient_snap.as_dict(),
+                        compact_summary=compact_summary,
+                        structured=r.structured,
+                        lang=effective_lang,
+                    )
+            stage_state = consultation_state_machine.transition_turn(
+                sid,
+                emergency=is_emergency,
+                symptomatic=(r.kind == "symptoms" or r.kind == "clarify"),
+                followup_asked=bool(r.kind == "clarify" or not rec_ready),
+                complaints=[cum_ctx.chief_complaint] if cum_ctx.chief_complaint else [],
+                has_investigations=bool(st_dict.get("recommended_tests")) if rec_ready else False,
+                has_specialist=bool(st_dict.get("recommended_specialist")) if rec_ready else False,
+                has_summary=bool(compact_summary),
+                recommendation_ready=rec_ready,
+                new_symptom_after_final=bool(was_unlocked and (r.kind == "symptoms" or r.kind == "clarify")),
+            )
             payload = {"reply": r.reply, "structured": r.structured, "citations": r.citations,
                        "disclaimer": r.disclaimer, "provider": r.provider, "model": r.model, "tier": r.tier, "speed": r.speed, "auto": model_pref == "auto",
-                       "latency_ms": r.latency_ms, "stored": store}
+                       "latency_ms": r.latency_ms, "stored": store, "language": effective_lang, "language_meta": lang_decision.as_dict(),
+                       "family_context": family_ctx, "patient_profile": patient_snap.as_dict(),
+                       "assessment_panel": assessment_panel, "compact_summary": compact_summary,
+                       "recommendation_ready": rec_ready,
+                       "consultation_stage": stage_state}
             if store:
-                wdb.add(Message(session_id=sid, role="user", content_enc=cu.cipher.enc(text), lang=body.lang))
-                m = Message(session_id=sid, role="assistant", content_enc=cu.cipher.enc(r.reply), lang=body.lang,
+                wdb.add(Message(session_id=sid, role="user", content_enc=cu.cipher.enc(text), lang=effective_lang))
+                m = Message(session_id=sid, role="assistant", content_enc=cu.cipher.enc(r.reply), lang=effective_lang,
                             structured=r.structured, citations=r.citations, safety={**r.red_flag, "warnings": r.warnings},
                             provider=r.provider, model=r.model, privacy_tier=r.tier, latency_ms=r.latency_ms)
                 wdb.add(m)
                 await wdb.commit()
                 payload["message_id"] = m.id
+                if (r.kind or "") not in MEMORY_SKIP_KINDS:
+                    try:
+                        from app.clinical.conversation_memory import save_conversation_summary
+                        payload["conversation_summary"] = await save_conversation_summary(
+                            wdb,
+                            active_cu,
+                            conversation_id=sid,
+                            user_text=cum_ctx.merged_clinical_text or text,
+                            channel=body.channel,
+                            lang=effective_lang,
+                            pipeline_result=assessment_panel,
+                        )
+                        if compact_summary:
+                            await sum_svc.save_if_consented(
+                                wdb, active_cu, session_id=sid, summary=compact_summary, channel=body.channel, lang=effective_lang
+                            )
+                        await scope_to(wdb, cu.id, cu.account_id)
+                    except Exception:  # noqa: BLE001
+                        log.exception("auto conversation summary save failed")
                 # Health memory: values said in this turn are saved now ("Saving: 101 °F · 2 days", with undo);
                 # symptoms, triggers and medicine responses follow from a small model in the background.
                 if body.context_scope == "record" and r.structured is not None and (r.kind or "") not in MEMORY_SKIP_KINDS:
-                    payload["saved_facts"] = await remember_turn(wdb, cu, text, r.english, sid)
-                if body.context_scope == "record":
+                    await scope_to(wdb, active_cu.id, active_cu.account_id)
+                    payload["saved_facts"] = await remember_turn(wdb, active_cu, text, r.english, sid)
+                    await scope_to(wdb, cu.id, cu.account_id)
+                if body.context_scope == "record" or body.channel == "voice":
                     try:
+                        await scope_to(wdb, active_cu.id, active_cu.account_id)
                         payload["clinical"] = await _persist_clinical_turn(
-                            wdb, cu, sid=sid, body=body, user_text=text, result=r
+                            wdb, active_cu, sid=sid, body=body, user_text=text, result=r
                         )
-                        if payload["clinical"].get("followup_question") and isinstance(r.structured, dict):
+                        await scope_to(wdb, cu.id, cu.account_id)
+                        if rec_ready and payload["clinical"].get("followup_question") and isinstance(r.structured, dict):
                             fq_q = payload["clinical"]["followup_question"]["question"]
                             existing_fqs = list(r.structured.get("follow_up_questions") or [])
                             if fq_q and fq_q not in existing_fqs:
-                                r.structured["follow_up_questions"] = [fq_q] + existing_fqs[:2]
+                                r.structured["follow_up_questions"] = [fq_q] + existing_fqs[:(0 if body.channel == "voice" else 2)]
+                                VoiceTextSynchronizationService().synchronize(
+                                    lang=effective_lang,
+                                    structured=r.structured,
+                                    specialty=r.structured.get("recommended_specialist"),
+                                    investigations={"items": r.structured.get("recommended_tests") or []},
+                                    diet=r.structured.get("diet_and_lifestyle"),
+                                    followup_question=fq_q,
+                                    channel=body.channel,
+                                )
                     except Exception:  # noqa: BLE001 — clinical persistence never breaks delivery of answer
                         log.exception("clinical turn persistence failed")
+                        await scope_to(wdb, cu.id, cu.account_id)
             yield _sse("answer", payload)
             yield _sse("done", {})
             if (store and body.context_scope == "record" and r.structured is not None
                     and (r.kind or "") not in MEMORY_SKIP_KINDS):
-                asyncio.create_task(remember_turn_later(cu, r.english or text, sid))
+                asyncio.create_task(remember_turn_later(active_cu, r.english or text, sid))
 
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})

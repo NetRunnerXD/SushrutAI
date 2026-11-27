@@ -34,13 +34,13 @@ WEB_DIR = ROOT / "apps" / "web"
 COMPOSE = ROOT / "infra" / "docker-compose.yml"
 IS_WIN = os.name == "nt"
 
-API_PORT, WEB_PORT = 8787, 3000  # overridable with --api-port / --web-port
+API_PORT, WEB_PORT, TLS_PORT = 8787, 3000, 3443  # overridable with --api-port / --web-port / --tls-port
 DEFAULT_MODELS = {"LLM_MODEL": "medgemma:4b", "RX_VLM_MODEL": "qwen3-vl:4b-instruct",
                   "EMBED_MODEL": "bge-m3", "GUARD_MODEL": "llama-guard3:1b",
                   "FAST_LLM_MODEL": "llama3.2:3b",  # Settings → Faster / Instant chat (non-symptom questions)
                   "SUGGEST_MODEL": "qwen2.5:0.5b", "SUGGEST_MODEL_INDIC": "gemma3:1b"}  # follow-up suggestion chips (CPU)
 
-COLORS = {"ollama": "35", "db": "34", "api": "36", "web": "32", "main": "33"}
+COLORS = {"ollama": "35", "db": "34", "api": "36", "web": "32", "tls": "34", "main": "33"}
 _print_lock = threading.Lock()
 
 
@@ -250,8 +250,12 @@ def start_api(procs: Procs, reload: bool, lan: list[str]) -> bool:
         return False
     cmd = [str(py), "-m", "uvicorn", "app.main:app", "--port", str(API_PORT), "--log-level", "warning",
            "--host", "0.0.0.0" if lan else "127.0.0.1"]
-    origins = ",".join(dict.fromkeys([f"http://localhost:{WEB_PORT}", f"http://127.0.0.1:{WEB_PORT}", "http://localhost:3000",
-                                      *(f"http://{ip}:{WEB_PORT}" for ip in lan)]))
+    origins = ",".join(dict.fromkeys([
+        f"http://localhost:{WEB_PORT}", f"http://127.0.0.1:{WEB_PORT}", "http://localhost:3000",
+        f"https://localhost:{TLS_PORT}", f"https://127.0.0.1:{TLS_PORT}",
+        *(f"http://{ip}:{WEB_PORT}" for ip in lan),
+        *(f"https://{ip}:{TLS_PORT}" for ip in lan),
+    ]))
     if reload:
         cmd += ["--reload", "--reload-dir", "app"]
     say("api", "starting API (first start loads speech models, ~20 s)")
@@ -275,7 +279,8 @@ def start_web(procs: Procs, prod: bool, lan: list[str]) -> bool:
         return False
     # The browser reaches the API on the same host it opened the app from (localhost here, 192.168.x.y on a
     # phone), so only the port is passed. SUSHRUT_DEV_ORIGINS lets Next's dev server answer other devices.
-    env = {"NEXT_PUBLIC_API_PORT": str(API_PORT), "SUSHRUT_DEV_ORIGINS": ",".join(lan)}
+    dev_origins = list(dict.fromkeys([*lan, *(f"{ip}:{TLS_PORT}" for ip in lan), f"localhost:{TLS_PORT}"]))
+    env = {"NEXT_PUBLIC_API_PORT": str(API_PORT), "SUSHRUT_DEV_ORIGINS": ",".join(dev_origins)}
     if not (WEB_DIR / "node_modules").exists():
         say("web", "installing web dependencies (npm install)")
         if subprocess.run([npm, "install"], cwd=WEB_DIR).returncode != 0:
@@ -293,9 +298,29 @@ def start_web(procs: Procs, prod: bool, lan: list[str]) -> bool:
     return wait_for(lambda: http_ok(f"http://127.0.0.1:{WEB_PORT}/", timeout=30) is not None, 180, "Web app", p)
 
 
+def start_tls(procs: Procs, lan: list[str]) -> bool:
+    if port_open(TLS_PORT):
+        say("tls", f"HTTPS phone proxy already running on :{TLS_PORT}")
+        return True
+    py = API_DIR / ".venv" / ("Scripts/python.exe" if IS_WIN else "bin/python")
+    if not py.exists():
+        return False
+    cmd = [
+        str(py), "-m", "app.lan_tls",
+        "--port", str(TLS_PORT),
+        "--web-port", str(WEB_PORT),
+        "--api-port", str(API_PORT),
+        "--cert-dir", str(ROOT / "data" / "tls"),
+        "--ips", ",".join(lan),
+    ]
+    say("tls", f"starting HTTPS + WSS phone proxy on :{TLS_PORT}")
+    p = procs.start("tls", cmd, API_DIR, env={"PYTHONIOENCODING": "utf-8"})
+    return wait_for(lambda: port_open(TLS_PORT), 20, "HTTPS phone proxy", p)
+
+
 # ---------------------------------------------------------------- main
 def main() -> int:
-    global API_PORT, WEB_PORT
+    global API_PORT, WEB_PORT, TLS_PORT
     ap = argparse.ArgumentParser(description="Start SushrutAI (Ollama, database, API, web app).")
     ap.add_argument("--pull", action="store_true", help="download missing Ollama models before starting")
     ap.add_argument("--prod", action="store_true", help="build and serve the production web app")
@@ -309,8 +334,9 @@ def main() -> int:
                     help="only this PC can open the app (default: phones and other devices on the home network too)")
     ap.add_argument("--api-port", type=int, default=API_PORT, help=f"API port (default {API_PORT})")
     ap.add_argument("--web-port", type=int, default=WEB_PORT, help=f"web app port (default {WEB_PORT})")
+    ap.add_argument("--tls-port", type=int, default=TLS_PORT, help=f"HTTPS phone proxy port (default {TLS_PORT})")
     args = ap.parse_args()
-    API_PORT, WEB_PORT = args.api_port, args.web_port
+    API_PORT, WEB_PORT, TLS_PORT = args.api_port, args.web_port, args.tls_port
 
     if IS_WIN:
         os.system("")  # enable ANSI colours in the Windows console
@@ -338,6 +364,8 @@ def main() -> int:
             ok = start_api(procs, args.reload, lan)
         if ok and not args.no_web:
             ok = start_web(procs, args.prod, lan)
+        if ok and lan and not args.no_web and not args.no_api:
+            ok = start_tls(procs, lan)
         if not ok:
             fail("startup failed — stopping what was started")
             return 1
@@ -346,17 +374,16 @@ def main() -> int:
         if not args.no_web:
             say("main", f"  App      http://localhost:{WEB_PORT}")
             if lan:
-                say("main", f"  \033[1mPhone    http://{lan[0]}:{WEB_PORT}\033[0m   (same Wi-Fi; type it in the phone's browser)")
+                say("main", f"  \033[1mPhone (Voice + All)  https://{lan[0]}:{TLS_PORT}\033[0m   (same Wi-Fi/hotspot)")
+                say("main", f"  Phone (Text only)    http://{lan[0]}:{WEB_PORT}")
             if len(lan) > 1:  # virtual adapters (WSL, hotspot, VPN): only needed if the first address doesn't work
-                say("main", "           other addresses of this PC: " + ", ".join(f"http://{ip}:{WEB_PORT}" for ip in lan[1:]))
+                say("main", "           other HTTPS addresses: " + ", ".join(f"https://{ip}:{TLS_PORT}" for ip in lan[1:]))
         if not args.no_api:
             say("main", f"  API docs http://localhost:{API_PORT}/docs")
         if lan and not args.no_web:
             say("main", "  Notes for phones:")
-            say("main", "   - First time only: if Windows asks, allow Python and Node.js on Private networks; and set "
-                        "this Wi-Fi to 'Private' in Windows settings, or phones can't connect.")
-            say("main", "   - Over plain http:// phone browsers block the microphone, so on a phone type your "
-                        "questions (voice works on this PC).")
+            say("main", "   - For microphone/voice on your phone, open the https:// link above and tap Advanced -> Proceed once (local self-signed cert).")
+            say("main", "   - First time only: if Windows asks, allow Python and Node.js on Private/Public networks.")
         say("main", "  Press Ctrl+C to stop" + ("" if procs.items else " (nothing to stop: all were already running)"))
         if args.check:
             say("main", "check passed — stopping")

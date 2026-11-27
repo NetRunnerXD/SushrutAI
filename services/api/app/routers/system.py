@@ -62,3 +62,11 @@ async def device():
     loaded = await ollama().running() if hasattr(ollama(), "running") else []
     return {**profile(), "ram_free_pct": round(100 * ram_free_fraction()), "speech_models_loaded": speech.loaded(),
             "ollama_loaded": loaded}
+
+
+@router.get("/metrics")
+async def metrics():
+    """Lightweight non-PII latency and reliability telemetry."""
+    from app.telemetry import snapshot
+
+    return snapshot()

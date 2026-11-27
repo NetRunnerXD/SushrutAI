@@ -61,7 +61,7 @@ async def parse_report(body: ReportIn, cu: CurrentUser = Depends(current_user), 
     pref = (await get_settings_row(db, cu.account_id)).model_pref or "balanced"
     model = doc_model_for(pref, "lab_report")
     from app.llm.providers import full_cloud_allowed, gemini, gemini_model_for
-    from app.security.settings import cloud_allowed
+    from app.security.settings import cloud_allowed, get_settings_row
 
     full_cloud_allowed.set(await cloud_allowed(db, cu.account_id, "cloud_llm_full"))
 
@@ -138,12 +138,33 @@ async def analyze_image(body: ImageIn, cu: CurrentUser = Depends(current_user), 
         raise HTTPException(403, "Please accept the privacy notice first")
     b64, doc = await _doc_image_b64(cu, db, body.document_id, max_side=896)
     s = get_settings()
+    from app.llm.providers import full_cloud_allowed, gemini, gemini_model_for
+    from app.security.settings import cloud_allowed, get_settings_row
+
+    pref = (await get_settings_row(db, cu.account_id)).model_pref or "balanced"
+    allow_full = await cloud_allowed(db, cu.account_id, "cloud_llm_full")
+    full_cloud_allowed.set(allow_full)
+
+    async def _vision(prompt_text: str, *, num_predict: int, temp: float = 0.0):
+        try:
+            res = await ollama().chat(s.vlm_model, [{"role": "user", "content": prompt_text}], images=[b64],
+                                      temperature=temp, num_ctx=4096, num_predict=num_predict)
+            return res.text, s.vlm_model
+        except ProviderUnavailable:
+            g_mod = gemini_model_for("gemini" if allow_full else pref)
+            if not g_mod and allow_full and gemini().available:
+                g_mod = s.gemini_model
+            if g_mod:
+                res = await gemini().chat(g_mod, [{"role": "user", "content": prompt_text}], images=[b64],
+                                          temperature=temp, num_predict=num_predict)
+                return res.text, res.model
+            raise
+
     try:
-        m = await ollama().chat(s.vlm_model, [{"role": "user", "content": MODALITY_PROMPT}], images=[b64],
-                                temperature=0.0, num_ctx=2048, num_predict=8)
+        mod_text, _ = await _vision(MODALITY_PROMPT, num_predict=8, temp=0.0)
     except ProviderUnavailable as e:
         raise HTTPException(503, e.hint) from e
-    modality = re.sub(r"[^a-z_]", "", m.text.strip().lower().split()[0] if m.text.strip() else "other")
+    modality = re.sub(r"[^a-z_]", "", mod_text.strip().lower().split()[0] if mod_text.strip() else "other")
     if modality in ("lab_report", "prescription", "document"):
         return {"modality": modality, "supported": False,
                 "message": "This looks like a document. Use 'Prescriptions' or lab-report upload to read it."}
@@ -159,15 +180,14 @@ async def analyze_image(body: ImageIn, cu: CurrentUser = Depends(current_user), 
               "do not recommend medicines. Keep it under 150 words. "
               f"Answer in {lang}." + prompt_block(sc) + (f" The patient asks: {body.question}" if body.question else ""))
     try:
-        d = await ollama().chat(s.vlm_model, [{"role": "user", "content": prompt}], images=[b64],
-                                temperature=0.2, num_ctx=4096, num_predict=400)
+        desc_text, used_model = await _vision(prompt, num_predict=400, temp=0.2)
     except ProviderUnavailable as e:
         raise HTTPException(503, e.hint) from e
     warn = ("MedGemma-4B has limited training on this image type; treat this description as very uncertain."
             if modality in LOW_CONFIDENCE_MODALITIES else None)
-    return {"modality": modality, "supported": True, "description": d.text.strip(), "low_confidence_warning": warn,
+    return {"modality": modality, "supported": True, "description": desc_text.strip(), "low_confidence_warning": warn,
             "screening": for_person(sc, body.lang),
-            "model": s.vlm_model, "advice": "Please get this image reviewed by a radiologist or specialist.",
+            "model": used_model, "advice": "Please get this image reviewed by a radiologist or specialist.",
             "disclaimer": disclaimer(body.lang)}
 
 

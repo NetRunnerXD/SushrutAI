@@ -848,6 +848,118 @@ async def patient_context_full(
         "transcripts": transcripts,
         "facts": facts,
         "safety_alerts": status_data["safety_alerts"],
+        "consultation_summary": {
+            "patient_reported_information": {
+                "chief_complaint": (status_data["active_symptoms"][0]["name"] if status_data["active_symptoms"] else None),
+                "symptoms": [
+                    {
+                        "name": s.get("name"),
+                        "location": s.get("body_part") or s.get("location"),
+                        "duration": s.get("duration") or s.get("onset"),
+                        "severity": s.get("severity"),
+                        "character": s.get("character"),
+                        "progression": s.get("progression"),
+                        "triggers": s.get("triggers") or [],
+                    }
+                    for s in status_data["active_symptoms"]
+                ],
+                "medical_history": status_data["medical_history"] + status_data["conditions"],
+                "current_medications": status_data["medications"],
+                "allergies": status_data["allergies"],
+                "important_negative_findings": [f for f in facts if f.get("fact_key") == "negated_symptom" or f.get("value", {}).get("negated")],
+                "preferred_language": lang,
+            },
+            "ai_generated_clinical_observations": {
+                "note": "AI-generated observations only — NOT a medical diagnosis. Confirm with a registered doctor.",
+                "summary": _dec(cu, latest_assess.summary_enc) if latest_assess else "",
+                "considerations": [
+                    {
+                        "explanation": d.explanation,
+                        "likelihood_band": d.likelihood_band,
+                        "supporting_evidence": _dec_json(cu, d.supporting_evidence_enc, []),
+                        "against_evidence": _dec_json(cu, d.against_evidence_enc, []),
+                    }
+                    for d in diffs
+                ],
+                "red_flags": status_data["safety_alerts"],
+            },
+            "missing_information": (
+                [q.get("reason") or q.get("question") for q in status_data["pending_followups"]]
+                + (_dec_json(cu, latest_assess.missing_evidence_enc, []) if latest_assess else [])
+            ),
+            "next_steps": {
+                "urgent_warning_signs": [
+                    a.get("message") or a.get("title")
+                    for a in status_data["safety_alerts"]
+                    if isinstance(a, dict)
+                ],
+                "recommended_action": status_data["last_recommendation"] or "Consult a registered doctor for personalized evaluation.",
+                "investigations_to_discuss": [
+                    {
+                        "name": iv.name,
+                        "purpose": iv.purpose_category,
+                        "rationale": _dec(cu, iv.rationale_enc) or "",
+                        "limitations": _dec(cu, iv.limitations_enc) or "",
+                    }
+                    for iv in inv_rows
+                ],
+            },
+        },
+    }
+
+
+@router.get("/consultation-summary")
+async def consultation_summary(
+    lang: str = Query(default="en"),
+    encounter_id: str | None = Query(default=None),
+    cu: CurrentUser = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Structured 4-section clinical Consultation Summary separating patient facts from AI observations."""
+    ctx = await patient_context_full(lang=lang, encounter_id=encounter_id, cu=cu, db=db)
+    return {
+        "patient_id": ctx["patient_id"],
+        "disclaimer": ctx["disclaimer"],
+        "consultation_summary": ctx["consultation_summary"],
+    }
+
+
+class CdssEvaluateIn(BaseModel):
+    text: str = Field(min_length=1, max_length=4000)
+    lang: str = "en"
+    age_years: int | None = None
+    pregnant: bool = False
+    comorbidities: list[str] = Field(default_factory=list)
+
+
+@router.post("/cdss-evaluate")
+async def cdss_evaluate(body: CdssEvaluateIn, cu: CurrentUser = Depends(current_user)):
+    """Run specialty classification, MBBS/MD/MS/DM/MCh routing, investigation selection & 9-section CDSS output."""
+    from app.clinical.cdss import build_nine_sections, evaluate_cdss_context
+    from app.safety.red_flags import check as rf_check
+
+    rf = rf_check(body.text, lang=body.lang, age_years=body.age_years)
+    cdss = evaluate_cdss_context(
+        body.text,
+        lang=body.lang,
+        age_years=body.age_years,
+        pregnant=body.pregnant,
+        comorbidities=body.comorbidities,
+        red_flag_triggered=rf.triggered,
+        red_flag_kind=rf.kind,
+    )
+    sections = build_nine_sections(
+        text=body.text,
+        lang=body.lang,
+        structured={"reply": body.text, "possible_conditions": [], "watch_for": rf.messages if rf.triggered else []},
+        cdss=cdss,
+    )
+    return {
+        "patient_id": cu.id,
+        "red_flag": rf.as_dict(),
+        "routing": cdss["routing"].as_dict(),
+        "investigations": cdss["investigations"],
+        "clinical_sections": sections,
     }
 
 
@@ -883,3 +995,116 @@ async def correct_fact_endpoint(
         raise HTTPException(403, str(e))
     except ValueError as e:
         raise HTTPException(409, str(e))
+
+
+class LiveGreetingIn(BaseModel):
+    lang: str = "en"
+    session_id: str | None = None
+
+
+@router.post("/live-greeting")
+async def live_greeting(
+    body: LiveGreetingIn,
+    cu: CurrentUser = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return the exact initial Live Conversation greeting and patient identity/confirmation state."""
+    from app.services.language_consistency import LanguageConsistencyService
+    from app.services.patient_profile import PatientProfileService
+
+    lang = (body.lang or cu.user.preferred_lang or "en").split("-")[0].lower()
+    if body.session_id:
+        LanguageConsistencyService().set_locked(body.session_id, lang)
+    svc = PatientProfileService()
+    snap = await svc.load_snapshot(db, cu, session_id=body.session_id)
+    onboarding = svc.onboarding_prompt(snap, lang=lang)
+    return {
+        "language": lang,
+        "greeting": onboarding["greeting"],
+        "prompt": onboarding["prompt"],
+        "missing_fields": onboarding["missing_fields"],
+        "status": onboarding["status"],
+        "patient": onboarding["patient"],
+        "ready_prompt": svc.ready_prompt_for(lang),
+    }
+
+
+@router.get("/sessions/{sid}/compact-summary")
+async def get_compact_summary(
+    sid: str,
+    lang: str = Query(default="en"),
+    cu: CurrentUser = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return the automatic compact structured consultation summary for session `sid`."""
+    from app.models import ChatSession
+    from app.services.patient_summary import PatientSummaryService
+
+    sess = await db.get(ChatSession, sid)
+    if sess is None or sess.user_id != cu.id:
+        raise HTTPException(404, "Session not found")
+    svc = PatientSummaryService()
+    summary = await svc.build_compact_summary(db, cu, session_id=sid, lang=lang or sess.lang)
+    return {"session_id": sid, "compact_summary": summary}
+
+
+class CompactSummaryPatchIn(BaseModel):
+    patient_name: str | None = Field(None, max_length=120)
+    age: int | None = Field(None, ge=0, le=125)
+    preferred_language: str | None = Field(None, max_length=12)
+    lang: str = "en"
+
+
+@router.patch("/sessions/{sid}/compact-summary")
+async def patch_compact_summary(
+    sid: str,
+    body: CompactSummaryPatchIn,
+    cu: CurrentUser = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Allow the patient to correct their name, age, or preferred language and regenerate the summary."""
+    from app.models import ChatSession, PatientProfile
+    from app.security.consent import active_purposes
+    from app.services.language_consistency import LanguageConsistencyService
+    from app.services.patient_summary import PatientSummaryService
+
+    sess = await db.get(ChatSession, sid)
+    if sess is None or sess.user_id != cu.id:
+        raise HTTPException(404, "Session not found")
+    purposes = await active_purposes(db, cu.account_id)
+    if "core_service" in purposes:
+        p = await db.get(PatientProfile, cu.id) or PatientProfile(user_id=cu.id)
+        if body.patient_name is not None:
+            clean_name = body.patient_name.strip()
+            p.name_enc = cu.cipher.enc(clean_name) if clean_name else None
+        if body.age is not None:
+            p.age_years = body.age
+            p.dob_enc = None
+        if body.preferred_language is not None:
+            clean_lang = body.preferred_language.split("-")[0].lower()
+            cu.user.preferred_lang = clean_lang
+            sess.lang = clean_lang
+            LanguageConsistencyService().set_locked(sid, clean_lang)
+        db.add(p)
+        await db.commit()
+
+    svc = PatientSummaryService()
+    use_lang = (body.preferred_language or body.lang or sess.lang or "en").split("-")[0].lower()
+    summary = await svc.build_compact_summary(db, cu, session_id=sid, lang=use_lang)
+    await svc.save_if_consented(db, cu, session_id=sid, summary=summary, lang=use_lang)
+    return {"session_id": sid, "compact_summary": summary}
+
+
+@router.delete("/sessions/{sid}/compact-summary", status_code=204)
+async def delete_compact_summary(
+    sid: str,
+    cu: CurrentUser = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete the saved consultation summary for session `sid` (privacy erasure)."""
+    enc = (await db.scalars(
+        select(Encounter).where(Encounter.user_id == cu.id, Encounter.chat_session_id == sid)
+    )).first()
+    if enc is not None:
+        enc.summary_enc = None
+        await db.commit()

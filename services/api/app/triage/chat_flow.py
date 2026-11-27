@@ -287,13 +287,14 @@ async def start(db: AsyncSession, cu: CurrentUser, chat_id: str, complaint: str,
                                           "question plan. Be medically accurate and conservative."},
             {"role": "user", "content": engine.build_prompt(seeded, profile, q_lang, _season_hint(date.today()), required)}]
     llm = None
-    # The narrowing questions stay on the local careful model. Gemini and Groq write the final answer only;
-    # their JSON is not the question-plan schema, and a failed plan used to skip the questions entirely.
-    log.info("question plan uses the local model (the chat model is %s)", model_pref)
+    # Prefer the local careful model first; if local Ollama is unavailable and the user consented to cloud,
+    # fall back seamlessly to the selected cloud provider instead of skipping differential questions.
+    log.info("question plan (chat model_pref=%s, allow_cloud=%s)", model_pref, allow_cloud)
     for attempt in (1, 2):
         try:
-            llm = (await clinical_chat(msgs, schema=engine.TRIAGE_SCHEMA, allow_cloud=False,
-                                       num_predict=1400, model_pref="balanced")).json()
+            use_pref = "balanced" if attempt == 1 and model_pref in ("auto", "fast", "instant", "balanced") else model_pref
+            llm = (await clinical_chat(msgs, schema=engine.TRIAGE_SCHEMA, allow_cloud=allow_cloud,
+                                       num_predict=1400, model_pref=use_pref)).json()
             break
         except (ProviderUnavailable, ValueError, KeyError, TypeError) as e:
             log.info("chat question plan unavailable (%s: %s), attempt %s", type(e).__name__, str(e)[:120], attempt)

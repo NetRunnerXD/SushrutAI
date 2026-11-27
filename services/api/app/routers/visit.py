@@ -69,11 +69,11 @@ async def visit_summary(days: int = 90, cu: CurrentUser = Depends(current_user),
     p = await db.get(PatientProfile, cu.id)
     dob = c.dec(p.dob_enc) if p and p.dob_enc else None
 
-    name = None
+    name = c.dec(p.name_enc) if p and p.name_enc else None
     if cu.is_member:
         link = (await db.scalars(select(HouseholdMember).where(HouseholdMember.user_id == cu.account_id,
                                                                HouseholdMember.member_id == cu.id))).first()
-        name = cu.account_cipher.dec(link.name_enc) if link else None
+        name = (cu.account_cipher.dec(link.name_enc) if link else None) or name
 
     vitals = list(await db.scalars(select(Vital).where(Vital.user_id == cu.id).order_by(Vital.measured_at.desc())))
     latest: dict[str, Vital] = {}
@@ -136,7 +136,7 @@ async def visit_summary(days: int = 90, cu: CurrentUser = Depends(current_user),
     story = await _health_story(db, cu, since)
     out = {
         "generated_at": utcnow(), "period_days": days, "checkins": checkins, **story,
-        "patient": {"name": name, "age": _age(dob), "sex": p.sex if p else None,
+        "patient": {"name": name, "age": _age(dob) if _age(dob) is not None else (p.age_years if p else None), "sex": p.sex if p else None,
                     "blood_group": p.blood_group if p else None, "height_cm": p.height_cm if p else None,
                     "weight_kg": weight, "bmi": round(b, 1) if b else None,
                     "bmi_category": bmi_category(b) if b else None,

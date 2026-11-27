@@ -299,6 +299,8 @@ async def export_fhir(cu: CurrentUser = Depends(current_user), db: AsyncSession 
     p = await db.get(PatientProfile, pid)
     patient = {"resourceType": "Patient", "id": pid}
     if p:
+        if pname := cu.cipher.dec(p.name_enc):
+            patient["name"] = [{"text": pname}]
         if dob := cu.cipher.dec(p.dob_enc):
             patient["birthDate"] = dob
         if p.sex in ("male", "female"):

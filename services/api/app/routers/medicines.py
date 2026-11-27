@@ -55,6 +55,43 @@ async def search(q: str = Query(min_length=2, max_length=120), db: AsyncSession 
     return {"query": q, "results": await service.search(db, q)}
 
 
+@router.get("/knowledge")
+async def medicine_knowledge(q: str = Query(min_length=2, max_length=120), db: AsyncSession = Depends(get_db)):
+    """Structured educational medicine monograph (generic/brand, class, interactions, pregnancy, India Rx status)."""
+    from app.services.medicine_knowledge import MedicineKnowledgeService
+    return await MedicineKnowledgeService().lookup(db, q)
+
+
+@router.get("/compare")
+async def compare_medicines(
+    a: str = Query(min_length=2, max_length=120),
+    b: str = Query(min_length=2, max_length=120),
+    db: AsyncSession = Depends(get_db),
+):
+    """Compare two medicines by generic, drug class, uses, interactions, and double-dose risk."""
+    from app.services.medicine_knowledge import MedicineKnowledgeService
+    return await MedicineKnowledgeService().compare(db, a, b)
+
+
+@router.get("/external-ref")
+async def external_medical_reference(q: str = "", kind: str = "all", cu: CurrentUser = Depends(current_user)):
+    """Optional cached external references (RxNav / MedlinePlus / ICD-10-CM); degrades gracefully offline."""
+    from app.medical_ref import lookup_icd10, lookup_medlineplus, lookup_rxnav
+
+    term = (q or "").strip()
+    if len(term) < 2:
+        return {"query": term, "rxnav": None, "icd10": [], "medlineplus": []}
+    out: dict = {"query": term}
+    if kind in ("all", "drug", "rxnav"):
+        out["rxnav"] = await lookup_rxnav(term)
+    if kind in ("all", "condition", "icd10"):
+        icd = await lookup_icd10(term)
+        out["icd10"] = icd
+        code = icd[0]["code"] if icd else None
+        out["medlineplus"] = await lookup_medlineplus(term, icd_code=code)
+    return out
+
+
 @router.get("/{pid}")
 async def get(pid: str, db: AsyncSession = Depends(get_db)):
     p = await db.get(Product, pid)
