@@ -2,11 +2,14 @@
 
 import {
   Activity, AlertTriangle, CheckCircle2, ClipboardList, Clock, FileSearch, FlaskConical,
-  HeartPulse, HelpCircle, Lock, MessageCircle, Pill, ShieldAlert, ShieldCheck, Sparkles, Stethoscope, UserCheck,
+  HeartPulse, HelpCircle, Lock, MessageCircle, Pill, ShieldAlert, ShieldCheck,
+  SlidersHorizontal, Sparkles, Stethoscope, Trash2, UserCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { ContextGraphNavigator } from "@/components/ContextGraphNavigator";
+import { useLiveTalk } from "@/components/LiveTalkProvider";
 import { Card, CardHeader, PageTitle, Skeleton } from "@/components/ui/Card";
 import { Sheet } from "@/components/ui/Sheet";
 import { Banner, DisclaimerChip } from "@/components/ui/Trust";
@@ -62,12 +65,17 @@ function HighlightedTranscript({ text, start, end }: { text: string; start?: num
 
 export default function PatientContextPage() {
   const { t, lang } = useI18n();
+  const { live } = useLiveTalk();
   const [ctx, setCtx] = useState<any>(null);
   const [selectedFact, setSelectedFact] = useState<any | null>(null);
   const [editText, setEditText] = useState("");
   const [editReason, setEditReason] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [selCats, setSelCats] = useState<string[]>([]);
+  const [selIds, setSelIds] = useState<Record<string, string[]>>({});
+  const [clearing, setClearing] = useState(false);
 
   const load = () => {
     api(`/clinical/context?lang=${encodeURIComponent(lang)}`)
@@ -75,6 +83,15 @@ export default function PatientContextPage() {
       .catch(() => setCtx({ empty: true }));
   };
   useEffect(load, [lang]);
+  useEffect(() => {
+    const onUpdated = () => load();
+    window.addEventListener("sushrut:context-updated", onUpdated);
+    const id = live.active ? setInterval(load, 4000) : null;
+    return () => {
+      window.removeEventListener("sushrut:context-updated", onUpdated);
+      if (id) clearInterval(id);
+    };
+  }, [lang, live.active]);
 
   function openFact(fact: any) {
     setSelectedFact(fact);
@@ -114,6 +131,71 @@ export default function PatientContextPage() {
     }
   }
 
+  async function clearAllContext() {
+    if (!window.confirm("Clear all context history (symptoms, facts, meds, relations, timeline, and assessments) for this profile?")) return;
+    setClearing(true);
+    setMsg(null);
+    try {
+      await api("/clinical/context", { method: "DELETE" });
+      setMsg("All context history cleared.");
+      load();
+    } catch (e: any) {
+      setMsg(e.message || "Could not clear context history.");
+    } finally {
+      setClearing(false);
+    }
+  }
+
+  async function deleteSingleItem(cat: string, id: string) {
+    setClearing(true);
+    setMsg(null);
+    try {
+      await api("/clinical/context/delete", {
+        method: "POST",
+        body: JSON.stringify({ categories: [], item_ids: { [cat]: [id] } }),
+      });
+      setMsg("Item deleted from context.");
+      load();
+    } catch (e: any) {
+      setMsg(e.message || "Could not delete item.");
+    } finally {
+      setClearing(false);
+    }
+  }
+
+  async function submitCustomDelete() {
+    if (selCats.length === 0 && Object.values(selIds).every((arr) => arr.length === 0)) return;
+    setClearing(true);
+    setMsg(null);
+    try {
+      await api("/clinical/context/delete", {
+        method: "POST",
+        body: JSON.stringify({ categories: selCats, item_ids: selIds }),
+      });
+      setDeleteOpen(false);
+      setSelCats([]);
+      setSelIds({});
+      setMsg("Selected context items deleted.");
+      load();
+    } catch (e: any) {
+      setMsg(e.message || "Could not delete selected items.");
+    } finally {
+      setClearing(false);
+    }
+  }
+
+  function toggleCat(cat: string) {
+    setSelCats((prev) => (prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]));
+  }
+
+  function toggleItem(cat: string, id: string) {
+    setSelIds((prev) => {
+      const cur = prev[cat] ?? [];
+      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+      return { ...prev, [cat]: next };
+    });
+  }
+
   if (!ctx) return <div className="mx-auto max-w-5xl space-y-3"><Skeleton className="h-24" /><Skeleton className="h-44" /></div>;
 
   const facts: any[] = ctx.facts ?? [];
@@ -138,9 +220,26 @@ export default function PatientContextPage() {
     <div className="mx-auto max-w-5xl space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <PageTitle sub={t.contextPageSub}>{t.navContext}</PageTitle>
-        <Link href="/ask" className="btn btn-primary min-h-12">
-          <MessageCircle aria-hidden className="h-5 w-5" />{t.continueChat}
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => { setSelCats([]); setSelIds({}); setDeleteOpen(true); }}
+            className="btn btn-outline min-h-12 gap-2"
+          >
+            <SlidersHorizontal aria-hidden className="h-4 w-4" />Custom Delete
+          </button>
+          <button
+            type="button"
+            disabled={clearing}
+            onClick={clearAllContext}
+            className="btn btn-outline min-h-12 gap-2 border-danger/40 text-danger hover:bg-danger-soft/40"
+          >
+            <Trash2 aria-hidden className="h-4 w-4" />Clear All
+          </button>
+          <Link href="/ask" className="btn btn-primary min-h-12">
+            <MessageCircle aria-hidden className="h-5 w-5" />{t.continueChat}
+          </Link>
+        </div>
       </div>
 
       <Banner tone="info">{t.clinicalDisclaimerBar}</Banner>
@@ -148,6 +247,8 @@ export default function PatientContextPage() {
         <Banner tone="success" title={t.returningPatientNote}>{ctx.prior_encounter_summary}</Banner>
       )}
       {msg && <Banner tone={msg === t.saved ? "success" : "warning"}>{msg}</Banner>}
+
+      <ContextGraphNavigator graph={ctx.neural_graph} liveActive={!!live.active} />
 
       {/* Extracted Facts with Clickable Source Transcript Highlighting */}
       {facts.length > 0 && (
@@ -168,7 +269,20 @@ export default function PatientContextPage() {
                   </div>
                   {f.original_quote && <p className="truncate text-[0.875rem] text-muted">Source: “{f.original_quote}”</p>}
                 </div>
-                <ProvenanceChip status={f.verification_status} />
+                <div className="flex items-center gap-2">
+                  <ProvenanceChip status={f.verification_status} />
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    title="Delete fact"
+                    aria-label={`Delete ${f.fact_key}`}
+                    onClick={(e) => { e.stopPropagation(); deleteSingleItem("facts", f.id); }}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); deleteSingleItem("facts", f.id); } }}
+                    className="rounded-lg p-1.5 text-muted hover:bg-danger-soft/40 hover:text-danger"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </span>
+                </div>
               </button>
             ))}
           </div>
@@ -450,6 +564,95 @@ export default function PatientContextPage() {
             )}
           </div>
         )}
+      </Sheet>
+
+      {/* Customized Context Deletion Sheet */}
+      <Sheet open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Custom Delete Context History">
+        <div className="space-y-4">
+          <p className="text-[0.875rem] text-muted">
+            Select whole categories or pick individual items to remove from your clinical context and neural graph.
+          </p>
+
+          <div>
+            <h3 className="mb-2 text-[0.8125rem] font-bold uppercase tracking-wide text-muted">Delete by Category</h3>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {[
+                { id: "facts", label: `Extracted Facts (${facts.length})` },
+                { id: "relations", label: `Family & Friend Relations (${facts.filter((f) => f.category === "subject_relation").length})` },
+                { id: "symptoms", label: `Symptoms (${allSymptoms.length})` },
+                { id: "medications", label: `Medications (${meds.length})` },
+                { id: "allergies", label: `Allergies (${allergies.length})` },
+                { id: "vitals", label: `Vitals (${vitals.length})` },
+                { id: "history", label: `Medical History (${history.length})` },
+                { id: "timeline", label: `Timeline Events (${timeline.length})` },
+                { id: "followups", label: `Pending Questions (${pendingQs.length})` },
+                { id: "assessments", label: `Assessments (${assessment ? 1 : 0})` },
+              ].map((cat) => (
+                <label
+                  key={cat.id}
+                  className="flex cursor-pointer items-center gap-2.5 rounded-[12px] border border-border bg-surface-2 px-3 py-2.5 text-[0.875rem] font-medium hover:border-brand"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selCats.includes(cat.id)}
+                    onChange={() => toggleCat(cat.id)}
+                    className="h-4 w-4 accent-brand"
+                  />
+                  <span>{cat.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2.5">
+            <h3 className="text-[0.8125rem] font-bold uppercase tracking-wide text-muted">Or Pick Individual Items</h3>
+            <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
+              {allSymptoms.map((s) => (
+                <label key={`sym-${s.id}`} className="flex cursor-pointer items-center gap-2.5 rounded-[10px] border border-border bg-surface px-3 py-2 text-[0.8125rem]">
+                  <input type="checkbox" checked={(selIds.symptoms ?? []).includes(s.id)} onChange={() => toggleItem("symptoms", s.id)} className="h-4 w-4 accent-brand" />
+                  <span className="font-semibold capitalize">Symptom: {s.name}</span>
+                  <span className="text-muted">({s.status})</span>
+                </label>
+              ))}
+              {meds.map((m) => (
+                <label key={`med-${m.id}`} className="flex cursor-pointer items-center gap-2.5 rounded-[10px] border border-border bg-surface px-3 py-2 text-[0.8125rem]">
+                  <input type="checkbox" checked={(selIds.medications ?? []).includes(m.id)} onChange={() => toggleItem("medications", m.id)} className="h-4 w-4 accent-brand" />
+                  <span className="font-semibold">Med: {m.name}</span>
+                </label>
+              ))}
+              {allergies.map((a) => (
+                <label key={`all-${a.id}`} className="flex cursor-pointer items-center gap-2.5 rounded-[10px] border border-border bg-surface px-3 py-2 text-[0.8125rem]">
+                  <input type="checkbox" checked={(selIds.allergies ?? []).includes(a.id)} onChange={() => toggleItem("allergies", a.id)} className="h-4 w-4 accent-brand" />
+                  <span className="font-semibold text-danger">Allergy: {a.substance}</span>
+                </label>
+              ))}
+              {vitals.map((v) => (
+                <label key={`vit-${v.id}`} className="flex cursor-pointer items-center gap-2.5 rounded-[10px] border border-border bg-surface px-3 py-2 text-[0.8125rem]">
+                  <input type="checkbox" checked={(selIds.vitals ?? []).includes(v.id)} onChange={() => toggleItem("vitals", v.id)} className="h-4 w-4 accent-brand" />
+                  <span className="font-semibold">Vital: {v.type} {v.value} {v.unit}</span>
+                </label>
+              ))}
+              {facts.slice(0, 20).map((f) => (
+                <label key={`fact-${f.id}`} className="flex cursor-pointer items-center gap-2.5 rounded-[10px] border border-border bg-surface px-3 py-2 text-[0.8125rem]">
+                  <input type="checkbox" checked={(selIds.facts ?? []).includes(f.id)} onChange={() => toggleItem("facts", f.id)} className="h-4 w-4 accent-brand" />
+                  <span className="font-semibold">{f.category === "subject_relation" ? "Relation" : f.category}: {f.fact_key}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+            <Button variant="secondary" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+            <Button
+              loading={clearing}
+              disabled={selCats.length === 0 && Object.values(selIds).every((arr) => arr.length === 0)}
+              onClick={submitCustomDelete}
+              icon={Trash2}
+            >
+              Delete Selected
+            </Button>
+          </div>
+        </div>
       </Sheet>
     </div>
   );

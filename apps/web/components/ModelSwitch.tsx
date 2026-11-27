@@ -68,12 +68,12 @@ export function ModelSwitch({ value, onChange, options }: { value: ModelPref; on
     <div ref={ref} className="relative">
       <button type="button" onClick={() => setOpen(!open)} aria-haspopup="listbox" aria-expanded={open}
         aria-label={`${t.answerSpeed}: ${LABEL[value][0]}`}
-        className="inline-flex h-12 shrink-0 items-center gap-1 rounded-full bg-surface-2 px-3 text-[0.875rem] font-semibold hover:bg-border">
-        <Gauge aria-hidden className="h-4 w-4" /><span className="max-sm:sr-only">{LABEL[value][0]}</span>
-        <ChevronDown aria-hidden className="h-4 w-4" /></button>
+        className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-surface-2 px-2.5 text-[0.75rem] font-semibold transition-colors hover:bg-border/60">
+        <Gauge aria-hidden className="h-3.5 w-3.5" /><span className="max-sm:sr-only">{LABEL[value][0]}</span>
+        <ChevronDown aria-hidden className="h-3.5 w-3.5" /></button>
       {open && (
         <ul role="listbox" aria-label={t.answerSpeed}
-          className="pop-in absolute bottom-14 start-0 z-20 w-72 space-y-1 rounded-[16px] border border-border bg-surface p-1.5 shadow-[var(--rim),var(--e3)]">
+          className="pop-in absolute bottom-11 start-0 z-40 max-h-[min(55vh,320px)] w-72 max-w-[calc(100vw-2rem)] space-y-1 overflow-y-auto overscroll-contain rounded-[16px] border border-border bg-surface p-1.5 shadow-[var(--rim),var(--e3)]">
           {options.map((o) => (
             <li key={o} role="option" aria-selected={o === value}>
               <button type="button" onClick={() => { choose(o); setOpen(false); }}

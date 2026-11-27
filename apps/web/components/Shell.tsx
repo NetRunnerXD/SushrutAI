@@ -13,8 +13,10 @@ import { SearchButton } from "./Search";
 import { LanguageButton } from "./LanguagePicker";
 import { PrivacyBadge } from "./ui/Trust";
 import { FloatingMic } from "./Voice";
+import { LiveTalkProvider } from "./LiveTalkProvider";
 import { VoiceLoopProvider } from "./VoiceLoop";
 import { DoseNotifier } from "./DoseNotifier";
+import { ServiceAlert } from "./ServiceAlert";
 import { DesktopShell } from "./desktop/DesktopShell";
 import { MobileFrame, useReportPathToFrame } from "./desktop/MobileFrame";
 import { useUiMode } from "@/lib/ui-mode";
@@ -225,6 +227,7 @@ function Inner({ children }: { children: ReactNode }) {
       </nav>
       <div className="print:hidden"><FloatingMic /></div>
       <DoseNotifier />
+      <ServiceAlert />
     </div>
   );
 }
@@ -240,7 +243,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <PrefsProvider>
       <I18nProvider>
         <EmergencyProvider>
-          <VoiceLoopProvider><Inner>{children}</Inner></VoiceLoopProvider>
+          <VoiceLoopProvider><LiveTalkProvider><Inner>{children}</Inner></LiveTalkProvider></VoiceLoopProvider>
         </EmergencyProvider>
       </I18nProvider>
     </PrefsProvider>

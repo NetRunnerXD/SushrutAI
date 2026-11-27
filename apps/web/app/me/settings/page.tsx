@@ -1,6 +1,6 @@
 "use client";
 
-import { BellRing, CalendarPlus, Download, Gauge, HelpCircle, Languages, Lock, MonitorSmartphone, Trash2 } from "lucide-react";
+import { BellRing, CalendarPlus, Cpu, Download, HelpCircle, Languages, Lock, MonitorSmartphone, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { LanguageGrid } from "@/components/LanguagePicker";
 import { CHAT_MODEL_KEY } from "@/components/ModelSwitch";
@@ -48,7 +48,7 @@ export default function SettingsPage() {
   const { prefs, setPrefs } = usePrefs();
   const desktop = useUiMode() === "desktop";
   const SECTIONS: [string, string][] = [["s-lang", t.langVoice], ["s-display", t.display], ["reminders", t.reminders],
-    ["s-speed", t.answerSpeed], ["s-privacy", t.privacy], ["s-help", t.help]];
+    ["s-ai", "AI Backend"], ["s-privacy", t.privacy], ["s-help", t.help]];
   const [current, setCurrent] = useState("s-lang");
   useEffect(() => {  // the section in view is marked in the desktop section list
     if (!desktop) return;
@@ -65,13 +65,29 @@ export default function SettingsPage() {
   const timers = useRef<number[]>([]);
 
   useEffect(() => {
-    api("/me/settings").then(setS);
+    api<any>("/me/settings").then((res) => {
+      setS(res);
+      setVoicePrefs({
+        gender: res?.tts_voice_gender === "male" ? "male" : "female",
+        localTts: res?.tts_engine || "auto",
+      });
+    });
     api<Reminder[]>("/me/reminders").then(setRems).catch(() => {});
     api<any>("/consents").then((c) => setConsents(c.active));
     return () => timers.current.forEach(clearTimeout);
   }, []);
 
-  const update = async (patch: any) => setS(await api("/me/settings", { method: "PUT", body: JSON.stringify(patch) }));
+  const update = async (patch: any) => {
+    const res = await api<any>("/me/settings", { method: "PUT", body: JSON.stringify(patch) });
+    setS(res);
+    if (patch.tts_voice_gender !== undefined || patch.tts_engine !== undefined) {
+      setVoicePrefs({
+        gender: res?.tts_voice_gender === "male" ? "male" : "female",
+        localTts: res?.tts_engine || "auto",
+        ...(patch.tts_voice_gender !== undefined ? { voices: {} } : {}),
+      });
+    }
+  };
   async function toggleConsent(purpose: string, on: boolean) {
     const r = on ? await api<any>("/consents", { method: "POST", body: JSON.stringify({ purposes: [purpose] }) })
                  : await api<any>(`/consents/${purpose}`, { method: "DELETE" });
@@ -144,6 +160,16 @@ export default function SettingsPage() {
         </Group>
         <Toggle label={t.highContrast} help="Black text and borders for low vision." checked={prefs.contrast === "high"} onChange={(v) => setPrefs({ contrast: v ? "high" : "normal" })} />
         <Toggle label={t.reduceMotion} help="Turns off pulsing and sliding animations." checked={prefs.motion === "reduce"} onChange={(v) => setPrefs({ motion: v ? "reduce" : "auto" })} />
+        <div className="space-y-1.5 border-t border-border pt-3">
+          <Group label="Chat Response Layout">
+            {([["v1", "Chat v1 (Classic)"], ["v2", "Chat v2 (Modular Cards)"]] as const).map(([v, l]) => (
+              <Chip key={v} selected={(prefs.chatUi ?? "v2") === v} onClick={() => setPrefs({ chatUi: v })}>{l}</Chip>
+            ))}
+          </Group>
+          <p className="text-[0.875rem] text-muted">
+            v2 displays Doctor to Visit and Specific Tests side-by-side as clickable cards with modular Causes, Food & Lifestyle, and Action sections.
+          </p>
+        </div>
       </Card>
 
       <Card id="reminders" className="scroll-mt-28 space-y-3">
@@ -169,48 +195,150 @@ export default function SettingsPage() {
       </Card>
 
       {s && (
-        <Card id="s-speed" className="scroll-mt-28">
-          <CardHeader icon={Gauge} title={t.answerSpeed} sub={t.answerSpeedHelp} />
-          <div role="radiogroup" aria-label={t.answerSpeed} className="grid gap-2 sm:grid-cols-3">
-            {([["auto", t.modelAuto, t.modelAutoHelp], ["balanced", t.modelBalanced, t.modelBalancedHelp], ["fast", t.modelFast, t.modelFastHelp],
-               ["instant", t.modelInstant, t.modelInstantHelp],
-               ["cloud", t.modelCloud, t.modelCloudHelp],
-               ["gemini", t.modelGemini, t.modelGeminiHelp], ["gemini_fast", t.modelGeminiFast, t.modelGeminiFastHelp]] as const)
-              .filter(([k]) => (s.model_options ?? ["balanced"]).includes(k))
-              .map(([k, label, help]) => {
-                const offlineBlocked = s.offline_mode && (k === "cloud" || k.startsWith("gemini"));
-                const on = (s.model_pref ?? "auto") === k;
+        <Card id="s-ai" className="scroll-mt-28 space-y-5">
+          <CardHeader icon={Cpu} title="AI Backend" sub="Configure answer models, translation models, local & cloud speech engines, and voice preferences." />
+
+          {/* 1. Answer AI Model */}
+          <div className="space-y-2">
+            <div>
+              <p className="font-semibold">{t.answerSpeed}</p>
+              <p className="text-[0.875rem] text-muted">{t.answerSpeedHelp}</p>
+            </div>
+            <div role="radiogroup" aria-label={t.answerSpeed} className="grid gap-2 sm:grid-cols-3">
+              {([["auto", t.modelAuto, t.modelAutoHelp], ["balanced", t.modelBalanced, t.modelBalancedHelp], ["fast", t.modelFast, t.modelFastHelp],
+                 ["instant", t.modelInstant, t.modelInstantHelp],
+                 ["cloud", t.modelCloud, t.modelCloudHelp],
+                 ["gemini", t.modelGemini, t.modelGeminiHelp], ["gemini_fast", t.modelGeminiFast, t.modelGeminiFastHelp]] as const)
+                .filter(([k]) => (s.model_options ?? ["balanced"]).includes(k))
+                .map(([k, label, help]) => {
+                  const offlineBlocked = s.offline_mode && (k === "cloud" || k.startsWith("gemini"));
+                  const on = (s.model_pref ?? "auto") === k;
+                  return (
+                    <button key={k} type="button" role="radio" aria-checked={on} disabled={offlineBlocked}
+                      onClick={async () => {
+                        if (k === "cloud" && !consents.includes("cloud_llm_deidentified")) {
+                          if (!window.confirm(t.cloudConsent)) return;
+                          await toggleConsent("cloud_llm_deidentified", true);
+                        }
+                        if (k.startsWith("gemini") && !consents.includes("cloud_llm_full")) {
+                          if (!window.confirm(t.geminiConsent)) return;
+                          await toggleConsent("cloud_llm_full", true);
+                        }
+                        try { localStorage.setItem(CHAT_MODEL_KEY, k); } catch { /* ignore */ }
+                        update({ model_pref: k });
+                      }}
+                      className={`flex min-h-24 flex-col items-start gap-1 rounded-[16px] border-2 p-3 text-start transition-colors disabled:cursor-not-allowed disabled:opacity-60
+                        ${on ? "border-brand bg-brand-soft" : "border-border bg-surface hover:border-border-input"}`}>
+                      <span className="display text-[1.125rem] font-bold">{label}</span>
+                      <span className="text-[0.875rem] leading-snug text-muted">{offlineBlocked ? t.modelOfflineNeeds : help}</span>
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+
+          {/* 2. Translation Model */}
+          <div className="space-y-2 border-t border-border pt-4">
+            <Group label="Preferred Translation Model">
+              {([
+                ["auto", "Auto (Recommended)"],
+                ["indictrans2", "IndicTrans2 (Local)"],
+                ["llm", "Local LLM (Ollama)"],
+                ["gemini", "Gemini API"],
+              ] as const).map(([k, label]) => {
+                const blocked = s.offline_mode && k === "gemini";
                 return (
-                  <button key={k} type="button" role="radio" aria-checked={on} disabled={offlineBlocked}
+                  <Chip key={k} selected={(s.translation_model ?? "auto") === k}
                     onClick={async () => {
-                      if (k === "cloud" && !consents.includes("cloud_llm_deidentified")) {
-                        if (!window.confirm(t.cloudConsent)) return;
-                        await toggleConsent("cloud_llm_deidentified", true);
-                      }
-                      if (k.startsWith("gemini") && !consents.includes("cloud_llm_full")) {
+                      if (blocked) return;
+                      if (k === "gemini" && !consents.includes("cloud_llm_full")) {
                         if (!window.confirm(t.geminiConsent)) return;
                         await toggleConsent("cloud_llm_full", true);
                       }
-                      try { localStorage.setItem(CHAT_MODEL_KEY, k); } catch { /* ignore */ }
-                      update({ model_pref: k });
-                    }}
-                    className={`flex min-h-24 flex-col items-start gap-1 rounded-[16px] border-2 p-3 text-start transition-colors disabled:cursor-not-allowed disabled:opacity-60
-                      ${on ? "border-brand bg-brand-soft" : "border-border bg-surface hover:border-border-input"}`}>
-                    <span className="display text-[1.125rem] font-bold">{label}</span>
-                    <span className="text-[0.875rem] leading-snug text-muted">{offlineBlocked ? t.modelOfflineNeeds : help}</span>
-                  </button>
+                      update({ translation_model: k });
+                    }}>
+                    {label}
+                  </Chip>
                 );
               })}
+            </Group>
+            <p className="text-[0.875rem] text-muted">
+              Auto uses IndicTrans2 locally for native scripts and local LLM for Hinglish/Banglish; Gemini API translates remotely when consented.
+            </p>
           </div>
-          <p className="mt-3 text-[0.875rem] leading-snug text-muted">{t.spokenAnswerHelp}</p>
-          <SpokenAnswerSetting consents={consents} onConsent={(p) => toggleConsent(p, true)} offline={!!s.offline_mode} />
-          <VoiceEngineSetting consents={consents} onConsent={(p) => toggleConsent(p, true)} offline={!!s.offline_mode} />
+
+          {/* 3. Local TTS Voice Gender & Engine */}
+          <div className="space-y-3 border-t border-border pt-4">
+            <Group label="Consultation & Speech Mode">
+              {([
+                ["general", "General (Standard Pace)"],
+                ["elderly", "Elderly & Patient-Friendly (Longer Pauses, Simpler Words)"],
+              ] as const).map(([k, label]) => (
+                <Chip key={k} selected={(s.speech_mode ?? "general") === k}
+                  onClick={() => {
+                    update({ speech_mode: k });
+                    try { localStorage.setItem("sushrut.speechMode", k); } catch { /* ignore */ }
+                  }}>
+                  {label}
+                </Chip>
+              ))}
+            </Group>
+            <Group label="Response Style">
+              {([
+                ["direct", "Direct (Natural & Concise)"],
+                ["detailed", "Detailed (Full Rationale)"],
+              ] as const).map(([k, label]) => (
+                <Chip key={k} selected={(s.response_style ?? "direct") === k}
+                  onClick={() => {
+                    update({ response_style: k });
+                    try { localStorage.setItem("sushrut.responseStyle", k); } catch { /* ignore */ }
+                  }}>
+                  {label}
+                </Chip>
+              ))}
+            </Group>
+            <Group label="Local TTS Voice Gender">
+              {([["female", "Female (Default)"], ["male", "Male"]] as const).map(([k, label]) => (
+                <Chip key={k} selected={(s.tts_voice_gender ?? "female") === k}
+                  onClick={() => update({ tts_voice_gender: k })}>
+                  {label}
+                </Chip>
+              ))}
+            </Group>
+            <Group label="Local TTS Engine">
+              {([
+                ["auto", "Auto (Kokoro + Parler / MMS)"],
+                ["kokoro", "Kokoro-82M (Fast HI/EN)"],
+                ["parler", "Indic Parler-TTS"],
+                ["mms", "MMS-TTS (Lightweight)"],
+              ] as const).map(([k, label]) => (
+                <Chip key={k} selected={(s.tts_engine ?? "auto") === k}
+                  onClick={() => update({ tts_engine: k })}>
+                  {label}
+                </Chip>
+              ))}
+            </Group>
+            <p className="text-[0.875rem] text-muted">
+              Kokoro-82M, Indic Parler-TTS, Gemini TTS, and device voices follow Female/Male selection; MMS-TTS uses one built-in voice per language.
+            </p>
+          </div>
+
+          {/* 4. Cloud Voice & Spoken Routing */}
+          <div className="border-t border-border pt-3">
+            <p className="text-[0.875rem] leading-snug text-muted">{t.spokenAnswerHelp}</p>
+            <SpokenAnswerSetting consents={consents} onConsent={(p) => toggleConsent(p, true)} offline={!!s.offline_mode} />
+            <VoiceEngineSetting consents={consents} onConsent={(p) => toggleConsent(p, true)} offline={!!s.offline_mode} />
+          </div>
+
+          {/* 5. Hardware & Loaded Models */}
           <DeviceInfo />
         </Card>
       )}
 
       <Card id="s-privacy" className="scroll-mt-28 space-y-1">
         <CardHeader icon={Lock} title={t.privacy} />
+        {s && <Toggle label="SOS Emergency Trigger (108 / 112)" help="Automatically interrupt chat and Talk Live with emergency 108 / 112 guidance when critical red-flag symptoms are detected. Turn off to continue conversing without stopping." checked={s.sos_enabled !== false} onChange={(v) => update({ sos_enabled: v })} />}
+        {s && <Toggle label="Neural Correlation Engine (GNN + RNN + CNN)" help="Use GPU/CPU neural graph & temporal models to connect symptoms, labs, medications, and family signals for personalized responses." checked={s.neural_correlation_enabled !== false} onChange={(v) => update({ neural_correlation_enabled: v })} />}
         {s && <Toggle label={t.offlineMode} help={t.offlineModeHelp} checked={s.offline_mode} disabled={s.offline_forced_by_server} onChange={(v) => update({ offline_mode: v })} />}
         {Object.entries(CONSENT_LABEL).map(([k, l]) => <Toggle key={k} label={l} checked={consents.includes(k)} onChange={(v) => toggleConsent(k, v)} />)}
         <div className="flex flex-wrap gap-2 pt-3">
@@ -365,6 +493,7 @@ function VoiceEngineSetting({ consents, onConsent, offline }: { consents: string
 const SPEECH_MODEL_NAMES: Record<string, string> = {
   it2: "IndicTrans2 (translation)", conformer: "IndicConformer (listening)", whisper: "Whisper (listening)",
   lid: "Whisper (language detection)", mms: "MMS (read-aloud)", parler: "Indic Parler (read-aloud)",
+  kokoro: "Kokoro-82M (read-aloud)",
 };
 
 function DeviceInfo() {
