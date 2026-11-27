@@ -15,6 +15,7 @@ import { ActionCard, useVoiceActions, type VoiceActions } from "./Voice";
 type Loop = {
   on: boolean; paused: boolean; state: HandsFreeState; partialText: string;
   toggle: () => Promise<void>; setPaused: (p: boolean) => void;
+  finishSpeaking: () => void;
   setQuestionHandler: (fn: ((text: string) => void) | null) => void;
   setBargeInHandler: (fn: ((spokenSoFar: string) => void) | null) => void;
   actions: VoiceActions;
@@ -124,8 +125,12 @@ export function VoiceLoopProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (hf.current) { stop(); start().catch(() => {}); } }, [lang]);  // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => hf.current?.stop(), []);
 
+  const finishSpeaking = useCallback(() => {
+    hf.current?.finishNow?.();
+  }, []);
+
   const value: Loop = {
-    on, paused, state, partialText, toggle, setPaused,
+    on, paused, state, partialText, toggle, setPaused, finishSpeaking,
     setQuestionHandler: (fn) => { question.current = fn; },
     setBargeInHandler: (fn) => { bargeInCb.current = fn; },
     actions,
@@ -138,21 +143,40 @@ export function VoiceLoopProvider({ children }: { children: ReactNode }) {
           <ActionCard a={actions} className="shadow-[var(--e3)]" />
         </div>
       )}
-      {on && <LoopPill paused={paused} state={state} onResume={() => setPaused(false)} onOff={toggle} labels={t} />}
+      {on && (
+        <LoopPill
+          paused={paused}
+          state={state}
+          hasPartial={Boolean(partialText)}
+          lang={lang}
+          onFinish={finishSpeaking}
+          onResume={() => setPaused(false)}
+          onOff={toggle}
+          labels={t}
+        />
+      )}
     </Ctx.Provider>
   );
 }
 
-/** A small status pill while hands-free is on: listening / hearing / paused, and a way to switch it off. */
-function LoopPill({ paused, state, onResume, onOff, labels: t }: {
-  paused: boolean; state: Loop["state"]; onResume: () => void; onOff: () => void; labels: any;
+/** A small status pill while hands-free is on: listening / hearing / paused, explicit finish button, and switch off. */
+function LoopPill({ paused, state, hasPartial, lang, onFinish, onResume, onOff, labels: t }: {
+  paused: boolean; state: Loop["state"]; hasPartial: boolean; lang: string;
+  onFinish: () => void; onResume: () => void; onOff: () => void; labels: any;
 }) {
+  const showFinish = !paused && (hasPartial || state === "waiting_for_continuation" || state === "speech");
+  const finishLabel = lang === "bn" ? "আমি বলা শেষ করেছি" : lang === "hi" ? "मैंने बोल दिया है" : "I'm finished speaking";
   return (
     <div role="status" aria-live="polite"
       className="fixed start-1/2 top-[calc(4.25rem+env(safe-area-inset-top))] z-40 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-[0.875rem] font-semibold shadow-[var(--rim),var(--e2)] rtl:translate-x-1/2 print:hidden">
       {paused ? <Pause aria-hidden className="h-4 w-4 text-warn" />
         : <Mic aria-hidden className={`h-4 w-4 ${state === "speech" ? "text-brand" : "text-ok"}`} />}
-      <span>{paused ? t.voicePaused : t.voiceLoopOn}</span>
+      <span>{paused ? t.voicePaused : state === "waiting_for_continuation" ? (lang === "bn" ? "ধীরে বলুন, শুনছি…" : "Still listening…") : t.voiceLoopOn}</span>
+      {showFinish && (
+        <button type="button" onClick={onFinish} className="rounded-full bg-brand px-2.5 py-0.5 text-[0.8125rem] text-brand-ink">
+          {finishLabel}
+        </button>
+      )}
       {paused && <button type="button" onClick={onResume} className="rounded-full bg-brand-soft px-2 py-0.5 text-brand">{t.resumeVoice}</button>}
       <button type="button" onClick={onOff} aria-label={t.voiceLoopOff} title={t.voiceLoopOff}
         className="grid h-7 w-7 place-items-center rounded-full hover:bg-surface-2"><MicOff aria-hidden className="h-4 w-4" /></button>

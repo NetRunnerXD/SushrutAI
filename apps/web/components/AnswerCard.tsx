@@ -10,9 +10,9 @@ import { ReplyText, tidyReply } from "./answer/ReplyText";
 import { SavedFacts } from "./answer/SavedFacts";
 import { Storylines } from "./answer/Storylines";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { bcp47, useI18n, fill } from "@/lib/i18n";
-import { speak } from "@/lib/voice";
+import { speak, speakSegments, subscribeActiveSection } from "@/lib/voice";
 import { useSOS } from "./Emergency";
 import { ListenButton } from "./Voice";
 import { api } from "@/lib/api";
@@ -107,6 +107,8 @@ export function AnswerCard({ a, onFollowUp, onAsk, question, answered }: {
 }) {
   const { t, lang } = useI18n();
   const [vote, setVote] = useState<"up" | "down" | null>(null);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  useEffect(() => subscribeActiveSection(setActiveSection), []);
   const sendVote = (v: "up" | "down") => {
     const topic = (a?.structured?.possible_conditions?.[0]?.name_en || a?.structured?.kind || "answer").slice(0, 80);
     api("/me/memory/feedback", { method: "POST", body: JSON.stringify({ kind: "answer", name: topic, value: v }) }).catch(() => {});
@@ -118,6 +120,16 @@ export function AnswerCard({ a, onFollowUp, onAsk, question, answered }: {
   const rich = tidyReply(a.reply, t);         // for the screen: keeps **bold** for the formatter
   const terms = conditions.flatMap((c) => [c.name, c.name_en]).filter(Boolean);
   const kind: string = s?.kind ?? (conditions.length ? "symptoms" : "general_health");
+  const respLang = (a?.language || s?.language || lang || "en") as string;
+  const hl = (secId: string) =>
+    activeSection === secId ? "rounded-[14px] ring-2 ring-brand bg-brand-soft/15 p-2 transition-colors" : "";
+  const playSynchronized = () => {
+    if (Array.isArray(s?.spoken_segments) && s.spoken_segments.length > 0) {
+      speakSegments(s.spoken_segments, respLang, bcp47(respLang));
+    } else {
+      speak(s?.spoken_response || clean, respLang, bcp47(respLang));
+    }
+  };
 
   if (kind === "clarify" && s?.clarify) {
     // The chat is narrowing things down: one question with large answer buttons (or just say the answer)
@@ -143,6 +155,23 @@ export function AnswerCard({ a, onFollowUp, onAsk, question, answered }: {
     );
   }
 
+  const isRecommendationReady = s?.recommendation_ready !== false && a?.recommendation_ready !== false && kind !== "clarify";
+  if (!isRecommendationReady && !CONVERSATIONAL.has(kind)) {
+    return (
+      <article className="space-y-3" aria-label="SushrutAI follow-up">
+        <div className="rounded-[14px] border border-border bg-surface-2 p-4">
+          <p className="mb-1 text-[0.75rem] font-bold uppercase tracking-wide text-brand">
+            {respLang === "bn" ? "ফলো-আপ প্রশ্ন" : respLang === "hi" ? "फ़ॉलो-अप प्रश्न" : "Consultation Follow-Up"}
+          </p>
+          <p className="display max-w-[65ch] text-[1.125rem] font-semibold leading-relaxed text-text">{clean}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <ListenButton label={t.readAloud} onClick={playSynchronized} />
+        </div>
+      </article>
+    );
+  }
+
   if (CONVERSATIONAL.has(kind)) {
     return (
       <article className="space-y-3" aria-label="SushrutAI answer">
@@ -164,19 +193,119 @@ export function AnswerCard({ a, onFollowUp, onAsk, question, answered }: {
         </Banner>
       )}
 
-      <ReplyText text={rich} terms={terms} label={t.whenToSeeDoctor} />
+      <div className={hl("acknowledgement")}>
+        <ReplyText text={rich} terms={terms} label={t.whenToSeeDoctor} />
+      </div>
       <SavedFacts facts={a.saved_facts} />
       <Storylines items={s?.storylines} />
 
+      {s?.sections_7 && (
+        <div className="grid gap-3 md:grid-cols-2">
+          {s.sections_7.section_1_patient_profile && (
+            <section className="rounded-[14px] border border-border bg-surface-2 p-3 text-[0.875rem]" aria-label="Patient Profile">
+              <p className="font-bold text-text">1. {s.sections_7.section_1_patient_profile.title}</p>
+              <p className="mt-1 text-muted">
+                {respLang === "bn" ? "নাম" : "Name"}: <span className="font-medium text-text">{String(s.sections_7.section_1_patient_profile.name)}</span>
+                {" · "}{respLang === "bn" ? "বয়স" : "Age"}: <span className="font-medium text-text">{String(s.sections_7.section_1_patient_profile.age)}</span>
+                {" · "}{respLang === "bn" ? "লিঙ্গ" : "Gender"}: <span className="font-medium text-text">{String(s.sections_7.section_1_patient_profile.gender)}</span>
+              </p>
+            </section>
+          )}
+          {s.sections_7.section_2_current_problem && (
+            <section className="rounded-[14px] border border-border bg-surface-2 p-3 text-[0.875rem]" aria-label="Current Problem">
+              <p className="font-bold text-text">2. {s.sections_7.section_2_current_problem.title}</p>
+              <p className="mt-1 font-medium text-text">{s.sections_7.section_2_current_problem.main_complaint}</p>
+              <p className="mt-0.5 text-muted">
+                {respLang === "bn" ? "সময়কাল" : "Duration"}: {s.sections_7.section_2_current_problem.duration}
+                {s.sections_7.section_2_current_problem.severity !== "Not specified" && ` · ${s.sections_7.section_2_current_problem.severity}`}
+              </p>
+            </section>
+          )}
+        </div>
+      )}
+
       <div className="space-y-2.5">
-        <Causes conditions={conditions} onAsk={onAsk} defaultOpen />
+        <div className={hl("causes")}>
+          <Causes conditions={conditions} onAsk={onAsk} defaultOpen />
+        </div>
         {kind === "symptoms" ? (
           <DoNow care={s?.self_care} watch={s?.watch_for} question={question} symptomatic defaultOpen />
         ) : (
           <DoNow care={s?.tips} watch={s?.watch_for} question={question} symptomatic={false} defaultOpen />
         )}
-        <NextSteps specialist={s?.specialist} tests={s?.suggested_tests} urgent={!!top && top !== "self_care"} />
-        {s?.nutrition?.length > 0 && (
+        <div className={hl("specialist")}>
+          {s?.recommended_specialist?.specialty && (
+            <section className="mb-2 rounded-[14px] border border-border bg-surface-2 p-3 text-[0.9375rem]" aria-label="Recommended Doctor">
+              <p className="flex items-center gap-1.5 font-bold">
+                <Stethoscope aria-hidden className="h-4 w-4 text-brand" />
+                {respLang === "bn" ? "প্রস্তাবিত চিকিৎসক" : respLang === "hi" ? "अनुशंसित डॉक्टर" : "Recommended Doctor"}:{" "}
+                <span>{s.recommended_specialist.specialty}</span>
+                {s.recommended_specialist.qualification && <span className="text-muted">({s.recommended_specialist.qualification})</span>}
+                {s.recommended_specialist.hospital_department && (
+                  <span className="ms-1 rounded-full bg-surface px-2 py-0.5 text-[0.75rem] font-semibold text-muted">
+                    {s.recommended_specialist.hospital_department}
+                  </span>
+                )}
+              </p>
+              {s.recommended_specialist.reason && <p className="mt-1 text-[0.875rem] text-muted">{s.recommended_specialist.reason}</p>}
+              {s.recommended_specialist.consult_first_guidance && (
+                <p className="mt-1 text-[0.8125rem] font-medium text-text">{s.recommended_specialist.consult_first_guidance}</p>
+              )}
+            </section>
+          )}
+          <NextSteps specialist={s?.specialist} tests={s?.suggested_tests} urgent={!!top && top !== "self_care"} />
+        </div>
+        {s?.recommended_tests?.length > 0 && (
+          <section className={`rounded-[14px] border border-border bg-surface-2 p-3 text-[0.875rem] ${hl("investigations")}`} aria-label="Suggested Investigations">
+            <p className="font-bold">
+              {respLang === "bn" ? "সম্ভাব্য পরীক্ষা-নিরীক্ষা (চিকিৎসকের পরামর্শ সাপেক্ষে)" : respLang === "hi" ? "संभावित जांचें (डॉक्टर के निर्णय के अनुसार)" : "Suggested Investigations (For Clinician Consideration)"}
+            </p>
+            <ul className="mt-1.5 space-y-1.5">
+              {s.recommended_tests.map((inv: any, idx: number) => (
+                <li key={idx} className="rounded-[10px] bg-surface p-2">
+                  <p className="font-semibold">
+                    {inv.test_name || inv.investigation_name}
+                    <span className="ms-1.5 text-[0.75rem] font-normal text-muted">
+                      [{respLang === "bn" ? "চিকিৎসকের মূল্যায়ন প্রয়োজন" : "Clinician assessment required"}]
+                    </span>
+                  </p>
+                  {inv.why_relevant && <p className="text-muted">{inv.why_relevant}</p>}
+                  {inv.what_it_provides && inv.what_it_provides !== inv.why_relevant && (
+                    <p className="text-[0.8125rem] text-muted">Provides: {inv.what_it_provides}</p>
+                  )}
+                  {inv.interpreter_role && (
+                    <p className="text-[0.8125rem] text-muted">Interpreted by: {inv.interpreter_role}</p>
+                  )}
+                  {inv.preparation && <p className="text-[0.8125rem] text-muted">Preparation: {inv.preparation}</p>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {(s?.diet_and_lifestyle?.suitable_foods?.length > 0 || s?.diet_and_lifestyle?.helpful_foods?.length > 0 || s?.diet_and_lifestyle?.foods_to_limit?.length > 0) && (
+          <section className={`rounded-[14px] border border-border bg-surface-2 p-3 text-[0.875rem] ${hl("diet")}`} aria-label="Dietary & Lifestyle Guidance">
+            <p className="flex items-center gap-1.5 font-bold">
+              <Utensils aria-hidden className="h-4 w-4 text-brand" />
+              {respLang === "bn" ? "খাবার ও জীবনযাত্রার পরামর্শ" : respLang === "hi" ? "आहार और जीवनशैली सलाह" : "Dietary & Lifestyle Guidance"}
+            </p>
+            {(s.diet_and_lifestyle.suitable_foods || s.diet_and_lifestyle.helpful_foods)?.length > 0 && (
+              <p className="mt-1"><span className="font-semibold">{respLang === "bn" ? "উপযোগী খাবার:" : "Suitable:"}</span> {(s.diet_and_lifestyle.suitable_foods || s.diet_and_lifestyle.helpful_foods).join("; ")}</p>
+            )}
+            {s.diet_and_lifestyle.foods_to_limit?.length > 0 && (
+              <p className="mt-1 text-muted"><span className="font-semibold text-text">{respLang === "bn" ? "সীমিত রাখুন:" : "Limit / Avoid:"}</span> {s.diet_and_lifestyle.foods_to_limit.join("; ")}</p>
+            )}
+            {(s.diet_and_lifestyle.hydration_guidance || s.diet_and_lifestyle.hydration) && (
+              <p className="mt-1 text-muted">{s.diet_and_lifestyle.hydration_guidance || s.diet_and_lifestyle.hydration}</p>
+            )}
+            {(s.diet_and_lifestyle.lifestyle_recommendations || s.diet_and_lifestyle.lifestyle)?.length > 0 && (
+              <p className="mt-1 text-muted">{(s.diet_and_lifestyle.lifestyle_recommendations || s.diet_and_lifestyle.lifestyle).join("; ")}</p>
+            )}
+            {s.diet_and_lifestyle.precaution_note && (
+              <p className="mt-1 text-[0.8125rem] font-medium text-warn">{s.diet_and_lifestyle.precaution_note}</p>
+            )}
+          </section>
+        )}
+        {s?.nutrition?.length > 0 && !s?.diet_and_lifestyle && (
           <AnswerSection id="food" icon={Utensils} title={t.nutrition} defaultOpen={false} summary={s.nutrition.length}>
             <ul className="list-disc space-y-0.5 ps-6">{s.nutrition.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul>
           </AnswerSection>
@@ -206,7 +335,7 @@ export function AnswerCard({ a, onFollowUp, onAsk, question, answered }: {
       )}
 
       {s?.follow_up_questions?.length > 0 && (!a.clinical?.followup_question || s.follow_up_questions.length > 1) && (
-        <section>
+        <section className={hl("followup")}>
           <h3 className="mb-1.5 flex items-center gap-1.5 font-semibold"><ClipboardList aria-hidden className="h-5 w-5" />{t.followUps}</h3>
           <ul className="space-y-1.5">
             {s.follow_up_questions
@@ -251,7 +380,7 @@ export function AnswerCard({ a, onFollowUp, onAsk, question, answered }: {
       <DisclaimerChip />
 
       <div className="flex flex-wrap gap-2 border-t border-border pt-3">
-        <ListenButton label={t.readAloud} onClick={() => speak(clean, lang, bcp47(lang))} />
+        <ListenButton label={t.readAloud} onClick={playSynchronized} />
         {question && <SaveForDoctor text={question} />}
         <button onClick={() => { setVote("up"); sendVote("up"); }} aria-pressed={vote === "up"} aria-label={t.helpful}
                 className={`grid h-12 w-12 place-items-center rounded-full ${vote === "up" ? "bg-ok-soft text-ok" : "bg-surface-2"}`}>

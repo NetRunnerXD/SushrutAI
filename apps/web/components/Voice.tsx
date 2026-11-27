@@ -7,7 +7,7 @@ import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 
 import { bcp47, fill, useI18n } from "@/lib/i18n";
 import { api, switchProfile } from "@/lib/api";
 import {
-  browserRecognitionAvailable, heard as heardMeta, isNoServerSpeech, isSpeaking, readPage, setHeardLang, repeatLast, speak, startBrowserRecognition, startServerRecording,
+  browserRecognitionAvailable, heard as heardMeta, isNoServerSpeech, isSpeaking, isValidTranscript, readPage, setHeardLang, repeatLast, speak, startBrowserRecognition, startServerRecording,
   stopSpeaking, type Recorder,
 } from "@/lib/voice";
 import { matchCommand } from "@/lib/voiceCommands";
@@ -196,6 +196,7 @@ export function useVoiceCapture(onText: (text: string) => void, { confirm = true
   const [left, setLeft] = useState<number | null>(null); // countdown seconds; null = paused / not counting
   const rec = useRef<Recorder | null>(null);
   const serverOk = useRef(true);
+  const busyLock = useRef(false);
   const onTextRef = useRef(onText);
   onTextRef.current = onText;
 
@@ -217,11 +218,17 @@ export function useVoiceCapture(onText: (text: string) => void, { confirm = true
     return () => cancelAnimationFrame(raf);
   }, [state]);
 
-  const reset = useCallback(() => { setHeard(""); setLeft(null); setState("idle"); }, []);
+  const reset = useCallback(() => { busyLock.current = false; setHeard(""); setInterim(""); setLeft(null); setState("idle"); }, []);
   const accept = useCallback((text?: string) => {
+    if (busyLock.current) return;
     const words = (text ?? heard).trim();
+    busyLock.current = true;
     reset();
-    if (words) onTextRef.current(words);
+    try {
+      if (words) onTextRef.current(words);
+    } finally {
+      setTimeout(() => { busyLock.current = false; }, 350);
+    }
   }, [heard, reset]);
 
   // auto-send countdown (pauses as soon as the person starts editing)
@@ -233,15 +240,24 @@ export function useVoiceCapture(onText: (text: string) => void, { confirm = true
   }, [state, left, accept]);
 
   const start = useCallback(async () => {
+    if (busyLock.current) return;
     stopSpeaking();
     setError(null);
     setHeard("");
+    setInterim("");
     setLeft(null);
     try {
       setHeardLang(null);
       heardMeta.onPartial = setInterim;
-      if (serverOk.current) rec.current = await startServerRecording(lang);
-      else if (browserRecognitionAvailable()) rec.current = startBrowserRecognition(bcp47(lang), setInterim);
+      if (serverOk.current) {
+        try {
+          rec.current = await startServerRecording(lang);
+        } catch (srvErr: any) {
+          if (srvErr?.name === "NotAllowedError") throw srvErr;
+          if (browserRecognitionAvailable()) rec.current = startBrowserRecognition(bcp47(lang), setInterim);
+          else throw srvErr;
+        }
+      } else if (browserRecognitionAvailable()) rec.current = startBrowserRecognition(bcp47(lang), setInterim);
       else throw new Error("unsupported");
       setState("listening");
     } catch (e: any) {
@@ -251,12 +267,13 @@ export function useVoiceCapture(onText: (text: string) => void, { confirm = true
   }, [lang]);
 
   const toggle = useCallback(async () => {
+    if (state === "transcribing" || busyLock.current) return;
     if (state !== "listening") return start();
     setState("transcribing");
     try {
       const text = (await rec.current!.stop())?.trim();
       setInterim("");
-      if (!text) { setState("idle"); setError("noSpeech"); return; }
+      if (!text || !isValidTranscript(text)) { setState("idle"); setError("noSpeech"); return; }
       if (cmds.run(text)) { setState("idle"); return; }
       if (await actions.handle(text)) { setState("idle"); return; } // "my BP is 130 over 85", "open my reports"…
       if (!confirm) { setState("idle"); onTextRef.current(text); return; }
